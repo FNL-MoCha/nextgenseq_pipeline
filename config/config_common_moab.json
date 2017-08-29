@@ -1,0 +1,73 @@
+{
+	"group"			: "patidarr",
+	"host"			: "moab",
+	"annovar_data"		: "/projects/lihc_hiseq/active/ref/annotation/",
+	"genotypeDest"		: "/data/khanlab/projects/Genotyping/GenotypeFiles/",
+	"bwaIndex"		: "/projects/lihc_hiseq/active/ref/Index/bwa/ucsc.hg19.fasta",
+	"BismarkIndex"		: "/projects/lihc_hiseq/active/ref/Index/Bismark",
+	"Bowtie2Index"		: "/projects/lihc_hiseq/active/ref/Index/Bowtie2Index/genome",
+	"BowtieIndex"		: "/projects/lihc_hiseq/active/ref/Index/BowtieIndex/genome",
+	"Novo_index"		: "/projects/lihc_hiseq/active/ref/Index/novoalign/chr_all_hg19.nbx",
+	"STAR_ref"		: "/projects/lihc_hiseq/active/ref/Index/STAR_hg19_index",
+	"reference"		: "/projects/lihc_hiseq/active/ref/ucsc.hg19.fasta",
+	"HLA"			: "/projects/lihc_hiseq/active/ref/HLA/",
+	"version_R"		: "3.4.0_gcc-4.9.1",
+	"version_python"	: "2.7",
+	"version_blast"		: "2.5.0+",
+	"VEP"			: "86",
+	"IEDB"			: "/data/MoCha/patidarr/IEDB/",
+	"target_intervals"	:{
+		"wholegenome"		: "/projects/lihc_hiseq/active/ref/design/WholeGenome.target.hg19.merged.bed",
+		"access" 		: "/projects/lihc_hiseq/active/ref/design/IlluminaAccessKitRNASeq.target.hg19.merged.bed",
+		"polya"			: "/projects/lihc_hiseq/active/ref/design/RefSeq.target.hg19.merged.bed",
+		"ribozero"		: "/projects/lihc_hiseq/active/ref/design/RefSeq.target.hg19.merged.bed",
+		"idt.xgen.exome.res"	: "/projects/lihc_hiseq/active/ref/design/IDT_xgen-exome-research-panel.target.hg19.bed"
+	},
+	"hotspot_bed"		:{
+		"wholegenome"		: "/projects/lihc_hiseq/active/ref/hotspot/hg19_Hotspot.08.08.16_merged.bed",
+		"access"		: "/projects/lihc_hiseq/active/ref/hotspot/hg19_Hotspot.08.08.16_merged.bed",
+		"polya"			: "/projects/lihc_hiseq/active/ref/hotspot/hg19_Hotspot.08.08.16_merged.bed",
+		"ribozero"		: "/projects/lihc_hiseq/active/ref/hotspot/hg19_Hotspot.08.08.16_merged.bed",
+		"idt.xgen.exome.res"	: "/projects/lihc_hiseq/active/ref/hotspot/hg19_Hotspot.08.08.16_merged.bed"
+	},
+	"verifyBamID_vcf"       :{
+		"clin.ex.v1"		: "/projects/lihc_hiseq/active/ref/verifyBamID/Clinical_Research_Exome.recode.vcf",
+		"clin.snv.v1"		: "/projects/lihc_hiseq/active/ref/verifyBamID/Omni_Panel1.recode.vcf",
+		"clin.cnv.v2"		: "/projects/lihc_hiseq/active/ref/verifyBamID/Omni_CNVPanel2.recode.vcf",
+		"clin.snv.v2"		: "/projects/lihc_hiseq/active/ref/verifyBamID/Omni_Panel2.recode.vcf",
+		"mayo_v5_urt"           : "/projects/lihc_hiseq/active/ref/verifyBamID/Omni_MayoV5.recode.vcf"
+	},
+	 "cnvkit_ref"            :{
+		"clin.ex.v1"		: "/projects/lihc_hiseq/active/ref/cnvkit/clin.ex.v1.hg19.cnn",
+		"clin.snv.v1"		: "/projects/lihc_hiseq/active/ref/cnvkit/clin.snv.v1.hg19.cnn",
+		"clin.cnv.v2"		: "/projects/lihc_hiseq/active/ref/cnvkit/clin.cnv.v2.hg19.cnn",
+		"clin.snv.v2"		: "/projects/lihc_hiseq/active/ref/cnvkit/clin.snv.v2.hg19.cnn"
+	},
+	"conpair_marker"	: "/projects/lihc_hiseq/active/ref/verifyBamID/GRCh37.autosomes.phase3_shapeit2_mvncall_integrated.20130502.SNV.genotype.sselect_v4_MAF_0.4_LD_0.8.bed",
+	"cnvkit_access"		: "/projects/lihc_hiseq/active/ref/access-5k-mappable.hg19.bed",
+	"1000G_phase1"		: "/projects/lihc_hiseq/active/ref/1000G_phase1.indels.hg19.vcf",
+	"Mills_and_1000G"	: "/projects/lihc_hiseq/active/ref/Mills_and_1000G_gold_standard.indels.hg19.vcf",
+	"dbsnp"			: "/projects/lihc_hiseq/active/ref/dbsnp_138.hg19.vcf",
+	"cosmic"		: "/projects/lihc_hiseq/active/ref/cosmic_v67.hg19.vcf",
+	"strelka_config"	: "Biowulf_Strelka.config.ini",
+	"snpEff_config"		: "Biowulf_snpEff.config",
+	"defuse_config"		: "Biowulf_defuse.config_hg19_ens69.txt",
+	"genotypeBed"		: "/projects/lihc_hiseq/active/ref/annotation/1000gSites4genotyping.bed",
+	"tophat_post_ref"	: "/projects/lihc_hiseq/active/ref/Tophat_post",
+	"TCGA_fusion"		: "/projects/lihc_hiseq/active/ref/fusion/TCGA.fusion",
+	"omim_fusion" 		: "/projects/lihc_hiseq/active/ref/fusion/omim.fusions.txt",
+	"Mitelman"		: "/projects/lihc_hiseq/active/ref/fusion/Mitelman/gene_pairs_list",
+	"exon_Bed_UCSC"		: "/projects/lihc_hiseq/active/ref/GTF/Exons_06302016_refseq_formatted.sorted.bed",
+	"exon_Bed_ENS"		: "/projects/lihc_hiseq/active/ref/GTF/Exons_06302016_ensembl_formatted.sorted.bed",
+	"gene_coord"		: "/projects/lihc_hiseq/active/ref/gene_coordinates.txt",
+	"ref_flat"		: "/projects/lihc_hiseq/active/ref/GTF/refFlat.txt.gz",
+	"rRNA_interval"		: "/projects/lihc_hiseq/active/ref/GTF/rRNA_interval_file",
+	"GTF"			: {
+				"ENS" : "/projects/lihc_hiseq/active/ref/GTF/06302016_ensembl.gtf",
+				"UCSC": "/projects/lihc_hiseq/active/ref/GTF/06302016_refseq.gtf"
+	},
+	"RDS"                   : {
+				"ENS" : "/projects/lihc_hiseq/active/ref/AnnotationRDS/annotation_ENSEMBL_transcript.RDS",
+				"UCSC": "/projects/lihc_hiseq/active/ref/AnnotationRDS/annotation_UCSC_transcript.RDS"
+	}
+}
