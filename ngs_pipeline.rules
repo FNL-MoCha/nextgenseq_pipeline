@@ -22,6 +22,8 @@ if HOST == 'biowulf.nih.gov':
 	configfile: NGS_PIPELINE +"/config/config_common_biowulf.json"
 elif HOST == 'login01':
 	configfile: NGS_PIPELINE +"/config/config_common_tgen.json"
+elif HOST == 'moab':
+	configfile: NGS_PIPELINE +"/config/config_common_moab.json"
 
 config['host'] = HOST
 GROUP=config['group']

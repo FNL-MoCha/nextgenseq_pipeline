@@ -42,6 +42,8 @@ if [[ `hostname` =~ "cn" ]] || [ `hostname` == 'biowulf.nih.gov' ]; then
 elif [[ `hostname` =~ "tghighmem" ]] || [[ `hostname` =~ "tgcompute" ]] || [ `hostname` == 'login01' ] ; then
 	#module load snakemake/3.5.5
 	export HOST="login01"
+elif [[ `hostname` =~ "fr-s-hpc-head-1" ]] ; then
+	export HOST="moab"
 else 
 	echo -e "Host `hostname` is not recognized\n"
 	echo -e "This pipeline is customized to run on biowulf.nih.gov or TGen Cluster @ KhanLab\n";
@@ -70,6 +72,10 @@ elif [ $HOST == 'login01' ]; then
 	echo "Variables are $cmd"
 	snakemake $cmd --cluster "sbatchT -o log/{params.rulename}.%j.o -e log/{params.rulename}.%j.e {params.batch}" >& ngs_pipeline_${NOW}.log
 	rm -rf /projects/scratch/ngs_pipeline_${NOW}_*
+elfi [ $HOST == 'moab' ]; then
+	echo "Host identified as $HOST"
+	echo "Variables are $cmd"
+	snakemake $cmd --cluster "qsub -W umask=022 -V -e $WORK_DIR/log/ -o $WORK_DIR/log/ {params.batch}" >& ngs_pipeline_${NOW}.log
 fi
 
 if [ -f ngs_pipeline_${NOW}.stats ]; then
