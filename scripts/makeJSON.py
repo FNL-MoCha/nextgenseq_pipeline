@@ -14,7 +14,7 @@ output["library"] = {}
 output["sample_references"] = {}
 output["sample_RNASeq"] = {}
 output["RNASeq"] = {}
-
+output["source"] = {}
 #patientIndex=0
 #TypeIndex=1
 #DiagnosisIndex=2
@@ -23,13 +23,14 @@ output["RNASeq"] = {}
 #libraryIndex=6
 #normRefIndex=7
 #rnaRefIndex=8
-
+#source=??
 ### Column headers in current txt input file
 #custom ID
 #Type
 #Diagnosis
 #Type of sequencing
 #Enrichment step
+#Source
 #FCID
 #Library ID
 #Matched normal
@@ -37,13 +38,14 @@ output["RNASeq"] = {}
 #Case Name
 f = open(argv[1], 'r')
 for line in f:
-	line = line.rstrip()	
+	#line = line.rstrip()	
 	column = line.split("\t")
 	if re.search("custom ID", line):
 		patientIndex	=column.index('custom ID')
 		TypeIndex	=column.index('Type')
 		DiagnosisIndex	=column.index('Diagnosis')
 		captureIndex	=column.index('Enrichment step')
+		sourceIndex	=column.index('Source')
 		FCIDIndex	=column.index('FCID')
 		libraryIndex	=column.index('Library ID')
 		normRefIndex	=column.index('Matched normal')
@@ -62,6 +64,7 @@ for line in f:
 		if column[patientIndex] == sample:
 			output["sample_captures"][column[libraryIndex]]=column[captureIndex]
 			output["Diagnosis"][column[libraryIndex]]=column[DiagnosisIndex]
+			output["source"][column[libraryIndex]]=column[sourceIndex]
 			output["sample_type"][column[libraryIndex]]=column[TypeIndex]
 			if column[normRefIndex]:
 				output["sample_references"][column[libraryIndex]]=[column[normRefIndex]]

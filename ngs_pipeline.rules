@@ -84,13 +84,15 @@ for sample in config['library'].keys():
 			elif os.path.exists(DATA_DIR+fq+"/"):
 				R1=glob.glob(DATA_DIR+fq+"/*_R1*.fastq.gz")
 				R2=glob.glob(DATA_DIR+fq+"/*_R2*.fastq.gz")
-				FQ[sample]  =[R1]
-				FQ[sample] +=[R2]
+				FQ[sample] =[]
+				FQ[sample].extend(R1)
+				FQ[sample].extend(R2)
 			elif os.path.exists(DATA_DIR+"Sample_"+fq+"/"):
 				R1=glob.glob(DATA_DIR+"Sample_"+fq+"/*_R1*.fastq.gz")
 				R2=glob.glob(DATA_DIR+"Sample_"+fq+"/*_R2*.fastq.gz")
-				FQ[sample]  =[R1]
-				FQ[sample] +=[R2]
+				FQ[sample] =[]
+				FQ[sample].extend(R1)
+				FQ[sample].extend(R2)
 			else:
 				print("#####################################")
 				print("")
