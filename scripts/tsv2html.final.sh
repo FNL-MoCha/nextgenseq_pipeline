@@ -148,19 +148,17 @@ awk -F "$d" -v last=$last $head $foot '
 ' <<< "$data"
 echo "
 <br><br>
-Result available in <b>$location</b>.
+Results available in <b>$location</b>.
 <br>
 <p>For IGV sessions to work in igv:<br>
-biowulf.nih.gov(/data/khanlab) is mapped as K <br>
-biowulf.nih.gov(/data/Clinomics) is mapped as V <br>
-login01 aka TGen Server(/projects/Clinomics) is mapped as Y<br><br>
+biowulf.nih.gov(/data/MoCha) is mapped as M <br>
 
 If you ran pipeline at another location, igv session file cannot be loaded in IGV.</p><br><br>
 
 <p>Regards,<br>
-KhanLab<br>
-Oncogenomics Section<br>
-CCR NCI NIH<br>
+Bioinformatics Team<br>
+MoCha<br>
+NCI NIH<br>
 </p>
 </body>
 </html>"

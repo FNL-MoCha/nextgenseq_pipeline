@@ -251,7 +251,7 @@ if 'sample_RNASeq' in config:
 			# Its possible to have Matched RNASeq, i.e. Tumor only sequencing (Exome/RNA) but missing Corrosponding Normal
 			#print(Tumor, "Corrosponding RNASeq found but matched Normal not found")
 ###########################################################################
-localrules: Khanlab_Pipeline, RNASeq
+localrules: Pipeline, RNASeq
 #IGV_Session, DBinput, AttachAnnotation, Expressed, vcf2txt, symlink_tophatBam, copyNovoBam, Actionable_Germline, Actionable_RNAseq, Actionable_Somatic, Actionable_Variants, Actionable_fusion, Sub_Fusion, makeConfig, TargetInterval, QC_Summary_Patient,QC_Summary,UnionSomaticCalls,TOPHAT_LINK, SampleGT,QC_Sum, FormatInput, RNASeqQC_1,RNASeqQC1 RNASeqQC_2,RNASeqQC_3, Cuff_Mat
 #Circos, CoveragePlot, BoxPlot_Hotspot, makeConfig,Ideogram
 ###########################################################################
@@ -308,7 +308,7 @@ onerror:
         shell("find .snakemake/ ! -readable -prune -group $USER -exec chgrp -f {GROUP} {{}} \;")
 	shell("find {PATIENTS} -group $USER -exec chgrp -f {GROUP} {{}} \;")
 	shell("find {PATIENTS} \( -type f -user $USER -exec chmod g+rw {{}} \; \) , \( -type d -user $USER -exec chmod g+rwx {{}} \; \)")
-	shell("ssh {HOST} \"echo 'ngs-pipeline version {VERSION} failed on {PATIENTS}. Error occured on {HOST}. Working Dir:  {WORK_DIR}' |mutt -s 'Khanlab ngs-pipeline Status' `whoami`@mail.nih.gov  {MAIL} \"")
+	shell("ssh {HOST} \"echo 'ngs-pipeline version {VERSION} failed on {PATIENTS}. Error occured on {HOST}. Working Dir:  {WORK_DIR}' |mutt -s ' ngs-pipeline Status' `whoami`@mail.nih.gov  {MAIL} \"")
 	shell("find .snakemake/ ! -readable -prune -group $USER -exec chgrp -f {GROUP} {{}} \;")
 onstart:
 	f = open('ngs_pipeline_%s.csv' % NOW , 'w')
@@ -318,13 +318,13 @@ onstart:
 		print (subject,diagnosis,TIME,sep='\t', end='\n',file=f)
 	
 	shell("for sub in {PATIENTS}; do rm -rf {WORK_DIR}/${{sub}}/{TIME}/successful.txt ; done")
-	shell("ssh {HOST} \"echo 'ngs-pipeline version {VERSION} started on {PATIENTS} on {HOST}. Working Dir:  {WORK_DIR}' |mutt -s 'Khanlab ngs-pipeline Status' `whoami`@mail.nih.gov {MAIL} \"")
+	shell("ssh {HOST} \"echo 'ngs-pipeline version {VERSION} started on {PATIENTS} on {HOST}. Working Dir:  {WORK_DIR}' |mutt -s ' ngs-pipeline Status' `whoami`@mail.nih.gov {MAIL} \"")
 onsuccess:
 	shell("find .snakemake/ ! -readable -prune \( -type f -user $USER -exec chmod g+r {{}} \; \) , \( -type d -user $USER -exec chmod g+rwx {{}} \; \)")
 	shell("find .snakemake/ ! -readable -prune -group $USER -exec chgrp -f {GROUP} {{}} \;")
 	print("Workflow finished, no error")
 ###########################################################################
-rule Khanlab_Pipeline:
+rule Pipeline:
 	input:
 		TARGET,
 		expand ("ngs_pipeline_{NOW}.rnaseq.done", NOW=NOW)
@@ -352,7 +352,7 @@ rule Khanlab_Pipeline:
 		chmod g+rw {WORK_DIR}/${{sub}}/{TIME}/successful.txt 	
 		chgrp {params.group} {WORK_DIR}/${{sub}}/{TIME}/successful.txt
         done
-	ssh {params.host} "{params.mail} --location {WORK_DIR} --host {params.host} --head --version {version} {WORK_DIR}/ngs_pipeline_{NOW}.csv |mutt -e \\\"my_hdr Content-Type: text/html\\\" -s 'Khanlab ngs-pipeline Status' `whoami`@mail.nih.gov {params.email}"
+	ssh {params.host} "{params.mail} --location {WORK_DIR} --host {params.host} --head --version {version} {WORK_DIR}/ngs_pipeline_{NOW}.csv |mutt -e \\\"my_hdr Content-Type: text/html\\\" -s ' ngs-pipeline Status' `whoami`@mail.nih.gov {params.email}"
 	rm -rf {WORK_DIR}/ngs_pipeline_{NOW}.csv
 	#######################
 	"""
@@ -373,31 +373,47 @@ rule makeConfig:
 ############
 #       Merge Fastq Files
 ############
-rule MergeFQ:
-	input: R=lambda wildcards: FQ[wildcards.sample]
+rule bbsplit:
+	input: 
+		R=lambda wildcards: FQ[wildcards.sample],
+		ref=config['bbsplitIndex']
 	output:
-		R1 = temp("{base}/{TIME}/FQ/{sample}_R1.fastq.gz"),
-		R2 = temp("{base}/{TIME}/FQ/{sample}_R2.fastq.gz")
+		R1 = "{base}/{TIME}/FQ/{sample}_R1.fastq.gz",
+		R2 = "{base}/{TIME}/FQ/{sample}_R2.fastq.gz"
+	version: config["bbtools"]
 	params:
-		rulename = "mergeFQ",
-		batch    = config[config['host']]["job_default"],
+		rulename = "bbsplit",
+		batch    = config[config['host']]["job_bbsplit"],
+		source   = lambda wildcards: config["source"][wildcards.sample],
 		work_dir =  WORK_DIR
 	shell: """
 	#######################
-	R1=`echo "{input.R}" |sed -e 's/ /\\n/g' |grep "_R1.fastq.gz"`
-	R2=`echo "{input.R}" |sed -e 's/ /\\n/g' |grep "_R2.fastq.gz"`	
+	module load bbtools/{version}
+	R1=`echo "{input.R}" |sed -e 's/ /\\n/g' |grep "_R1"`
+	R2=`echo "{input.R}" |sed -e 's/ /\\n/g' |grep "_R2"`	
 
-	count=`echo {input.R}|grep -o _R2.fastq.gz |wc -l`
+	count=`echo {input.R}|grep -o _R1_ |wc -l`
 	echo "#########${{count}}#########"
 	if [ ${{count}} == '1' ] ; then
-		ln -sf {input.R[0]} {params.work_dir}/{output.R1}
-		ln -sf {input.R[1]} {params.work_dir}/{output.R2}
+		if [ {params.source} == 'PDX' ]; then
+			bbtools bbsplit build=1 path={input.ref} in1={input.R[0]} in2={input.R[1]} basename={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_%_#.fastq.gz refstats={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_stat.txt
+			mv -f {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_1.fastq.gz {output.R1} 
+			mv -f {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_2.fastq.gz {output.R2}
+		else
+			ln -sf {input.R[0]} {params.work_dir}/{output.R1}
+			ln -sf {input.R[1]} {params.work_dir}/{output.R2}
+		fi
 	else
 		zcat ${{R1}} |gzip >{output.R1} &
 		zcat ${{R2}} |gzip >{output.R2} &
+		wait
+		if [ {params.source} == 'PDX' ]; then
+			bbtools bbsplit build=1 path={input.ref} in1={output.R1} in2={output.R2} basename={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_%_#.fastq.gz refstats={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_stat.txt
+			mv -f {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_1.fastq.gz {output.R1}
+                	mv -f {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_2.fastq.gz {output.R2}
+		fi
 	fi
 	
-	wait
 	#######################
 	"""
 ############
@@ -434,7 +450,9 @@ rule FASTQC:
 #       BWA
 ############
 rule BWA:
-	input: R=lambda wildcards: FQ[wildcards.sample],
+	input:
+		R1 = "{base}/{TIME}/FQ/{sample}_R1.fastq.gz",
+		R2 = "{base}/{TIME}/FQ/{sample}_R2.fastq.gz",
 		ref=config["bwaIndex"]
 	output:
 		temp("{base}/{TIME}/{sample}/{sample}.bwa.bam"),
@@ -444,18 +462,22 @@ rule BWA:
 		rulename  = "bwa",
 		platform  = config["platform"],
 		samtools  = config["samtools"],
+		sentieon  = config["sentieon"],
 		batch     = config[config['host']]["job_bwa"]
 	shell: """
 	#######################
 	module load bwa/{version}
 	module load samtools/{params.samtools}
-	R1=`echo "{input.R}" |sed -e 's/ /\\n/g' |grep "_R1"`
-	R2=`echo "{input.R}" |sed -e 's/ /\\n/g' |grep "_R2"`
-	
-	THREADS=`expr ${{THREADS}} - 2`
-	
-	bwa mem -M -t ${{THREADS}} -R '@RG\\tID:{wildcards.sample}\\tSM:{wildcards.sample}\\tLB:{wildcards.sample}\\tPL:{params.platform}' {input.ref} "<zcat ${{R1}}" "<zcat ${{R2}}" | samtools view -Sbh - | samtools sort -m 30000000000 - {wildcards.base}/{TIME}/{wildcards.sample}/{wildcards.sample}.bwa
-	samtools index {wildcards.base}/{TIME}/{wildcards.sample}/{wildcards.sample}.bwa.bam
+	set +eo pipefail
+	module -q load {params.sentieon} 2>/dev/null
+	set -eo pipefail
+	if [ $? == '0' ] ; then
+        	echo "Using Sentieon"
+		bwa mem -M -t ${{THREADS}} -R '@RG\\tID:{wildcards.sample}\\tSM:{wildcards.sample}\\tLB:{wildcards.sample}\\tPL:{params.platform}' {input.ref} {input.R1} {input.R2} | sentieon util sort -o {wildcards.base}/{TIME}/{wildcards.sample}/{wildcards.sample}.bwa.bam -t ${{THREADS}} --sam2bam -i -	
+	else
+		bwa mem -M -t ${{THREADS}} -R '@RG\\tID:{wildcards.sample}\\tSM:{wildcards.sample}\\tLB:{wildcards.sample}\\tPL:{params.platform}' {input.ref} {input.R1} {input.R2} | samtools view -Sbh - | samtools sort -m 30000000000 - {wildcards.base}/{TIME}/{wildcards.sample}/{wildcards.sample}.bwa
+		samtools index {wildcards.base}/{TIME}/{wildcards.sample}/{wildcards.sample}.bwa.bam
+	fi
 	#######################
 	"""
 ############
@@ -665,7 +687,7 @@ rule IGV_Session:
 		work_dir =  WORK_DIR
 	shell: """
 	#######################
-	dir=`echo {params.work_dir} | sed -e 's/\/data\/khanlab/K:/g' | sed -e 's/\/projects\/Clinomics/Y:/g' |sed -e 's/\/data\/Clinomics/V:/g'`
+	dir=`echo {params.work_dir} | sed -e 's/\/data\/MoCha/M:/g' `
 	echo "<?xml version=\\"1.0\\" encoding=\\"UTF-8\\"?>" >{output}
 	echo "<Global genome=\\"hg19\\" locus=\\"\\" version=\\"3\\">" >>{output}
 	echo "\t<Resources>" >>{output}
@@ -694,13 +716,23 @@ rule Picard_MarkDup:
 	params:
 		rulename  = "mark_dup",
 		batch     = config[config['host']]["job_markdup"],
-		samtools  = config["samtools"]
+		samtools  = config["samtools"],
+		sentieon  = config["sentieon"],
 	shell: """
 	#######################
 	module load picard/{version}
-	java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $PICARD_JAR MarkDuplicates AS=true M={output.metrics} I={input.bam} O={output.bam} REMOVE_DUPLICATES=false VALIDATION_STRINGENCY=SILENT
-	module load samtools/{params.samtools}
-	samtools index {output.bam}
+	set +eo pipefail
+	module -q load {params.sentieon} 2>/dev/null
+	set -eo pipefail
+	if [ $? == '0' ] ; then
+		echo "Using Sentieon"
+		sentieon driver -t ${{THREADS}} -i {input.bam} --algo LocusCollector --fun score_info {output.metrics}.tmp
+		sentieon driver -t ${{THREADS}} -i {input.bam} --algo Dedup --score_info {output.metrics}.tmp --metrics {output.metrics} {output.bam}
+	else
+		java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $PICARD_JAR MarkDuplicates AS=true M={output.metrics} I={input.bam} O={output.bam} REMOVE_DUPLICATES=false VALIDATION_STRINGENCY=SILENT
+		module load samtools/{params.samtools}
+		samtools index {output.bam}
+	fi
 	#######################
 	"""
 ############
@@ -739,15 +771,27 @@ rule GATK:
 	version: config["GATK"]
 	params:
 		rulename  = "gatk",
-		batch     = config[config['host']]["job_gatk"]
+		batch     = config[config['host']]["job_gatk"],
+		sentieon  = config["sentieon"],
 	shell: """
 	#######################
 	module load GATK/{version}
-	java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -T RealignerTargetCreator -R {input.ref} -known {input.phase1} -known {input.mills} -I {input.bam} -o ${{LOCAL}}/{wildcards.sample}.realignment.intervals
-	java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -T IndelRealigner -R {input.ref} -known {input.phase1} -known {input.mills} -I {input.bam} --targetIntervals ${{LOCAL}}/{wildcards.sample}.realignment.intervals -o ${{LOCAL}}/{wildcards.sample}.lr.bam --maxReadsInMemory 1500000
-	java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -T BaseRecalibrator -R {input.ref} -knownSites {input.phase1} -knownSites {input.mills} -I ${{LOCAL}}/{wildcards.sample}.lr.bam -o ${{LOCAL}}/{wildcards.sample}.recalibration.matrix.txt
-	java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -T PrintReads -R {input.ref} -I ${{LOCAL}}/{wildcards.sample}.lr.bam -o {output.bam} -BQSR ${{LOCAL}}/{wildcards.sample}.recalibration.matrix.txt
-	mv -f {wildcards.base}/{TIME}/{wildcards.sample}/{wildcards.sample}.bwa.final.bai {output.index}
+	set +eo pipefail
+	module -q load {params.sentieon} 2>/dev/null
+	set -eo pipefail
+	if [ $? == '0' ] ; then
+		echo "Using Sentieon"
+		sentieon driver -t ${{THREADS}} -r {input.ref} -i {input.bam} --algo Realigner -k {input.phase1} -k {input.mills} ${{LOCAL}}/{wildcards.sample}.lr.bam
+		sentieon driver -t ${{THREADS}} -r {input.ref} -i ${{LOCAL}}/{wildcards.sample}.lr.bam --algo QualCal -k {input.phase1} -k {input.mills} ${{LOCAL}}/{wildcards.sample}.recalibration.matrix.txt
+		sentieon driver -t ${{THREADS}} -r {input.ref} -i ${{LOCAL}}/{wildcards.sample}.lr.bam -q ${{LOCAL}}/{wildcards.sample}.recalibration.matrix.txt --algo QualCal -k {input.phase1} -k {input.mills} ${{LOCAL}}/{wildcards.sample}.recalibrationPost.matrix.txt --algo ReadWriter {output.bam}
+
+	else
+		java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -T RealignerTargetCreator -R {input.ref} -known {input.phase1} -known {input.mills} -I {input.bam} -o ${{LOCAL}}/{wildcards.sample}.realignment.intervals
+		java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -T IndelRealigner -R {input.ref} -known {input.phase1} -known {input.mills} -I {input.bam} --targetIntervals ${{LOCAL}}/{wildcards.sample}.realignment.intervals -o ${{LOCAL}}/{wildcards.sample}.lr.bam --maxReadsInMemory 1500000
+		java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -T BaseRecalibrator -R {input.ref} -knownSites {input.phase1} -knownSites {input.mills} -I ${{LOCAL}}/{wildcards.sample}.lr.bam -o ${{LOCAL}}/{wildcards.sample}.recalibration.matrix.txt
+		java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -T PrintReads -R {input.ref} -I ${{LOCAL}}/{wildcards.sample}.lr.bam -o {output.bam} -BQSR ${{LOCAL}}/{wildcards.sample}.recalibration.matrix.txt
+		mv -f {wildcards.base}/{TIME}/{wildcards.sample}/{wildcards.sample}.bwa.final.bai {output.index}
+	fi
 	#######################
 	"""
 ############
@@ -770,23 +814,37 @@ rule MuTect:
 		R	 = config['version_R'],
 		batch    = config[config['host']]["job_mutect"],
 		vcforder = NGS_PIPELINE + "/scripts/vcfOrderCol.R",
+		sentieon =config["sentieon"],
 		mt       = "--max_alt_allele_in_normal_fraction 0.05 --max_alt_alleles_in_normal_count 4 --min_qscore 20 -rf MappingQuality -mmq 30"
 	shell: """
 	#######################
 	module load muTect/{version}
 	module load R/{params.R}
-	java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $MUTECT_JAR -T MuTect \
-		--reference_sequence {input.ref} \
-		--cosmic {input.cosmic} \
-		--dbsnp {input.dbsnp} \
-		--input_file:normal {input[2]} \
-		--input_file:tumor {input[0]} \
-		--intervals  {input.interval} \
-		--coverage_file {output.coverage} \
-		--out {output.call_stats} \
-		--vcf {output.vcf}.vcf \
-		{params.mt}
-
+	set +eo pipefail
+	module -q load {params.sentieon} 2>/dev/null
+	set -eo pipefail
+	if [ $? == '0' ] ; then
+		echo "Using Sentieon"
+		sentieon driver --read_filter MapQualFilter,min_map_qual=30 -t ${{THREADS}} -r {input.ref} \
+			-i {input[2]} -i {input[0]} \
+			--interval {input.interval} \
+			--algo TNsnv --dbsnp {input.dbsnp} \
+			--tumor_sample {wildcards.Tumor} --normal_sample {params.normal} \
+			--call_stats_out {output.call_stats} --stdcov_out {output.coverage} {params.mt} {output.vcf}.vcf
+		
+	else
+		java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $MUTECT_JAR -T MuTect \
+			--reference_sequence {input.ref} \
+			--cosmic {input.cosmic} \
+			--dbsnp {input.dbsnp} \
+			--input_file:normal {input[2]} \
+			--input_file:tumor {input[0]} \
+			--intervals  {input.interval} \
+			--coverage_file {output.coverage} \
+			--out {output.call_stats} \
+			--vcf {output.vcf}.vcf \
+			{params.mt}
+	fi
 	{params.vcforder} -i {output.vcf}.vcf -o {output.vcf}
 	rm -rf {output.vcf}.vcf
 	#######################

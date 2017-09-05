@@ -82,7 +82,7 @@ while (<VAR>) {
 		elsif($_ =~ /Platypus/i){
 			$CALLER = "Platypus";
 		}
-		elsif($_ =~ /HaplotypeCaller/i or $_ =~ /VQSR/i or $_ =~ /UnifiedGenotyper/i){ # If VQSR is ran on vcf file the HaplotypeCaller tag get taken out by GATK
+		elsif($_ =~ /HaplotypeCaller/i or $_ =~ /VQSR/i or $_ =~ /UnifiedGenotyper/i or $_ =~ /Haplotyper/i){ # If VQSR is ran on vcf file the HaplotypeCaller tag get taken out by GATK
 			$CALLER = "GATK";
 		}
 		elsif($_ =~ /freeBayes/){

@@ -1,6 +1,6 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
-ANNO_FILES =["gene","clinseq","cadd","cosmic","pcg","clinvar","hgmd","match","mcg","docm","candl","tcc","civic","sift.out","coding.rare.txt","annotations.final.txt"]
+ANNO_FILES =["gene","cadd","cosmic","pcg","clinvar","hgmd","match","mcg","docm","candl","tcc","civic","sift.out","coding.rare.txt","annotations.final.txt"]
 TARGET += expand("{subject}/{TIME}/annotation/AnnotationInput.{suff}", suff=ANNO_FILES, TIME=TIME, subject=PATIENTS)
 ############
 #	table_annovar for:
@@ -56,30 +56,6 @@ rule Annovar_Gene:
 	mv {input.file}.gene.{params.build}_multianno.txt {output}
 	sed -i '1s/\./_/g' {output}
 	rm -rf {input.file}.gene.refGene.invalid_input {input.file}.gene.invalid_input
-	#######################
-	"""
-############
-# annotate_variation
-#	custom ref input. clinseq
-############
-rule Annovar_Clinseq:
-	input:
-		file="{base}/AnnotationInput.anno",
-		clinseq=config["annovar_data"]+config["annot_clinseq"]
-	output: "{base}/AnnotationInput.clinseq"
-	version: config["annovar"]
-	params:
-		rulename   = "Annot_clinseq",
-		batch      = config[config['host']]["job_annot"],
-		RefData    = config["annovar_data"],
-		build      = config["build"],
-	shell: """
-	#######################
-	module load annovar/{version}
-	annotate_variation.pl {input.file} {params.RefData} -buildver {params.build} -otherinfo --outfile {input.file}.clinseq -filter -dbtype generic -genericdbfile `basename {input.clinseq}`
-	awk '{{OFS="\\t"}};{{print $3,$4,$5,$6,$7,$2}}' {input.file}.clinseq.{params.build}_generic_dropped |sed -e 's/,/\\t/g' >{output}
-	head -1 {input.clinseq} >>{output}
-	rm -rf {input.file}.clinseq.{params.build}_generic_dropped {input.file}.clinseq.{params.build}_generic_filtered {input.file}.clinseq.invalid_input {input.file}.clinseq.log
 	#######################
 	"""
 ################################
@@ -242,7 +218,6 @@ rule SIFT:
 rule CombineAnnotation:
 	input:
 		"{base}/AnnotationInput.gene",
-		"{base}/AnnotationInput.clinseq",
 		"{base}/AnnotationInput.cadd",
 		"{base}/AnnotationInput.cosmic",
 		"{base}/AnnotationInput.pcg",
@@ -272,7 +247,6 @@ rule CombineAnnotation:
 	#######################
 echo "{wildcards.base}/AnnotationInput
 {wildcards.base}/AnnotationInput.gene
-{wildcards.base}/AnnotationInput.clinseq
 {wildcards.base}/AnnotationInput.cadd
 {wildcards.base}/AnnotationInput.sift.out
 {wildcards.base}/AnnotationInput.clinvar

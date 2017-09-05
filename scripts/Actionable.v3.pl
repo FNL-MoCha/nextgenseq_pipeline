@@ -5,7 +5,7 @@ use List::Util qw(first);
 use 5.010;
 local $SIG{__WARN__} = sub {
 	my $message =shift;
-	die $message;
+#	die $message;
 };
 
 
@@ -25,10 +25,10 @@ local $SIG{__WARN__} = sub {
 
 
 my $index_of_clinvar=57; # This does not include chr/alt, Func_RefGene==0
-my $index_of_ACMG=182; 
+my $index_of_ACMG=174; 
 my $index_of_HGMD=64;
 my $index_of_Gene=1;
-my $index_of_GrandTotal=181;
+my $index_of_GrandTotal=167;
 my $idx_anno_region=0;
 my $idx_anno_eff=3;
 if($ARGV[0] eq 'somatic'){
@@ -238,12 +238,12 @@ sub Germline{
 	my %germline;
 	foreach my $key (sort keys %judge_tier) {
 		my @temp = split("\t", $key);
-		if ($temp[195] eq 'Normal'){
-			$germline{"$temp[0]\t$temp[1]\t$temp[2]\t$temp[3]\t$temp[4]\t$temp[196]"} = "$temp[204]";
-			$normal_vaf{"$temp[0]\t$temp[1]\t$temp[2]\t$temp[3]\t$temp[4]\t$temp[196]"} = "$temp[202]";
+		if ($temp[176] eq 'Normal'){
+			$germline{"$temp[0]\t$temp[1]\t$temp[2]\t$temp[3]\t$temp[4]\t$temp[177]"} = "$temp[185]";
+			$normal_vaf{"$temp[0]\t$temp[1]\t$temp[2]\t$temp[3]\t$temp[4]\t$temp[177]"} = "$temp[183]";
 		}
-		if($temp[195] eq 'Tumor'){
-			$tumor_vaf{"$temp[0]\t$temp[1]\t$temp[2]\t$temp[3]\t$temp[4]\t$temp[196]"} = "$temp[202]";
+		if($temp[176] eq 'Tumor'){
+			$tumor_vaf{"$temp[0]\t$temp[1]\t$temp[2]\t$temp[3]\t$temp[4]\t$temp[177]"} = "$temp[183]";
 		}
 	}
 	foreach my $key (sort keys %normal_vaf){
@@ -263,8 +263,8 @@ sub Germline{
 	}
 	foreach my $key (sort keys %judge_tier) {
 		my @temp = split("\t", $key);
-		if (exists $germline{"$temp[0]\t$temp[1]\t$temp[2]\t$temp[3]\t$temp[4]\t$temp[196]"}){
-			$temp[204] = $germline{"$temp[0]\t$temp[1]\t$temp[2]\t$temp[3]\t$temp[4]\t$temp[196]"};
+		if (exists $germline{"$temp[0]\t$temp[1]\t$temp[2]\t$temp[3]\t$temp[4]\t$temp[177]"}){
+			$temp[185] = $germline{"$temp[0]\t$temp[1]\t$temp[2]\t$temp[3]\t$temp[4]\t$temp[177]"};
 			print join("\t", @temp)."\n";
 		}
 	}

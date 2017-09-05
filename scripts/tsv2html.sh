@@ -164,9 +164,9 @@ awk -F "$d" -v last=$last $head $foot '
   }
 ' <<< "$data"
 echo "<p>Regards,<br>
-KhanLab<br>
-Oncogenomics Section<br>
-CCR NCI NIH<br>
+Bioinformatics Team<br>
+MoCha<br>
+NCI NIH<br>
 </p>
 </body>
 </html>"

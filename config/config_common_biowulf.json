@@ -9,6 +9,8 @@
 	"BowtieIndex"		: "/data/MoCha/patidarr/ref/Index/BowtieIndex/genome",
 	"Novo_index"		: "/data/MoCha/patidarr/ref/Index/novoalign/chr_all_hg19.nbx",
 	"STAR_ref"		: "/data/MoCha/patidarr/ref/Index/STAR_hg19_index",
+	"bbsplitIndex"		: "/data/MoCha/patidarr/ref/Index/bbtools",
+	"rsemIndex"		: "/data/MoCha/patidarr/ref/Index/RSEM/hg19_UCSC_RefGene_rsem",
 	"reference"		: "/data/MoCha/patidarr/ref/ucsc.hg19.fasta",
 	"HLA"			: "/data/MoCha/patidarr/ref/HLA/",
 	"version_R"		: "3.4.0_gcc-4.9.1",

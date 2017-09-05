@@ -20,7 +20,6 @@
 	"annot_caddind": "hg19_caddindel.txt",
 	"annot_cosmic" : "hg19_cosmic78.txt",
 	"annot_pcg"    : "hg19_PCG_042616.txt",
-	"annot_clinseq": "hg19_clinseq_951.txt",
 	"annot_clinvar": "hg19_clinvar_20160831.txt",
 	"annot_hgmd"   : "hg19_hgmd.2016.2.txt",
 	"annot_match"  : "hg19_MATCHTrial_2015_11.txt",
