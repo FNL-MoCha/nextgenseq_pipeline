@@ -388,18 +388,19 @@ rule bbsplit:
 		work_dir =  WORK_DIR
 	shell: """
 	#######################
-	module load bbtools/{version}
 	R1=`echo "{input.R}" |sed -e 's/ /\\n/g' |grep "_R1"`
 	R2=`echo "{input.R}" |sed -e 's/ /\\n/g' |grep "_R2"`	
 
-	count=`echo {input.R}|grep -o _R1_ |wc -l`
+	count=`echo {input.R}|grep -o _R1 |wc -l`
 	echo "#########${{count}}#########"
 	if [ ${{count}} == '1' ] ; then
 		if [ {params.source} == 'PDX' ]; then
+			module load bbtools/{version}
 			bbtools bbsplit build=1 path={input.ref} in1={input.R[0]} in2={input.R[1]} basename={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_%_#.fastq.gz refstats={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_stat.txt
 			mv -f {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_1.fastq.gz {output.R1} 
 			mv -f {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_2.fastq.gz {output.R2}
 		else
+			echo "This is what I should be running normally 1 "
 			ln -sf {input.R[0]} {params.work_dir}/{output.R1}
 			ln -sf {input.R[1]} {params.work_dir}/{output.R2}
 		fi
@@ -408,6 +409,7 @@ rule bbsplit:
 		zcat ${{R2}} |gzip >{output.R2} &
 		wait
 		if [ {params.source} == 'PDX' ]; then
+			module load bbtools/{version}
 			bbtools bbsplit build=1 path={input.ref} in1={output.R1} in2={output.R2} basename={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_%_#.fastq.gz refstats={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_stat.txt
 			mv -f {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_1.fastq.gz {output.R1}
                 	mv -f {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_2.fastq.gz {output.R2}

@@ -39,7 +39,7 @@ awk '{OFS="\t"}{print $1,$2,$3,"NOTFOUND",0,"NULL"}' ${OUT}.NotfoundInENSEMBL >$
 cat ${OUT}.foundInRefSeq ${OUT}.foundInENSEMBL ${OUT}.Notfound |sortBed -i - |uniq|mergeBed -i - -c 4,5,6 -o distinct,collapse,collapse |awk '{OFS="\t"}{print $1,$2,$3,$4"___"$5,$6}' >${OUT}.refseq.ensembl.noUTR.notfound.target.hg19.bed
 igvtools index ${OUT}.refseq.ensembl.noUTR.notfound.target.hg19.bed
 
-slopBed -i ${OUT}.refseq.ensembl.noUTR.notfound.target.hg19.bed -g $dir/ref/ucsc.hg19.genome -b 20 >${OUT}.refseq.ensembl.noUTR.notfound.targetbp.hg19.bed
+slopBed -i ${OUT}.refseq.ensembl.noUTR.notfound.target.hg19.bed -g $dir/ref/ucsc.hg19.genome -b 100 >${OUT}.refseq.ensembl.noUTR.notfound.targetbp.hg19.bed
 rm -rf ${OUT} ${OUT}.foundInRefSeq ${OUT}.NotfoundInRefSeq ${OUT}.foundInENSEMBL ${OUT}.NotfoundInENSEMBL ${OUT}.Notfound ${OUT}.PaddedNotfoundInRefSeq
 igvtools index ${OUT}.refseq.ensembl.noUTR.notfound.targetbp.hg19.bed
 rm -rf igv.log
