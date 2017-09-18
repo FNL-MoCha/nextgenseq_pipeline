@@ -36,10 +36,7 @@
 		"sureselect.v5"		: "/data/MoCha/patidarr/ref/verifyBamID/Omni_MayoV5.recode.vcf"
 	},
 	 "cnvkit_ref"            :{
-		"clin.ex.v1"		: "/data/MoCha/patidarr/ref/cnvkit/clin.ex.v1.hg19.cnn",
-		"clin.snv.v1"		: "/data/MoCha/patidarr/ref/cnvkit/clin.snv.v1.hg19.cnn",
-		"clin.cnv.v2"		: "/data/MoCha/patidarr/ref/cnvkit/clin.cnv.v2.hg19.cnn",
-		"clin.snv.v2"		: "/data/MoCha/patidarr/ref/cnvkit/clin.snv.v2.hg19.cnn"
+		"sureselect.v5"		: "/data/MoCha/patidarr/ref/cnvkit/Sureselect.v5.hg19.cnn"
 	},
 	"conpair_marker"	: "/data/MoCha/patidarr/ref/verifyBamID/GRCh37.autosomes.phase3_shapeit2_mvncall_integrated.20130502.SNV.genotype.sselect_v4_MAF_0.4_LD_0.8.bed",
 	"cnvkit_access"		: "/data/MoCha/patidarr/ref/access-5k-mappable.hg19.bed",

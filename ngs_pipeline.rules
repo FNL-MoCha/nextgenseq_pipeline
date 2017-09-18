@@ -251,8 +251,7 @@ if 'sample_RNASeq' in config:
 			# Its possible to have Matched RNASeq, i.e. Tumor only sequencing (Exome/RNA) but missing Corrosponding Normal
 			#print(Tumor, "Corrosponding RNASeq found but matched Normal not found")
 ###########################################################################
-localrules: Pipeline, RNASeq
-#IGV_Session, DBinput, AttachAnnotation, Expressed, vcf2txt, symlink_tophatBam, copyNovoBam, Actionable_Germline, Actionable_RNAseq, Actionable_Somatic, Actionable_Variants, Actionable_fusion, Sub_Fusion, makeConfig, TargetInterval, QC_Summary_Patient,QC_Summary,UnionSomaticCalls,TOPHAT_LINK, SampleGT,QC_Sum, FormatInput, RNASeqQC_1,RNASeqQC1 RNASeqQC_2,RNASeqQC_3, Cuff_Mat
+localrules: Pipeline, RNASeq, IGV_Session, DBinput, AttachAnnotation, Expressed, vcf2txt, symlink_tophatBam, copyNovoBam, Actionable_Germline, Actionable_RNAseq, Actionable_Somatic, Actionable_Variants, Actionable_fusion, Sub_Fusion, makeConfig, TargetInterval, QC_Summary_Patient,QC_Summary,UnionSomaticCalls,TOPHAT_LINK, SampleGT,QC_Sum, FormatInput, RNASeqQC_1,RNASeqQC1 RNASeqQC_2,RNASeqQC_3, Cuff_Mat
 #Circos, CoveragePlot, BoxPlot_Hotspot, makeConfig,Ideogram
 ###########################################################################
 #				Include Rule Book			  #
@@ -281,7 +280,7 @@ include: NGS_PIPELINE +"/ruleBook/STAR.rules"
 include: NGS_PIPELINE +"/ruleBook/Sequenza.rules"
 include: NGS_PIPELINE +"/ruleBook/cnvkit.rules"
 include: NGS_PIPELINE +"/ruleBook/MethlySeq.rules"
-include: NGS_PIPELINE +"/ruleBook/HotSpot_Pileup.rules"
+#include: NGS_PIPELINE +"/ruleBook/HotSpot_Pileup.rules"
 
 ###########################################################################
 # we have to do it this way as some samples may not have rna or tumor     #
@@ -308,7 +307,7 @@ onerror:
         shell("find .snakemake/ ! -readable -prune -group $USER -exec chgrp -f {GROUP} {{}} \;")
 	shell("find {PATIENTS} -group $USER -exec chgrp -f {GROUP} {{}} \;")
 	shell("find {PATIENTS} \( -type f -user $USER -exec chmod g+rw {{}} \; \) , \( -type d -user $USER -exec chmod g+rwx {{}} \; \)")
-	shell("ssh {HOST} \"echo 'ngs-pipeline version {VERSION} failed on {PATIENTS}. Error occured on {HOST}. Working Dir:  {WORK_DIR}' |mutt -s ' ngs-pipeline Status' `whoami`@mail.nih.gov  {MAIL} \"")
+	shell("ssh {HOST} \"echo 'ngs-pipeline version {VERSION} failed on {PATIENTS}. Error occured on {HOST}. Working Dir:  {WORK_DIR}' |mutt -s ' ngs-pipeline Status' `whoami`@mail.nih.gov \"")
 	shell("find .snakemake/ ! -readable -prune -group $USER -exec chgrp -f {GROUP} {{}} \;")
 onstart:
 	f = open('ngs_pipeline_%s.csv' % NOW , 'w')
@@ -318,7 +317,7 @@ onstart:
 		print (subject,diagnosis,TIME,sep='\t', end='\n',file=f)
 	
 	shell("for sub in {PATIENTS}; do rm -rf {WORK_DIR}/${{sub}}/{TIME}/successful.txt ; done")
-	shell("ssh {HOST} \"echo 'ngs-pipeline version {VERSION} started on {PATIENTS} on {HOST}. Working Dir:  {WORK_DIR}' |mutt -s ' ngs-pipeline Status' `whoami`@mail.nih.gov {MAIL} \"")
+	shell("ssh {HOST} \"echo 'ngs-pipeline version {VERSION} started on {PATIENTS} on {HOST}. Working Dir:  {WORK_DIR}' |mutt -s ' ngs-pipeline Status' `whoami`@mail.nih.gov \"")
 onsuccess:
 	shell("find .snakemake/ ! -readable -prune \( -type f -user $USER -exec chmod g+r {{}} \; \) , \( -type d -user $USER -exec chmod g+rwx {{}} \; \)")
 	shell("find .snakemake/ ! -readable -prune -group $USER -exec chgrp -f {GROUP} {{}} \;")
@@ -794,6 +793,8 @@ rule GATK:
 		java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -T PrintReads -R {input.ref} -I ${{LOCAL}}/{wildcards.sample}.lr.bam -o {output.bam} -BQSR ${{LOCAL}}/{wildcards.sample}.recalibration.matrix.txt
 		mv -f {wildcards.base}/{TIME}/{wildcards.sample}/{wildcards.sample}.bwa.final.bai {output.index}
 	fi
+	sleep 60s
+	touch {output.index}
 	#######################
 	"""
 ############
@@ -932,7 +933,7 @@ rule VCF2TXT:
 rule FormatInput:
 	input:
 		txtFiles=lambda wildcards: SUBJECT_VCFS[wildcards.subject],
-		hotspot ="{subject}/{TIME}/{subject}/db/{subject}.hotspot",
+		#hotspot ="{subject}/{TIME}/{subject}/db/{subject}.hotspot",
 		convertor= NGS_PIPELINE + "/scripts/MakeAnnotationInputs.pl"
 	output:
 		temp("{subject}/{TIME}/annotation/AnnotationInput.anno"),
@@ -946,7 +947,7 @@ rule FormatInput:
 	#######################
 	module load annovar/{version}
 	export LC_ALL=C
-	cut -f 1-5 {input.txtFiles} {input.hotspot} |sort |uniq > {wildcards.subject}/{TIME}/annotation/AnnotationInput
+	cut -f 1-5 {input.txtFiles} |sort |uniq > {wildcards.subject}/{TIME}/annotation/AnnotationInput
 	perl {input.convertor} {wildcards.subject}/{TIME}/annotation/AnnotationInput
 	rm -rf "{wildcards.subject}/{TIME}/annotation/AnnotationInput.pph"
 	#######################

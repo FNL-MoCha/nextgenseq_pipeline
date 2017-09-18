@@ -2,7 +2,7 @@
 #       STAR
 ############
 rule STAR_TPM:
-	input:  R=lambda wildcards: FQ[wildcards.sample],
+	input: 
 		R1="{subject}/{TIME}/FQ/{sample}_R1.fastq.gz",
         	R2="{subject}/{TIME}/FQ/{sample}_R2.fastq.gz",
 		ref=config["reference"],
@@ -24,7 +24,7 @@ rule STAR_TPM:
 	# run 1st pass
 	STAR --outTmpDir STEP1 \
 		--genomeDir {params.star_ref} \
-		--readFilesIn {input.R[0]} {input.R[1]} \
+		--readFilesIn {params.home}/{input.R1} {params.home}/{input.R2} \
 		--readFilesCommand zcat\
 		--outSAMtype BAM SortedByCoordinate\
 		--outFileNamePrefix {wildcards.sample} \
@@ -53,7 +53,7 @@ rule STAR_TPM:
 		--genomeDir GenomeForPass2\
 		--runThreadN ${{THREADS}}\
 		--outSAMattributes All\
-		--readFilesIn {input.R[0]} {input.R[1]}\
+		--readFilesIn {params.home}/{input.R1} {params.home}/{input.R2}\
 		--outSAMtype BAM SortedByCoordinate\
 		--sjdbGTFfile {input.gtf1}\
 		--readFilesCommand zcat\

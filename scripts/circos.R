@@ -20,6 +20,31 @@ for (i in 1:length(files)){
 labs <- paste("", gsub("Sample_|\\.bwa|\\.star|\\.loh", "", files, perl=TRUE), sep="")
 
 
+
+data("UCSC.hg19.chr", package="OmicCircos");
+data("UCSC.hg19", package="OmicCircos");
+ref     <- UCSC.hg19.chr;
+ref[,1] <- gsub("chr", "", ref[,1]);
+chr     <- unique(ref[,1]);
+chr.l   <- c();
+for (ch in chr){
+  dat.i <- which(ref[,1]==ch);
+  m     <- max(ref[dat.i,3])/2;
+  chr.l <- rbind(chr.l, c(ch, m, ch));
+}
+angle <- function(x, po.min, po.max, angle.start, angle.end){ 
+  ag <- (x - po.min)/(po.max-po.min) * (angle.end - angle.start) + angle.start;
+  ag;
+}
+
+angles    <- angle(as.numeric(chr.l[,2]), as.numeric(UCSC.hg19[,6]), 
+                   as.numeric(UCSC.hg19[,7]), as.numeric(UCSC.hg19[,2]),
+                   as.numeric(UCSC.hg19[,3]));
+r         <- 418;
+coord.x   <- 400 + cos((angles)/180*pi) * r;
+coord.y   <- 400 - sin((angles)/180*pi) * r;
+
+
 cols <-c('#26294a','#01545a','#bd544f','#017351',
 	'#03c383','#b8bd4f','#aad962','#fbbf45',
 	'#bd8b4f','#ef6a32','#ed0346','#d76e60',
@@ -35,7 +60,8 @@ png(FILE ,width = 1000, height = 1000, res=100, points=12, type=c("cairo"))
 par(mar=c(2, 2, 2, 2))
 plot(c(1,800), c(1,800), type="n", axes=FALSE, xlab="", ylab="", main="")
 
-circos(R=400, cir="hg19", type="chr", mapping=UCSC.hg19.chr,print.chr.lab=TRUE, W=10, lwd=5, cex=1.5)
+circos(R=400, cir="hg19", type="chr",    mapping=UCSC.hg19.chr ,print.chr.lab=FALSE, W=10, lwd=5, cex=1.5)
+text(coord.x, coord.y, chr.l[,1], cex=1.4, col=c("red", "blue"));
 
 r=350
 for (i in 1:length(files)){
@@ -43,5 +69,11 @@ for (i in 1:length(files)){
         circos(cir="hg19", R=r, W=50, type="s", mapping=LOH.data, col.v=3, col=cols[i], B=FALSE, cex=0.0001, lwd=1)
 	r=r-45
 }
-legend("topright", legend=labs, col=cols, lty=1, lwd=4, cex=1)
 dev.off()
+newname <-gsub("circos.png", "legend.circos.png", FILE)
+png(newname ,width = 1000, height = 1000, res=100, points=12, type=c("cairo"))
+par(mar=c(2, 2, 2, 2))
+plot(c(1,800), c(1,800), type="n", axes=FALSE, xlab="", ylab="")
+legend("center", legend=labs, col=cols, lty=1, lwd=4, cex=2)
+dev.off()
+

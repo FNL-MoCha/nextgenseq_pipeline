@@ -5,7 +5,7 @@ use List::Util qw(first);
 use 5.010;
 local $SIG{__WARN__} = sub {
 	my $message =shift;
-#	die $message;
+	die $message;
 };
 
 
@@ -13,24 +13,17 @@ local $SIG{__WARN__} = sub {
 # Author: Rajesh Patidar patidarr@nih.gov
 # version: 03022017 ==> LOF in ACMG genes are Tier1.2 (germline)
 #
-
-
-
-
-
-
-
-
-
-
-
-my $index_of_clinvar=57; # This does not include chr/alt, Func_RefGene==0
-my $index_of_ACMG=174; 
-my $index_of_HGMD=64;
+my $index_of_clinvar=38; # This does not include chr/alt, Func_RefGene==0
+my $index_of_ACMG=67; 
+my $index_of_HGMD=44;
 my $index_of_Gene=1;
-my $index_of_GrandTotal=167;
+my $index_of_GrandTotal=66;
 my $idx_anno_region=0;
 my $idx_anno_eff=3;
+my $idx_sample_type=75;
+my $idx_cap_type=76;
+my $idx_vaf=83;
+my $idx_tier=85;
 if($ARGV[0] eq 'somatic'){
 	Somatic($ARGV[1], $ARGV[2], $ARGV[3], $ARGV[4], $ARGV[5]);
 	# 1 == HotspotFile [reference]
@@ -238,12 +231,12 @@ sub Germline{
 	my %germline;
 	foreach my $key (sort keys %judge_tier) {
 		my @temp = split("\t", $key);
-		if ($temp[176] eq 'Normal'){
-			$germline{"$temp[0]\t$temp[1]\t$temp[2]\t$temp[3]\t$temp[4]\t$temp[177]"} = "$temp[185]";
-			$normal_vaf{"$temp[0]\t$temp[1]\t$temp[2]\t$temp[3]\t$temp[4]\t$temp[177]"} = "$temp[183]";
+		if ($temp[$idx_sample_type] eq 'Normal'){
+			$germline{"$temp[0]\t$temp[1]\t$temp[2]\t$temp[3]\t$temp[4]\t$temp[$idx_cap_type]"} = "$temp[$idx_tier]";
+			$normal_vaf{"$temp[0]\t$temp[1]\t$temp[2]\t$temp[3]\t$temp[4]\t$temp[$idx_cap_type]"} = "$temp[$idx_vaf]";
 		}
-		if($temp[176] eq 'Tumor'){
-			$tumor_vaf{"$temp[0]\t$temp[1]\t$temp[2]\t$temp[3]\t$temp[4]\t$temp[177]"} = "$temp[183]";
+		if($temp[$idx_sample_type] eq 'Tumor'){
+			$tumor_vaf{"$temp[0]\t$temp[1]\t$temp[2]\t$temp[3]\t$temp[4]\t$temp[$idx_cap_type]"} = "$temp[$idx_vaf]";
 		}
 	}
 	foreach my $key (sort keys %normal_vaf){
@@ -263,8 +256,8 @@ sub Germline{
 	}
 	foreach my $key (sort keys %judge_tier) {
 		my @temp = split("\t", $key);
-		if (exists $germline{"$temp[0]\t$temp[1]\t$temp[2]\t$temp[3]\t$temp[4]\t$temp[177]"}){
-			$temp[185] = $germline{"$temp[0]\t$temp[1]\t$temp[2]\t$temp[3]\t$temp[4]\t$temp[177]"};
+		if (exists $germline{"$temp[0]\t$temp[1]\t$temp[2]\t$temp[3]\t$temp[4]\t$temp[$idx_cap_type]"}){
+			$temp[$idx_tier] = $germline{"$temp[0]\t$temp[1]\t$temp[2]\t$temp[3]\t$temp[4]\t$temp[$idx_cap_type]"};
 			print join("\t", @temp)."\n";
 		}
 	}
