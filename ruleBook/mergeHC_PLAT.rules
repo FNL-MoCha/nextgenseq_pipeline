@@ -1,0 +1,34 @@
+if 'subject' in config:
+	for subject in config['subject']:
+		for library in config['subject'][subject]:
+			TARGET    += [subject+"/"+TIME+"/"+library+"/calls/"+library+".merged.vcf"]
+#######################
+# Merge HC with Platypus results for delivery
+#######################
+rule Merge:
+	input:
+		hc="{subject}/{TIME}/{sample}/calls/{sample}.HC_DNASeq.raw.vcf",
+		plat="{subject}/{TIME}/{sample}/calls/{sample}.Platypus.raw.vcf",
+		ref=config["reference"],
+	output:
+		vcf="{subject}/{TIME}/{sample}/calls/{sample}.merged.vcf"
+	version: config["GATK"]
+	params:
+		rulename = "mergeHC_PLAT",
+		batch    = config[config['host']]["job_GATK"]
+	shell: """
+	#######################
+	module load GATK/{version}
+	java -Xmx${{MEM}}g -XX:ParallelGCThreads=${{THREADS}}\
+		 -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR\
+		 -T CombineVariants\
+		 -R {input.ref}\
+		 -dcov 10000\
+		 --variant:HC {input.hc}\
+		 --variant:Platypus {input.plat}\
+		 -o {output} -genotypeMergeOptions PRIORITIZE\
+		 -priority HC,Platypus\
+		 -nt ${{THREADS}}\
+		 -et NO_ET
+	#######################
+	"""
