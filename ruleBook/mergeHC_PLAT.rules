@@ -15,7 +15,7 @@ rule Merge:
 	version: config["GATK"]
 	params:
 		rulename = "mergeHC_PLAT",
-		batch    = config[config['host']]["job_GATK"]
+		batch    = config[config['host']]["job_gatk"]
 	shell: """
 	#######################
 	module load GATK/{version}
@@ -28,7 +28,6 @@ rule Merge:
 		 --variant:Platypus {input.plat}\
 		 -o {output} -genotypeMergeOptions PRIORITIZE\
 		 -priority HC,Platypus\
-		 -nt ${{THREADS}}\
-		 -et NO_ET
+		 -nt ${{THREADS}}
 	#######################
 	"""
