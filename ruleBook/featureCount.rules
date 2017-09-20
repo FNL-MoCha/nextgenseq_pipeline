@@ -1,0 +1,29 @@
+############
+# featureCounts
+#############
+rule FeatureCounts:
+	input:
+		bam="{base}/{TIME}/{sample}/{sample}.star.bam",
+		ref=lambda wildcards: config['GTF'][wildcards.gtf],
+		script=NGS_PIPELINE + "/scripts/featureCounts.v2.R",
+		trasncriptRDS=lambda wildcards: config['RDS'][wildcards.gtf],
+		geneRDS=lambda wildcards: config['RDS'][wildcards.gtf].replace('transcript', 'gene'),
+		exonRDS=lambda wildcards: config['RDS'][wildcards.gtf].replace('transcript', 'exon'),
+	output:
+		"{base}/{TIME}/{sample}/TPM_{gtf}/{sample}.transcript.TPM.txt",
+		"{base}/{TIME}/{sample}/TPM_{gtf}/{sample}.gene.TPM.txt",
+		"{base}/{TIME}/{sample}/TPM_{gtf}/{sample}.exon.TPM.txt",
+	version: config['version_R']
+	params:
+		rulename   = "featureCounts",
+		batch      =config[config['host']]['job_featCount'],
+		work_dir =  WORK_DIR
+	shell: """
+	#######################
+	module load R/{version}
+	cd ${{LOCAL}}
+	{input.script} --nt ${{THREADS}} --lib="{wildcards.sample}" --targetFile="{params.work_dir}/{input.bam}" --referenceGTF="{input.ref}" --featureType="transcript" --resultOut="{params.work_dir}/{wildcards.base}/{wildcards.TIME}/{wildcards.sample}/TPM_{wildcards.gtf}/" --annotationRDS={input.trasncriptRDS}
+	{input.script} --nt ${{THREADS}} --lib="{wildcards.sample}" --targetFile="{params.work_dir}/{input.bam}" --referenceGTF="{input.ref}" --featureType="gene" --resultOut="{params.work_dir}/{wildcards.base}/{wildcards.TIME}/{wildcards.sample}/TPM_{wildcards.gtf}/" --annotationRDS={input.geneRDS}
+	{input.script} --nt ${{THREADS}} --lib="{wildcards.sample}" --targetFile="{params.work_dir}/{input.bam}" --referenceGTF="{input.ref}" --featureType="exon" --resultOut="{params.work_dir}/{wildcards.base}/{wildcards.TIME}/{wildcards.sample}/TPM_{wildcards.gtf}/" --annotationRDS={input.exonRDS}
+	#######################
+	"""
