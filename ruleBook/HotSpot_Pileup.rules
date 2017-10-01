@@ -10,11 +10,11 @@ if 'RNASeq' in config:
 			else:
 				HOT_SPOT[subject].extend([subject+"/"+TIME+"/"+sample+"/calls/"+sample+".star.pileup.txt"])
 		
-if 'subject' in config:
+if 'DNASeq' in config:
 	local =[]
-	for subject in config['subject']:
+	for subject in config['DNASeq']:
 		TARGET    += [subject+"/"+TIME+"/"+subject+"/db/"+subject+".hotspot"]
-		for sample in config['subject'][subject]:
+		for sample in config['DNASeq'][subject]:
 			TARGET    += [subject+"/"+TIME+"/"+sample+"/calls/"+sample+".bwa.pileup.txt"]
 			if subject not in HOT_SPOT:
 				HOT_SPOT[subject] = [subject+"/"+TIME+"/"+sample+"/calls/"+sample+".bwa.pileup.txt"]

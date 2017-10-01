@@ -64,7 +64,8 @@ circos(R=400, cir="hg19", type="chr",    mapping=UCSC.hg19.chr ,print.chr.lab=FA
 text(coord.x, coord.y, chr.l[,1], cex=1.4, col=c("red", "blue"));
 
 r=350
-for (i in 1:length(files)){
+#for (i in 1:length(files)){
+for (i in 1:6){
         LOH.data   <-read.table(paste(DIR,files[i] ,sep = ""), sep="\t", quote="", head=T)
         circos(cir="hg19", R=r, W=50, type="s", mapping=LOH.data, col.v=3, col=cols[i], B=FALSE, cex=0.0001, lwd=1)
 	r=r-45

@@ -1,32 +1,32 @@
 HLA ={}
-if 'subject' in config:
-	for subject in config['subject']:
-		for library in config['subject'][subject]:
+if 'DNASeq' in config:
+	for subject in config['DNASeq']:
+		for library in config['DNASeq'][subject]:
 			if config['sample_captures'][library] not in config['Panel_List']:
 				TARGET    += [subject+"/"+TIME+"/"+library+"/HLA/seq2HLA/"+library+"-ClassI.HLAgenotype4digits"]
 				TARGET    += [subject+"/"+TIME+"/"+library+"/HLA/HLAminer/HLAminer_HPTASR.csv"]
 				TARGET    += [subject+"/"+TIME+"/"+library+"/HLA/"+library+".Calls.txt"]
-if 'sample_references' in config:
-	if len(config['sample_references']) > 0:
-		for Tumor in config['sample_references']:
-			for Normal in config['sample_references'][Tumor]:
+if 'matched_normal' in config:
+	if len(config['matched_normal']) > 0:
+		for Tumor in config['matched_normal']:
+			for Normal in config['matched_normal'][Tumor]:
 				seq2HLA    = "{subject}/{TIME}/{sample}/HLA/seq2HLA/{sample}-ClassI.HLAgenotype4digits".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[Normal], sample=Normal)
 				HLAminer   = "{subject}/{TIME}/{sample}/HLA/HLAminer/HLAminer_HPTASR.csv".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[Normal], sample=Normal)
 				if config['sample_captures'][Tumor] not in config['Panel_List']:
 					# any output which is desired on all somatic libraries but Panel goes here, the list of panel captures should be maintained in the Panel_List in config file
 					HLA[Tumor] = [seq2HLA, HLAminer]
-	for sample in config['sample_references'].keys():
+	for sample in config['matched_normal'].keys():
 		subject=SAMPLE_TO_SUBJECT[sample]
 		if config['sample_captures'][sample] not in config['Panel_List']:
 			TARGET    +=[subject+"/"+TIME+"/"+sample+"/NeoAntigen/MHC_Class_I/"+sample+".final.tsv"]
 
-if 'RNASeq' in config:
-	for subject  in config['RNASeq'].keys():
-		for sample in config['RNASeq'][subject]:
-			TARGET    +=  [subject+"/"+TIME+"/"+sample+"/HLA/seq2HLA/"+sample+"-ClassI.HLAgenotype4digits"]
-			TARGET    +=  [subject+"/"+TIME+"/"+sample+"/HLA/HLAminer/HLAminer_HPTASR.csv"]
-			TARGET    +=  [subject+"/"+TIME+"/"+sample+"/HLA/"+sample+".Calls.txt"]
-
+#if 'RNASeq' in config:
+#	for subject  in config['RNASeq'].keys():
+#		for sample in config['RNASeq'][subject]:
+#			TARGET    +=  [subject+"/"+TIME+"/"+sample+"/HLA/seq2HLA/"+sample+"-ClassI.HLAgenotype4digits"]
+#			TARGET    +=  [subject+"/"+TIME+"/"+sample+"/HLA/HLAminer/HLAminer_HPTASR.csv"]
+#			TARGET    +=  [subject+"/"+TIME+"/"+sample+"/HLA/"+sample+".Calls.txt"]
+#
 ############
 #	seq2HLA
 ############
@@ -108,7 +108,7 @@ rule VEP:
 		rulename = "VEP",
 		VEP	 = config['VEP'],
 		merge=NGS_PIPELINE + "/scripts/consensusHLA.pl",
-		normal	 = lambda wildcards: config['sample_references'][wildcards.sample][0],
+		normal	 = lambda wildcards: config['matched_normal'][wildcards.sample][0],
 		batch    = config[config['host']]["job_VEP"],
 	shell: """
 	#######################
@@ -132,7 +132,7 @@ rule pVACseq:
 	params:
 		rulename = "pVACSeq",
 		python   = config["version_python"],
-		normal   = lambda wildcards: config['sample_references'][wildcards.sample][0],
+		normal   = lambda wildcards: config['matched_normal'][wildcards.sample][0],
 		tool 	 = NGS_PIPELINE + "/scripts/process_pVACSeq.pl",
 		IEDB	 = config['IEDB'],
 		batch    = config[config['host']]["job_VEP"],

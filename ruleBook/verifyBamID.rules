@@ -1,11 +1,11 @@
-for subject in config['subject']:
-	for sample in config['subject'][subject]:
+for subject in config['DNASeq']:
+	for sample in config['DNASeq'][subject]:
 		if config['sample_captures'][sample] in config['verifyBamID_vcf']:
 			TARGET     +=[subject+"/"+TIME+"/"+sample+"/verifyBamID/"+sample+".selfSM"] 
 conPair ={}
-if len(config['sample_references']) > 0:
-	for Tumor in config['sample_references']:
-		for Normal in config['sample_references'][Tumor]:
+if len(config['matched_normal']) > 0:
+	for Tumor in config['matched_normal']:
+		for Normal in config['matched_normal'][Tumor]:
 			TumorIn   = "{subject}/{TIME}/{sample}/qc/{sample}.conpair.mpileup".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[Tumor], sample=Tumor)
 			NormalIn  = "{subject}/{TIME}/{sample}/qc/{sample}.conpair.mpileup".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[Normal], sample=Normal)
 			conPair[Tumor] = [TumorIn , NormalIn]
@@ -82,7 +82,7 @@ rule conpair_conta:
 	params: 
 		rulename = "conpair_3",
 		batch    = config[config['host']]["job_default"],
-		normal   = lambda wildcards: config['sample_references'][wildcards.Tumor]
+		normal   = lambda wildcards: config['matched_normal'][wildcards.Tumor]
 	shell: """
 	#######################
 	module load conpair/{version}

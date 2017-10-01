@@ -63,11 +63,11 @@ fi
 #
 ###########################################################################
 SUBJECT_TO_SAMPLE  = {}
-for subject in config['subject']:
-	SUBJECT_TO_SAMPLE[subject] = expand("{sample}", sample = config['subject'][subject])
+for subject in config['DNASeq']:
+	SUBJECT_TO_SAMPLE[subject] = expand("{sample}", sample = config['DNASeq'][subject])
 ###########################################################################
 SAMPLE_TO_SUBJECT  = {}
-for subject,samples in config['subject'].items():
+for subject,samples in config['DNASeq'].items():
 	for sample in samples:
 		SAMPLE_TO_SUBJECT[sample]=subject
 ###########################################################################
@@ -125,14 +125,14 @@ SAMPLES =[]
 somaticPairs = {}
 pairedCapture = {}
 # Inputs for the targets, where direct list can not be used.
-for subject in config['subject'].keys():
+for subject in config['DNASeq'].keys():
 	PATIENTS.append(subject)
-	SUB_BAMS[subject]= ["{subject}/{TIME}/{sample}/{sample}.bwa.final.bam".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in config['subject'][subject]]
-	SUB_COV[subject] = ["{subject}/{TIME}/{sample}/qc/{sample}.bwa.coverage.txt".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in config['subject'][subject]]
-	SUB_HOT[subject] = ["{subject}/{TIME}/{sample}/qc/{sample}.bwa.hotspot.depth".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in config['subject'][subject]]
-	SUB_LOH[subject] = ["{subject}/{TIME}/{sample}/qc/{sample}.bwa.loh".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in config['subject'][subject]]
-	SUB_GT[subject]  = ["{subject}/{TIME}/{sample}/qc/{sample}.bwa.gt".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in config['subject'][subject]]
-	for sample in config['subject'][subject]:
+	SUB_BAMS[subject]= ["{subject}/{TIME}/{sample}/{sample}.bwa.final.bam".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in config['DNASeq'][subject]]
+	SUB_COV[subject] = ["{subject}/{TIME}/{sample}/qc/{sample}.bwa.coverage.txt".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in config['DNASeq'][subject]]
+	SUB_HOT[subject] = ["{subject}/{TIME}/{sample}/qc/{sample}.bwa.hotspot.depth".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in config['DNASeq'][subject]]
+	SUB_LOH[subject] = ["{subject}/{TIME}/{sample}/qc/{sample}.bwa.loh".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in config['DNASeq'][subject]]
+	SUB_GT[subject]  = ["{subject}/{TIME}/{sample}/qc/{sample}.bwa.gt".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in config['DNASeq'][subject]]
+	for sample in config['DNASeq'][subject]:
 		SAMPLES.append(sample)
 ###########################################################################
 #		Add RNASeq only samples to PATIENTS
@@ -152,12 +152,12 @@ TARGET     += ["{subject}/{TIME}/{sample}/qc/{sample}.bwa.gt".format(TIME=TIME, 
 TARGET     += expand("{subject}/{TIME}/qc/{subject}.genotyping.txt", TIME=TIME, subject=PATIENTS)
 TARGET     += expand("{subject}/{TIME}/annotation/AnnotationInput.coding.rare.txt", TIME=TIME, subject=PATIENTS)
 TARGET     += expand("{subject}/{TIME}/annotation/{subject}.Annotations.coding.rare.txt", TIME=TIME, subject=PATIENTS)
-TARGET     += expand("{subject}/{TIME}/qc/{subject}.config.txt", TIME=TIME, subject=PATIENTS)
+#TARGET     += expand("{subject}/{TIME}/qc/{subject}.config.txt", TIME=TIME, subject=PATIENTS)
 TARGET     += expand("{subject}/{TIME}/igv/session_{subject}.xml", TIME=TIME, subject=PATIENTS)
 
-if len(config['sample_references']) > 0:
-	for Tumor in config['sample_references']:
-		for Normal in config['sample_references'][Tumor]:
+if len(config['matched_normal']) > 0:
+	for Tumor in config['matched_normal']:
+		for Normal in config['matched_normal'][Tumor]:
 			TumorBam   = "{subject}/{TIME}/{sample}/{sample}.bwa.final".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[Tumor], sample=Tumor)
 			NormalBam  = "{subject}/{TIME}/{sample}/{sample}.bwa.final".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[Normal], sample=Normal)
 			pairedCapture[Tumor] = config['sample_captures'][Tumor]
@@ -177,14 +177,14 @@ SOMATIC =[]
 # This is to find out if we need to make variants db file or germline file.
 ACT_TYPE =[]
 DECIDE_GL={}
-for subject in config['subject'].keys():
+for subject in config['DNASeq'].keys():
 	normal = None
 	tumor  = None
 	pair   = None
-	for sample in config['subject'][subject]:
+	for sample in config['DNASeq'][subject]:
 		if config['sample_type'][sample] == 'Tumor':
 			tumor = 'yes'
-			if sample in config['sample_references'].keys():
+			if sample in config['matched_normal'].keys():
 				pair  = 'yes'
 		elif config['sample_type'][sample] == 'Normal':
 			normal = 'yes'
@@ -197,9 +197,9 @@ for subject in config['subject'].keys():
 			ACT_TYPE +=[subject]
 ##########################################################################
 # To create lists to be filled in SUBJECT_ANNO
-for subject in config['subject']:
+for subject in config['DNASeq']:
 	local  = []
-	for sample in config['subject'][subject]:
+	for sample in config['DNASeq'][subject]:
 		local.extend([(subject+"/"+TIME+"/"+sample+"/calls/"+sample+".HC_DNASeq.snpEff.txt"),
 			      (subject+"/"+TIME+"/"+sample+"/calls/"+sample+".Platypus.snpEff.txt")
 			    ])
@@ -212,7 +212,7 @@ for subject in config['subject']:
 		germline = [w.replace('snpEff','annotated') for w in local]
 		add_to_SUBJECT_ANNO(subject,"germline",germline)
 	TARGET.extend(local)	
-for sample in config['sample_references'].keys():
+for sample in config['matched_normal'].keys():
 	local  = []
 	subject=SAMPLE_TO_SUBJECT[sample]
 	local.extend(
@@ -228,7 +228,7 @@ for sample in config['sample_references'].keys():
 	if subject in SUBJECT_VCFS:
 		SUBJECT_VCFS[subject].extend(local)
 	somatic = [w.replace('snpEff','annotated') for w in local]
-	if sample in config['sample_RNASeq']:
+	if sample in config['matched_rnaseq']:
 		somatic = [w.replace('MuTect.annotated','MuTect.annotated.expressed') for w in somatic]
 		somatic = [w.replace('strelka.snvs.annotated','strelka.snvs.annotated.expressed') for w in somatic]
 		somatic = [w.replace('strelka.indels.annotated','strelka.indels.annotated.expressed') for w in somatic]
@@ -237,11 +237,11 @@ for sample in config['sample_references'].keys():
 ###########################################################################
 # Expressed Mutations
 expressedPairs = {}
-if 'sample_RNASeq' in config:
-	if len(config['sample_RNASeq']) > 0:
-		for Tumor in config['sample_RNASeq']:
-			if Tumor in config['sample_references'].keys():
-				for RNASample in config['sample_RNASeq'][Tumor]:
+if 'matched_rnaseq' in config:
+	if len(config['matched_rnaseq']) > 0:
+		for Tumor in config['matched_rnaseq']:
+			if Tumor in config['matched_normal'].keys():
+				for RNASample in config['matched_rnaseq'][Tumor]:
 					subject=SAMPLE_TO_SUBJECT[Tumor]
 					RNASeqBam    = subject + "/"+TIME+ "/" + RNASample + "/calls/"+RNASample + ".HC_RNASeq.snpEff.txt"
 					expressedPairs[Tumor] = RNASeqBam
@@ -281,6 +281,7 @@ include: NGS_PIPELINE +"/ruleBook/featureCount.rules"
 include: NGS_PIPELINE +"/ruleBook/Sequenza.rules"
 include: NGS_PIPELINE +"/ruleBook/cnvkit.rules"
 include: NGS_PIPELINE +"/ruleBook/MethlySeq.rules"
+include: NGS_PIPELINE +"/ruleBook/RSEM.rules"
 #include: NGS_PIPELINE +"/ruleBook/HotSpot_Pileup.rules"
 
 ###########################################################################
@@ -312,9 +313,9 @@ onerror:
 	shell("find .snakemake/ ! -readable -prune -group $USER -exec chgrp -f {GROUP} {{}} \;")
 onstart:
 	f = open('ngs_pipeline_%s.csv' % NOW , 'w')
-	print ('#Patient','Diagnosis','CaseID',sep='\t', end='\n',file=f)
+	print ('#Patient','diagnosis','CaseID',sep='\t', end='\n',file=f)
 	for subject in sorted(PATIENTS):
-		diagnosis =config['Diagnosis'][SUBJECT_TO_SAMPLE[subject][0]]
+		diagnosis =config['diagnosis'][SUBJECT_TO_SAMPLE[subject][0]]
 		print (subject,diagnosis,TIME,sep='\t', end='\n',file=f)
 	
 	shell("for sub in {PATIENTS}; do rm -rf {WORK_DIR}/${{sub}}/{TIME}/successful.txt ; done")
@@ -553,7 +554,7 @@ rule SampleGT:
 		mail     	= config["mail"],
 		mail_tool 	= NGS_PIPELINE + "/scripts/tsv2html.sh",
 		host	 	= config["host"],
-		diagnosis	= lambda wildcards: config['Diagnosis'][SUBJECT_TO_SAMPLE[wildcards.subject][0]]
+		diagnosis	= lambda wildcards: config['diagnosis'][subject]
 	shell: """
 	#######################
 	mkdir -p {wildcards.subject}/{TIME}/qc/GT
@@ -700,6 +701,18 @@ rule IGV_Session:
 	done
 	echo "\t</Resources>" >>{output}
 	echo "</Global>" >>{output}
+
+	########
+	dir=`echo {params.work_dir} | sed -e 's/data/Volumes/g' `
+	echo "<?xml version=\\"1.0\\" encoding=\\"UTF-8\\"?>" >{wildcards.subject}/{wildcards.TIME}/igv/session_mac_{wildcards.subject}.xml
+        echo "<Global genome=\\"hg19\\" locus=\\"\\" version=\\"3\\">" >>{wildcards.subject}/{wildcards.TIME}/igv/session_mac_{wildcards.subject}.xml
+        echo "\t<Resources>" >>{wildcards.subject}/{wildcards.TIME}/igv/session_mac_{wildcards.subject}.xml
+        for BAM in {input.bams}
+        do
+                echo "\t\t<Resource path=\\"${{dir}}/${{BAM}}\\"/>" >>{wildcards.subject}/{wildcards.TIME}/igv/session_mac_{wildcards.subject}.xml
+        done
+        echo "\t</Resources>" >>{wildcards.subject}/{wildcards.TIME}/igv/session_mac_{wildcards.subject}.xml
+        echo "</Global>" >>{wildcards.subject}/{wildcards.TIME}/igv/session_mac_{wildcards.subject}.xml	
 	#######################
 	"""
 ############
@@ -1001,7 +1014,7 @@ rule Expressed:
 	params:
 		rulename  = "Expressed",
 		batch     = config[config['host']]["job_expressed"],
-		name      = lambda wildcards: config["sample_RNASeq"][wildcards.sample]
+		name      = lambda wildcards: config["matched_rnaseq"][wildcards.sample]
 	shell: """
 	#######################
 	module load samtools/{version}

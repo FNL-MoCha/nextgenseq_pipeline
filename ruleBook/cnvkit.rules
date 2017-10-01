@@ -1,10 +1,10 @@
-for subject in config['subject']:
-	for sample in config['subject'][subject]:
+for subject in config['DNASeq']:
+	for sample in config['DNASeq'][subject]:
 		if config["sample_type"][sample] =='Tumor':
 			if config['sample_captures'][sample] in config['cnvkit_ref']:
 				TARGET +=[subject+"/"+TIME+"/"+sample+"/cnvkit/"+sample+".cns"]	
 			else:
-				for sample in config['sample_references']: 
+				for sample in config['matched_normal']: 
 					TARGET +=[subject+"/"+TIME+"/"+sample+"/cnvkit/"+sample+".cnr"]
 ############
 #       cnvkit

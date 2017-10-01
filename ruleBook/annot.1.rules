@@ -49,7 +49,7 @@ fi
 """)
 
 #PATIENTS =[]
-#for subject in config['subject'].keys():
+#for subject in config['DNASeq'].keys():
 #        PATIENTS.append(subject)
 ANNO_FILES =["gene","clinseq","cadd","cosmic","pcg","clinvar","hgmd","match","mcg","docm","candl","tcc","civic","sift.out","coding.rare.txt","annotations.final.txt"]
 TARGET = expand("AnnotationInput.{suff}", suff=ANNO_FILES)

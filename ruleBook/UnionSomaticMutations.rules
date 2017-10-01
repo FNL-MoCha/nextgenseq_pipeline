@@ -1,13 +1,13 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
 UNION_SOM_MUT={}
-if 'sample_references' in config:
-	for sample in config['sample_references'].keys():
+if 'matched_normal' in config:
+	for sample in config['matched_normal'].keys():
 		subject=SAMPLE_TO_SUBJECT[sample]
 		local =[(subject+"/"+TIME+"/"+sample+"/calls/"+sample+".strelka.snvs.annotated.txt"),
 		        (subject+"/"+TIME+"/"+sample+"/calls/"+sample+".strelka.indels.annotated.txt"),
 	        	(subject+"/"+TIME+"/"+sample+"/calls/"+sample+".MuTect.annotated.txt")]
-		if sample in config['sample_RNASeq'].keys():
+		if sample in config['matched_rnaseq'].keys():
 			local = [w.replace('annotated','annotated.expressed') for w in local]
 		UNION_SOM_MUT[sample] = local
 		TARGET +=[subject+"/"+TIME+ACT_DIR+sample+".unionSomaticVars.txt"]

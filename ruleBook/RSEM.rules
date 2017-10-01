@@ -1,0 +1,25 @@
+
+############
+# RSEM 
+#############
+rule RSEM:
+	input:
+		R1 = "{base}/{TIME}/FQ/{sample}_R1.fastq.gz",
+		R2 = "{base}/{TIME}/FQ/{sample}_R2.fastq.gz",
+	output:
+		"{base}/{TIME}/{sample}/RSEM/{sample}.isoforms.results",
+		"{base}/{TIME}/{sample}/RSEM/{sample}.genes.results",
+	version: config['rsem']
+	params:
+		rulename   ="RSEM",
+		batch      =config[config['host']]['job_RSEM'],
+		index      =config["rsemIndex"],
+		bowtie     =config["bowtie2"],
+	shell: """
+	#######################
+	module load rsem/{version}
+	module load bowtie/{params.bowtie}
+	rsem-calculate-expression -p ${{THREADS}} --output-genome-bam --bowtie2 --forward-prob 0 --paired-end {input.R1} {input.R2} {params.index} {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/RSEM/{wildcards.sample}
+	rm -rf {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/RSEM/{wildcards.sample}*.bam
+	#######################
+	"""

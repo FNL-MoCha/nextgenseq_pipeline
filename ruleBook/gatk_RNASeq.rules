@@ -43,7 +43,7 @@ rule GATK_RNASeq_RTC:
         shell: """
         #######################
         module load GATK/{version}
-        java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -T RealignerTargetCreator -nt 10 -R {input.ref} -known {input.phase1} -known {input.mills} -I {input.bam} -o {output.intervals}
+        java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -T RealignerTargetCreator -nt ${{THREADS}} -R {input.ref} -known {input.phase1} -known {input.mills} -I {input.bam} -o {output.intervals}
         ######################
         """
 ############
@@ -110,7 +110,7 @@ rule GATK_RNASeq_PR:
         shell: """
         #######################
         module load GATK/{version}
-        java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -T PrintReads -R {input.ref} -I {input.bam} -o {output.bam} -BQSR {input.mat}
+        java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -nct ${{THREADS}} -T PrintReads -R {input.ref} -I {input.bam} -o {output.bam} -BQSR {input.mat}
         mv {wildcards.base}/{TIME}/{wildcards.sample}/{wildcards.sample}.star.final.bai {output.index}
         ######################
         """

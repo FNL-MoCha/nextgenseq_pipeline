@@ -1,14 +1,12 @@
-# vim: syntax=python tabstop=4 expandtab
-# coding: utf-8
 rule RNASeqQC:
 	input:
-		bam="{base}/{TIME}/{sample}/{sample}.tophat.final.bam",
-		bai="{base}/{TIME}/{sample}/{sample}.tophat.final.bam.bai",
+		bam="{subject}/{TIME}/{sample}/{sample}.tophat.final.bam",
+		bai="{subject}/{TIME}/{sample}/{sample}.tophat.final.bam.bai",
 		rna_interval=config['rRNA_interval'],
 		ref_flat=config['ref_flat'],
 	output:
-		table="{base}/{TIME}/{sample}/qc/{sample}.RnaSeqMetrics.txt",
-		pdf="{base}/{TIME}/{sample}/qc/{sample}.RnaSeqMetrics.pdf",
+		table="{subject}/{TIME}/{sample}/qc/{sample}.RnaSeqMetrics.txt",
+		pdf="{subject}/{TIME}/{sample}/qc/{sample}.RnaSeqMetrics.pdf",
 	version: config["picard"]
 	params:
 		rulename  = "RnaSeqMetrics",
@@ -23,10 +21,10 @@ rule RNASeqQC:
 	"""
 rule RNASeqQC1:
 	input:
-		bam="{base}/{TIME}/{sample}/{sample}.tophat.final.bam",
-		bai="{base}/{TIME}/{sample}/{sample}.tophat.final.bam.bai",
+		bam="{subject}/{TIME}/{sample}/{sample}.tophat.final.bam",
+		bai="{subject}/{TIME}/{sample}/{sample}.tophat.final.bam.bai",
 	output:
-		table="{base}/{TIME}/{sample}/qc/{sample}.AlignmentSummaryMetrics.txt",
+		table="{subject}/{TIME}/{sample}/qc/{sample}.AlignmentSummaryMetrics.txt",
 	version: config["picard"]
 	params:
 		rulename  ="RnaSeqMetrics",
@@ -40,19 +38,19 @@ rule RNASeqQC1:
 	"""
 rule RNASeqQC_1:
 	input:
-		"{base}/{TIME}/{sample}/qc/fastqc/{sample}_R1_fastqc.html",
-		file1="{base}/{TIME}/{sample}/qc/{sample}.RnaSeqMetrics.txt",
-		file2="{base}/{TIME}/{sample}/qc/{sample}.AlignmentSummaryMetrics.txt",
+		"{subject}/{TIME}/{sample}/qc/fastqc/{sample}_R1_fastqc.html",
+		file1="{subject}/{TIME}/{sample}/qc/{sample}.RnaSeqMetrics.txt",
+		file2="{subject}/{TIME}/{sample}/qc/{sample}.AlignmentSummaryMetrics.txt",
 		convertor=NGS_PIPELINE+ "/scripts/rnaseqQC.pl"	
 	output:
-		"{base}/{TIME}/{sample}/qc/{sample}.RnaSeqQC.txt"
+		"{subject}/{TIME}/{sample}/qc/{sample}.RnaSeqQC.txt"
 	params:
 		rulename  = "RnaSeqMetrics",
 		batch     = config[config['host']]["job_default"],
-		diagnosis = lambda wildcards: config['Diagnosis'][wildcards.sample]
+		diagnosis = lambda wildcards: config['diagnosis'][subject]
 	shell: """
 	#######################
-	perl {input.convertor} {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/{wildcards.sample}_R1_fastqc/fastqc_data.txt {input.file2} {input.file1} {wildcards.base} {wildcards.sample} "{params.diagnosis}" >{output}
+	perl {input.convertor} {wildcards.subject}/{TIME}/{wildcards.sample}/qc/fastqc/{wildcards.sample}_R1_fastqc/fastqc_data.txt {input.file2} {input.file1} {wildcards.subject} {wildcards.sample} "{params.diagnosis}" >{output}
 	#######################
 	"""
 rule RNASeqQC_2:

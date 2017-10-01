@@ -31,6 +31,7 @@ if 'RNASeq' in config:
 			TARGET_R += [subject+"/"+TIME+"/"+sample+"/qc/"+sample+".RnaSeqQC.txt"]
 			TARGET_R += [subject+"/"+TIME+"/"+sample+"/qc/"+sample+".star.gt"]
 			TARGET_R += [subject+"/"+TIME+"/"+sample+"/fusion/"+sample+".actionable.fusion.txt"]
+			TARGET_R += [subject+"/"+TIME+"/"+sample+"/RSEM/"+sample+".genes.results"]
 			TARGET_R += [subject+"/"+TIME+"/"+sample+"/calls/"+sample+".HC_RNASeq.annotated.txt"]
 			add_to_SUBJECT_ANNO(subject, "rnaseq", [subject+"/"+TIME+"/"+sample+"/calls/"+sample+".HC_RNASeq.annotated.txt"])
 			for gtf in config['GTF']:
@@ -194,7 +195,7 @@ rule Cuff_Mat:
 	params:
 		rulename  ="cuff_1",
 		batch     =config[config['host']]['job_default'],
-		diagnosis =lambda wildcards: config['Diagnosis'][wildcards.sample],
+		diagnosis =lambda wildcards: config['diagnosis'][wildcards.sample],
 		library   =lambda wildcards: config['sample_captures'][wildcards.sample]
 	shell: """
 	#######################

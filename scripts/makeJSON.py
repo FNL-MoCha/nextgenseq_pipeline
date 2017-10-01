@@ -7,17 +7,17 @@ from sys import argv
 samples=argv[2]
 output ={}
 output["sample_captures"] ={}
-output["Diagnosis"] = {}
+output["diagnosis"] = {}
 output["sample_type"] = {}
-output["subject"] = {}
+output["DNASeq"] = {}
 output["library"] = {}
-output["sample_references"] = {}
-output["sample_RNASeq"] = {}
+output["matched_normal"] = {}
+output["matched_rnaseq"] = {}
 output["RNASeq"] = {}
 output["source"] = {}
 #patientIndex=0
 #TypeIndex=1
-#DiagnosisIndex=2
+#diagnosisIndex=2
 #captureIndex=4
 #FCIDIndex=5
 #libraryIndex=6
@@ -27,7 +27,7 @@ output["source"] = {}
 ### Column headers in current txt input file
 #custom ID
 #Type
-#Diagnosis
+#diagnosis
 #Type of sequencing
 #Enrichment step
 #Source
@@ -43,7 +43,7 @@ for line in f:
 	if re.search("custom ID", line):
 		patientIndex	=column.index('custom ID')
 		TypeIndex	=column.index('Type')
-		DiagnosisIndex	=column.index('Diagnosis')
+		diagnosisIndex	=column.index('Diagnosis')
 		captureIndex	=column.index('Enrichment step')
 		sourceIndex	=column.index('Source')
 		FCIDIndex	=column.index('FCID')
@@ -63,22 +63,22 @@ for line in f:
 	for sample in samples.split(','):
 		if column[patientIndex] == sample:
 			output["sample_captures"][column[libraryIndex]]=column[captureIndex]
-			output["Diagnosis"][column[libraryIndex]]=column[DiagnosisIndex]
+			output["diagnosis"][column[patientIndex]]=column[diagnosisIndex]
 			output["source"][column[libraryIndex]]=column[sourceIndex]
 			output["sample_type"][column[libraryIndex]]=column[TypeIndex]
 			if column[normRefIndex]:
-				output["sample_references"][column[libraryIndex]]=[column[normRefIndex]]
+				output["matched_normal"][column[libraryIndex]]=[column[normRefIndex]]
 			if column[rnaRefIndex]:
-				output["sample_RNASeq"][column[libraryIndex]] =[column[rnaRefIndex]]
+				output["matched_rnaseq"][column[libraryIndex]] =[column[rnaRefIndex]]
 			if not column[FCIDIndex]:
 				output["library"][column[libraryIndex]] = [column[libraryIndex]]
 			else:
 				output["library"][column[libraryIndex]] = [column[libraryIndex]+"_"+column[FCIDIndex]]
 			if 'Normal' in column[TypeIndex] or 'Tumor' in column[TypeIndex]:
-				if column[patientIndex] not in output["subject"].keys():	
-					output["subject"][column[patientIndex]]=[column[libraryIndex]]
+				if column[patientIndex] not in output["DNASeq"].keys():	
+					output["DNASeq"][column[patientIndex]]=[column[libraryIndex]]
 				else:
-					output["subject"][column[patientIndex]].append(column[libraryIndex])
+					output["DNASeq"][column[patientIndex]].append(column[libraryIndex])
 			else:
 				if column[patientIndex] not in output["RNASeq"].keys():
 					output["RNASeq"][column[patientIndex]]=[column[libraryIndex]]

@@ -1,6 +1,6 @@
 if 'subject' in config:
-	for subject in config['subject']:
-		for library in config['subject'][subject]:
+	for subject in config['DNASeq']:
+		for library in config['DNASeq'][subject]:
 			TARGET    += [subject+"/"+TIME+"/"+library+"/calls/"+library+".merged.vcf"]
 #######################
 # Merge HC with Platypus results for delivery
@@ -15,7 +15,7 @@ rule Merge:
 	version: config["GATK"]
 	params:
 		rulename = "mergeHC_PLAT",
-		batch    = config[config['host']]["job_gatk"]
+		batch    = config[config['host']]["job_HC_PLAT"]
 	shell: """
 	#######################
 	module load GATK/{version}
