@@ -1,0 +1,40 @@
+if 'DNASeq' in config:
+	for subject in config['DNASeq']:
+		for sample in config['DNASeq'][subject]:
+			if config['sample_captures'][sample] not in config['Panel_List']:
+				TARGET    += [subject+"/"+TIME+"/"+sample+"/ancestry/"+sample+".ancestry"]
+rule Ancestry:
+	input:
+		bam="{subject}/{TIME}/{sample}/{sample}.bwa.final.bam",
+		ref=config["reference"],
+		vcf2eigenstrat=NGS_PIPELINE + "/scripts/vcf2eigenstrat.py",
+		inferancestry=NGS_PIPELINE + "/scripts/inferancestry.py",
+		interval=config['ancestry_bed'],
+		snpwt=config['snpwt']
+	output:
+		vcf=temp("{subject}/{TIME}/{sample}/ancestry/{sample}.ancestry.vcf"),
+		ancestry="{subject}/{TIME}/{sample}/ancestry/{sample}.ancestry"
+	version: config["samtools_new"]
+	params:
+		rulename = "Ancestry",
+		batch    = config[config['host']]["job_default"],
+	shell: """
+	#######################
+	module load samtools/{version}
+	samtools mpileup -q 30 -Q 20 -v -f {input.ref} -l {input.interval} {input.bam}\
+		| bcftools call -c -Ov\
+		| bcftools filter -e 'ALT="."'\
+		| bcftools annotate -c CHROM,FROM,TO,ID -a {input.interval}.gz > {output.vcf}
+	
+	python {input.vcf2eigenstrat}  -v {output.vcf} -o {output.ancestry}
+
+	echo "geno:   {output.ancestry}.geno"     >{output.ancestry}.tmp
+	echo "snp:    {output.ancestry}.snp"     >>{output.ancestry}.tmp
+	echo "ind:    {output.ancestry}.ind"     >>{output.ancestry}.tmp
+	echo "snpwt:  {input.snpwt}"             >>{output.ancestry}.tmp
+	echo "predpcoutput:   {output.ancestry}" >>{output.ancestry}.tmp
+
+	python {input.inferancestry}   --par {output.ancestry}.tmp
+	rm -rf {output.ancestry}.tmp {output.ancestry}.geno {output.ancestry}.snp {output.ancestry}.ind
+	#######################
+	"""

@@ -156,6 +156,7 @@ rule TOPHAT_FUSION:
 	sed -i  '1s/^/Sample\\tGene_left\\tChr_left\\tCoordinate_left\\tGene_right\\tChr_right\\tCoordinate_right\\t#SpanningReads\\t#SpanningMatePairs\\t#SpanningMateEndOfPair\\tScore\\n/' tophatfusion_out/result.txt
 	ln -sf ../tophatfusion_out/result.html fusion/tophat-fusion.html
 	ln -sf ../tophatfusion_out/result.txt  fusion/tophat-fusion.txt
+	rm -rf tophatfusion_out/read_alignments/
 	#######################
 	"""
 ############

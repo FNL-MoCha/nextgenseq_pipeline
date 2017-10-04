@@ -3,7 +3,7 @@
 	"mail"			: "-c patidarr@mail.nih.gov -c li.chen2@nih.gov -c dasbiswa@mail.nih.gov -c corinne.camalier@nih.gov",
 	"platform"		: "Illumina",
 	"samtools"		: "0.1.19",
-	"samtools_old"		: "0.1.19",
+	"samtools_new"		: "1.5",
 	"sentieon"		: "sentieon-genomics/201704",
 	"fastqc"		: "0.11.2",
 	"bedtools"		: "2.22.0",

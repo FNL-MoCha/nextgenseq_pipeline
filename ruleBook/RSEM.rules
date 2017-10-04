@@ -19,7 +19,8 @@ rule RSEM:
 	#######################
 	module load rsem/{version}
 	module load bowtie/{params.bowtie}
-	rsem-calculate-expression -p ${{THREADS}} --output-genome-bam --bowtie2 --forward-prob 0 --paired-end {input.R1} {input.R2} {params.index} {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/RSEM/{wildcards.sample}
-	rm -rf {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/RSEM/{wildcards.sample}*.bam
+	rsem-calculate-expression -p ${{THREADS}} --output-genome-bam --bowtie2 --forward-prob 0 --paired-end {input.R1} {input.R2} {params.index} ${{LOCAL}}/{wildcards.sample}
+	cp ${{LOCAL}}/{wildcards.sample}.genes.results {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/RSEM/{wildcards.sample}.genes.results
+	cp ${{LOCAL}}/{wildcards.sample}.isoforms.results {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/RSEM/{wildcards.sample}.isoforms.results
 	#######################
 	"""

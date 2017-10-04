@@ -1,5 +1,3 @@
-# vim: syntax=python tabstop=4 expandtab
-# coding: utf-8
 SequenzaPairs ={}
 if 'matched_normal' in config:
 	if len(config['matched_normal']) > 0:
@@ -25,7 +23,7 @@ rule PILE4SEQ:
 		interval= lambda wildcards: config['target_intervals'][config['sample_captures'][wildcards.sample]],
 		seq=NGS_PIPELINE+ "/scripts/sequenza-utils.py"
 	output: temp("{base}/{TIME}/{sample}/{sample}.mpileup.gz")
-	version: config["samtools_old"]
+	version: config["samtools"]
 	params:
 		rulename  = "pile4seq",
 		batch     = config[config['host']]["job_Sequenza"],

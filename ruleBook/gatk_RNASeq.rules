@@ -17,7 +17,7 @@ rule GATK_RNASeq_Trim:
                 index=temp("{base}/{TIME}/{sample}/{sample}.star.trim.bai"),
         version: config["GATK"]
         params:
-                rulename  = "gatk_R",
+                rulename  = "gatk_R1",
                 batch     = config[config['host']]["job_gatk_RNA"]
         shell: """
         #######################
@@ -38,7 +38,7 @@ rule GATK_RNASeq_RTC:
                 intervals=temp("{base}/{TIME}/{sample}/{sample}.star.realignment.intervals"),
         version: config["GATK"]
         params:
-                rulename  = "gatk_R",
+                rulename  = "gatk_R2",
                 batch     = config[config['host']]["job_gatk_RNA"]
         shell: """
         #######################
@@ -61,7 +61,7 @@ rule GATK_RNASeq_IR:
                 index=temp("{base}/{TIME}/{sample}/{sample}.star.lr.bai"),
         version: config["GATK"]
         params:
-                rulename  = "gatk_R",
+                rulename  = "gatk_R3",
                 batch     = config[config['host']]["job_gatk_RNA"]
         shell: """
         #######################
@@ -82,7 +82,7 @@ rule GATK_RNASeq_BR:
                 mat=temp("{base}/{TIME}/{sample}/{sample}.star.recalibration.matrix.txt"),
         version: config["GATK"]
         params:
-                rulename  = "gatk_R",
+                rulename  = "gatk_R4",
                 batch     = config[config['host']]["job_gatk_RNA"]
         shell: """
         #######################
@@ -105,7 +105,7 @@ rule GATK_RNASeq_PR:
                 index="{base}/{TIME}/{sample}/{sample}.star.final.bam.bai",
         version: config["GATK"]
         params:
-                rulename  = "gatk_R",
+                rulename  = "gatk_R5",
                 batch     = config[config['host']]["job_gatk_RNA"]
         shell: """
         #######################

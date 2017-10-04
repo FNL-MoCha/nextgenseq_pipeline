@@ -64,17 +64,30 @@ circos(R=400, cir="hg19", type="chr",    mapping=UCSC.hg19.chr ,print.chr.lab=FA
 text(coord.x, coord.y, chr.l[,1], cex=1.4, col=c("red", "blue"));
 
 r=350
-#for (i in 1:length(files)){
-for (i in 1:6){
-        LOH.data   <-read.table(paste(DIR,files[i] ,sep = ""), sep="\t", quote="", head=T)
-        circos(cir="hg19", R=r, W=50, type="s", mapping=LOH.data, col.v=3, col=cols[i], B=FALSE, cex=0.0001, lwd=1)
-	r=r-45
+if (length(files) >6){
+	#for (i in 1:length(files)){
+	for (i in 1:6){
+        	LOH.data   <-read.table(paste(DIR,files[i] ,sep = ""), sep="\t", quote="", head=T)
+       		circos(cir="hg19", R=r, W=50, type="s", mapping=LOH.data, col.v=3, col=cols[i], B=FALSE, cex=0.0001, lwd=1)
+		r=r-45
+	}
+} else{
+	for (i in 1:length(files)){
+                LOH.data   <-read.table(paste(DIR,files[i] ,sep = ""), sep="\t", quote="", head=T)
+                circos(cir="hg19", R=r, W=50, type="s", mapping=LOH.data, col.v=3, col=cols[i], B=FALSE, cex=0.0001, lwd=1)
+                r=r-45
+        }
+
 }
 dev.off()
 newname <-gsub("circos.png", "legend.circos.png", FILE)
 png(newname ,width = 1000, height = 1000, res=100, points=12, type=c("cairo"))
 par(mar=c(2, 2, 2, 2))
 plot(c(1,800), c(1,800), type="n", axes=FALSE, xlab="", ylab="")
-legend("center", legend=labs, col=cols, lty=1, lwd=4, cex=2)
+if (length(files) >6){
+	legend("center", legend=labs[0:6], col=cols, lty=1, lwd=4, cex=2)
+}else{
+	legend("center", legend=labs, col=cols, lty=1, lwd=4, cex=2)
+}
 dev.off()
 
