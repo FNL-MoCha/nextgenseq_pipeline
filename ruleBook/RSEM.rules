@@ -13,6 +13,7 @@ rule RSEM:
 	params:
 		rulename   ="RSEM",
 		batch      =config[config['host']]['job_RSEM'],
+		script	   =NGS_PIPELINE+"/scripts/RSEM_renorm.R",
 		index      =config["rsemIndex"],
 		bowtie     =config["bowtie2"],
 	shell: """
@@ -20,7 +21,9 @@ rule RSEM:
 	module load rsem/{version}
 	module load bowtie/{params.bowtie}
 	rsem-calculate-expression -p ${{THREADS}} --output-genome-bam --bowtie2 --forward-prob 0 --paired-end {input.R1} {input.R2} {params.index} ${{LOCAL}}/{wildcards.sample}
-	cp ${{LOCAL}}/{wildcards.sample}.genes.results {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/RSEM/{wildcards.sample}.genes.results
-	cp ${{LOCAL}}/{wildcards.sample}.isoforms.results {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/RSEM/{wildcards.sample}.isoforms.results
+	module load R
+	{params.script} ${{LOCAL}}/{wildcards.sample}.isoforms.results ${{LOCAL}}/{wildcards.sample}.genes.results {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/RSEM/{wildcards.sample}.isoforms.results {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/RSEM/{wildcards.sample}.genes.results
+	#cp ${{LOCAL}}/{wildcards.sample}.genes.results {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/RSEM/{wildcards.sample}.genes.results
+	#cp ${{LOCAL}}/{wildcards.sample}.isoforms.results {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/RSEM/{wildcards.sample}.isoforms.results
 	#######################
 	"""

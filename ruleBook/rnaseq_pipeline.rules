@@ -48,7 +48,7 @@ if 'RNASeq' in config:
 			SUBJECT_VCFS[subject] += ["{subject}/{TIME}/{sample}/calls/{sample}.HC_RNASeq.snpEff.txt".format(TIME=TIME, subject=SUB2RNA[s], sample=s) for s in config['RNASeq'][subject]]
 		if subject in SUB_HOT:
 			SUB_HOT[subject] += ["{subject}/{TIME}/{sample}/qc/{sample}.star.hotspot.depth".format(TIME=TIME, subject=SUB2RNA[s], sample=s) for s in config['RNASeq'][subject]]
-			SUB_LOH[subject] += ["{subject}/{TIME}/{sample}/qc/{sample}.star.loh".format(TIME=TIME, subject=SUB2RNA[s], sample=s) for s in config['RNASeq'][subject]]
+			#SUB_LOH[subject] += ["{subject}/{TIME}/{sample}/qc/{sample}.star.loh".format(TIME=TIME, subject=SUB4RNA[s], sample=s) for s in config['RNASeq'][subject]]
 			SUB_COV[subject] += ["{subject}/{TIME}/{sample}/qc/{sample}.star.coverage.txt".format(TIME=TIME, subject=SUB2RNA[s], sample=s) for s in config['RNASeq'][subject]]
 			SUB_GT[subject]  += ["{subject}/{TIME}/{sample}/qc/{sample}.star.gt".format(TIME=TIME,subject=SUB2RNA[s], sample=s) for s in config['RNASeq'][subject]]
 		else:

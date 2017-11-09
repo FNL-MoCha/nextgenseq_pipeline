@@ -41,7 +41,7 @@ for line in f:
 	#line = line.rstrip()	
 	column = line.split("\t")
 	if re.search("custom ID", line):
-		patientIndex	=column.index('custom ID')
+		patientIndex	=column.index('##custom ID')
 		TypeIndex	=column.index('Type')
 		diagnosisIndex	=column.index('Diagnosis')
 		captureIndex	=column.index('Enrichment step')
@@ -58,7 +58,6 @@ for line in f:
 		column[TypeIndex] = 'Tumor'
 	elif column[TypeIndex]  == 'normal DNA' or column[TypeIndex]  == 'blood DNA':
 		column[TypeIndex] = 'Normal'
-
 
 	for sample in samples.split(','):
 		if column[patientIndex] == sample:

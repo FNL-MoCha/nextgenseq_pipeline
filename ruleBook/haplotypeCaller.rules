@@ -17,10 +17,11 @@ rule HAPCALLER:
 	module load GATK/{version}
 	set +eo pipefail
 	module -q load {params.sentieon} 2>/dev/null
-	set -eo pipefail
+	#set -eo pipefail
 	if [ $? == '0' ] ; then
 		echo "Using Sentieon"
-		sentieon driver -t ${{THREADS}} -r {input.ref} -i {input.bam} --interval {input.interval} --algo Haplotyper -d {input.dbsnp} --min_base_qual 20 --min_map_qual 30  {output.vcf}
+		sentieon driver -t ${{THREADS}} -r {input.ref} -i {input.bam} --interval {input.interval} --algo Haplotyper -d {input.dbsnp} --min_base_qual 20 --min_map_qual 30 ${{LOCAL}}/{wildcards.sample}.HC_DNASeq.raw.vcf
+		cp ${{LOCAL}}/{wildcards.sample}.HC_DNASeq.raw.vcf {output.vcf}
 	else
 		java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -T HaplotypeCaller -R {input.ref} -I {input.bam} -L {input.interval} -o {output.vcf} --dbsnp {input.dbsnp} -mbq 20 -mmq 30
 	fi

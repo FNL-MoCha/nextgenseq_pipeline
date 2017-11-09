@@ -15,10 +15,12 @@ if 'matched_normal' in config:
 				if config['sample_captures'][Tumor] not in config['Panel_List']:
 					# any output which is desired on all somatic libraries but Panel goes here, the list of panel captures should be maintained in the Panel_List in config file
 					HLA[Tumor] = [seq2HLA, HLAminer]
-	for sample in config['matched_normal'].keys():
-		subject=SAMPLE_TO_SUBJECT[sample]
-		if config['sample_captures'][sample] not in config['Panel_List']:
-			TARGET    +=[subject+"/"+TIME+"/"+sample+"/NeoAntigen/MHC_Class_I/"+sample+".final.tsv"]
+#	for sample in config['matched_normal'].keys():
+#		subject=SAMPLE_TO_SUBJECT[sample]
+#		if config['sample_captures'][sample] not in config['Panel_List']:
+#			TARGET    +=[subject+"/"+TIME+"/"+sample+"/NeoAntigen/MHC_Class_I/"+sample+".final.tsv"]
+#
+
 
 #if 'RNASeq' in config:
 #	for subject  in config['RNASeq'].keys():

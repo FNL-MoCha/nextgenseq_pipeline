@@ -24,17 +24,22 @@
 		"access" 		: "/data/MoCha/patidarr/ref/design/IlluminaAccessKitRNASeq.target.hg19.merged.bed",
 		"polya"			: "/data/MoCha/patidarr/ref/design/RefSeq.target.hg19.merged.bed",
 		"ribozero"		: "/data/MoCha/patidarr/ref/design/RefSeq.target.hg19.merged.bed",
-		"sureselect.v5"		: "/data/MoCha/patidarr/ref/design/Sureselect.v5.refseq.ensembl.noUTR.notfound.target.hg19.bed"
+		"sureselect.v5"		: "/data/MoCha/patidarr/ref/design/Sureselect.v5.refseq.ensembl.noUTR.notfound.target.hg19.bed",
+		"sureselect.v6"		: "/data/MoCha/patidarr/ref/design/Sureselect.v6.refseq.ensembl.noUTR.notfound.target.hg19.bed",
+		"K2A_manifest"		: "/data/MoCha/patidarr/ref/design/K2A_manifest.target.bed"
 	},
 	"hotspot_bed"		:{
 		"wholegenome"		: "/data/MoCha/patidarr/ref/hotspot/hg19_Hotspot.08.08.16_merged.bed",
 		"access"		: "/data/MoCha/patidarr/ref/hotspot/hg19_Hotspot.08.08.16_merged.bed",
 		"polya"			: "/data/MoCha/patidarr/ref/hotspot/hg19_Hotspot.08.08.16_merged.bed",
 		"ribozero"		: "/data/MoCha/patidarr/ref/hotspot/hg19_Hotspot.08.08.16_merged.bed",
-		"sureselect.v5"		: "/data/MoCha/patidarr/ref/hotspot/hg19_Hotspot.08.08.16_merged.bed"
+		"sureselect.v5"		: "/data/MoCha/patidarr/ref/hotspot/hg19_Hotspot.08.08.16_merged.bed",
+		"sureselect.v6"		: "/data/MoCha/patidarr/ref/hotspot/hg19_Hotspot.08.08.16_merged.bed",
+		"K2A_manifest"		: "/data/MoCha/patidarr/ref/hotspot/hg19_Hotspot.08.08.16_merged.bed"
 	},
 	"verifyBamID_vcf"       :{
-		"sureselect.v5"		: "/data/MoCha/patidarr/ref/verifyBamID/Omni_MayoV5.recode.vcf"
+		"sureselect.v5"		: "/data/MoCha/patidarr/ref/verifyBamID/Omni_MayoV5.recode.vcf",
+		"sureselect.v6"		: "/data/MoCha/patidarr/ref/verifyBamID/Omni_MayoV5.recode.vcf"
 	},
 	 "cnvkit_ref"            :{
 		"sureselect.v5"		: "/data/MoCha/patidarr/ref/cnvkit/Sureselect.v5.hg19.cnn"
@@ -59,6 +64,8 @@
 	"exon_Bed_ENS"		: "/data/MoCha/patidarr/ref/GTF/Exons_06302016_ensembl_formatted.sorted.bed",
 	"gene_coord"		: "/data/MoCha/patidarr/ref/gene_coordinates.txt",
 	"ref_flat"		: "/data/MoCha/patidarr/ref/GTF/refFlat.txt.gz",
+	"msi_interval"		: "/data/MoCha/patidarr/ref/MSI/SS.v5.native.msi_intervals",
+	"msi_baseline"		: "/data/MoCha/patidarr/ref/MSI/MSI_BASELINE.txt",
 	"rRNA_interval"		: "/data/MoCha/patidarr/ref/GTF/rRNA_interval_file",
 	"GTF"			: {
 				"ENS" : "/data/MoCha/patidarr/ref/GTF/06302016_ensembl.gtf",

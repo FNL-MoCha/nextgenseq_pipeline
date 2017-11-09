@@ -24,9 +24,9 @@ my $result = $het/($het+$homo);
 if ($result <0.3){
 	print "Male\n";
 }
-elsif($result >0.7){
+elsif($result >0.4){
 	print "Female";
 }
 else{
-	print "$het\t$homo\t$result\n";
+	print "Probable Female\n";
 }

@@ -149,10 +149,10 @@ TARGET     += ["{subject}/{TIME}/{sample}/qc/{sample}.bwa.flagstat.txt".format(T
 TARGET     += ["{subject}/{TIME}/{sample}/{sample}.bwa.final.bam".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in SAMPLES]
 TARGET     += ["{subject}/{TIME}/{sample}/qc/{sample}.bwa.hotspot.depth".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in SAMPLES]
 TARGET     += ["{subject}/{TIME}/{sample}/qc/{sample}.bwa.gt".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in SAMPLES]
+TARGET     += ["{subject}/{TIME}/{sample}/qc/{sample}.gender".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in SAMPLES]
 TARGET     += expand("{subject}/{TIME}/qc/{subject}.genotyping.txt", TIME=TIME, subject=PATIENTS)
 TARGET     += expand("{subject}/{TIME}/annotation/AnnotationInput.coding.rare.txt", TIME=TIME, subject=PATIENTS)
 TARGET     += expand("{subject}/{TIME}/annotation/{subject}.Annotations.coding.rare.txt", TIME=TIME, subject=PATIENTS)
-#TARGET     += expand("{subject}/{TIME}/qc/{subject}.config.txt", TIME=TIME, subject=PATIENTS)
 #TARGET     += expand("{subject}/{TIME}/igv/session_{subject}.xml", TIME=TIME, subject=PATIENTS)
 
 if len(config['matched_normal']) > 0:
@@ -251,13 +251,15 @@ if 'matched_rnaseq' in config:
 			# Its possible to have Matched RNASeq, i.e. Tumor only sequencing (Exome/RNA) but missing Corrosponding Normal
 			#print(Tumor, "Corrosponding RNASeq found but matched Normal not found")
 ###########################################################################
-localrules: Pipeline, RNASeq, IGV_Session, DBinput, AttachAnnotation, Expressed, vcf2txt, symlink_tophatBam, copyNovoBam, Actionable_Germline, Actionable_RNAseq, Actionable_Somatic, Actionable_Variants, Actionable_fusion, Sub_Fusion, makeConfig, TargetInterval, QC_Summary_Patient,QC_Summary,UnionSomaticCalls,TOPHAT_LINK, SampleGT,QC_Sum, FormatInput, RNASeqQC_1,RNASeqQC1 RNASeqQC_2,RNASeqQC_3, Cuff_Mat
+localrules: Pipeline, RNASeq, IGV_Session, DBinput, AttachAnnotation, Expressed , symlink_tophatBam, copyNovoBam, Actionable_Germline, Actionable_RNAseq, Actionable_Somatic, Actionable_Variants, Actionable_fusion, Sub_Fusion, makeConfig, TargetInterval, QC_Summary_Patient,QC_Summary,UnionSomaticCalls,TOPHAT_LINK, SampleGT,QC_Sum, FormatInput, RNASeqQC_1,RNASeqQC1 RNASeqQC_2,RNASeqQC_3, Cuff_Mat, Gender
 #Circos, CoveragePlot, BoxPlot_Hotspot, makeConfig,Ideogram
 ###########################################################################
 #				Include Rule Book			  #
 ###########################################################################
-include: NGS_PIPELINE +"/ruleBook/bamUtil.rules"
+#include: NGS_PIPELINE +"/ruleBook/bamUtil.rules"
 include: NGS_PIPELINE +"/ruleBook/ROH.rules"
+include: NGS_PIPELINE +"/ruleBook/MSI.rules"
+include: NGS_PIPELINE +"/ruleBook/MANTIS.rules"
 include: NGS_PIPELINE +"/ruleBook/Ancestry.rules"
 include: NGS_PIPELINE +"/ruleBook/mergeHC_PLAT.rules"
 include: NGS_PIPELINE +"/ruleBook/verifyBamID.rules"
@@ -392,7 +394,7 @@ rule bbsplit:
 	shell: """
 	#######################
 	R1=`echo "{input.R}" |sed -e 's/ /\\n/g' |grep "_R1"`
-	R2=`echo "{input.R}" |sed -e 's/ /\\n/g' |grep "_R2"`	
+	R2=`echo "${{R1}}" |sed -e 's/_R2/_R1/g'`	
 
 	count=`echo {input.R}|grep -o _R1 |wc -l`
 	echo "#########${{count}}#########"
@@ -475,10 +477,11 @@ rule BWA:
 	module load samtools/{params.samtools}
 	set +eo pipefail
 	module -q load {params.sentieon} 2>/dev/null
-	set -eo pipefail
+	#set -eo pipefail
 	if [ $? == '0' ] ; then
         	echo "Using Sentieon"
-		bwa mem -M -t ${{THREADS}} -R '@RG\\tID:{wildcards.sample}\\tSM:{wildcards.sample}\\tLB:{wildcards.sample}\\tPL:{params.platform}' {input.ref} {input.R1} {input.R2} | sentieon util sort -o {wildcards.base}/{TIME}/{wildcards.sample}/{wildcards.sample}.bwa.bam -t ${{THREADS}} --sam2bam -i -	
+		bwa mem -M -t ${{THREADS}} -R '@RG\\tID:{wildcards.sample}\\tSM:{wildcards.sample}\\tLB:{wildcards.sample}\\tPL:{params.platform}' {input.ref} {input.R1} {input.R2} | sentieon util sort -o ${{LOCAL}}/{wildcards.sample}.bwa.bam -t ${{THREADS}} --sam2bam -i -
+		cp ${{LOCAL}}/{wildcards.sample}.bwa.bam* {wildcards.base}/{TIME}/{wildcards.sample}/	
 	else
 		bwa mem -M -t ${{THREADS}} -R '@RG\\tID:{wildcards.sample}\\tSM:{wildcards.sample}\\tLB:{wildcards.sample}\\tPL:{params.platform}' {input.ref} {input.R1} {input.R2} | samtools view -Sbh - | samtools sort -m 30000000000 - {wildcards.base}/{TIME}/{wildcards.sample}/{wildcards.sample}.bwa
 		samtools index {wildcards.base}/{TIME}/{wildcards.sample}/{wildcards.sample}.bwa.bam
@@ -539,6 +542,24 @@ rule GENOTYPING:
 	
 	perl {input.vcf2loh} {output.vcf} >{output.loh}
 	
+	#######################
+	"""
+############
+# Gender Estimation
+# loh2gender=NGS_PIPELINE + "/scripts/guessGender.pl",
+############
+rule Gender:
+	input:
+		loh="{base}/{TIME}/{sample}/qc/{sample}.bwa.loh",
+		loh2gender=NGS_PIPELINE + "/scripts/guessGender.pl",
+	output:
+		"{base}/{TIME}/{sample}/qc/{sample}.gender"
+	params:
+		rulename  = "gender",
+		batch     = config[config['host']]["job_default"],
+	shell: """
+	#######################
+	perl {input.loh2gender} {input.loh} >{output}
 	#######################
 	"""
 ############
@@ -740,11 +761,14 @@ rule Picard_MarkDup:
 	module load picard/{version}
 	set +eo pipefail
 	module -q load {params.sentieon} 2>/dev/null
-	set -eo pipefail
+	#set -eo pipefail
 	if [ $? == '0' ] ; then
 		echo "Using Sentieon"
-		sentieon driver -t ${{THREADS}} -i {input.bam} --algo LocusCollector --fun score_info {output.metrics}.tmp
-		sentieon driver -t ${{THREADS}} -i {input.bam} --algo Dedup --score_info {output.metrics}.tmp --metrics {output.metrics} {output.bam}
+		sentieon driver -t ${{THREADS}} -i {input.bam} --algo LocusCollector --fun score_info ${{LOCAL}}/{wildcards.base}.markdup.txt.tmp
+		sentieon driver -t ${{THREADS}} -i {input.bam} --algo Dedup --score_info ${{LOCAL}}/{wildcards.base}.markdup.txt.tmp --metrics ${{LOCAL}}/{wildcards.base}.markdup.txt ${{LOCAL}}/{wildcards.sample}.{wildcards.base}.dd.bam
+		cp ${{LOCAL}}/{wildcards.base}.markdup.txt {output.metrics}
+		cp ${{LOCAL}}/{wildcards.sample}.{wildcards.base}.dd.bam {output.bam}
+		cp ${{LOCAL}}/{wildcards.sample}.{wildcards.base}.dd.bam.bai {output.index}
 	else
 		java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $PICARD_JAR MarkDuplicates AS=true M={output.metrics} I={input.bam} O={output.bam} REMOVE_DUPLICATES=false VALIDATION_STRINGENCY=SILENT
 		module load samtools/{params.samtools}
@@ -795,12 +819,14 @@ rule GATK:
 	module load GATK/{version}
 	set +eo pipefail
 	module -q load {params.sentieon} 2>/dev/null
-	set -eo pipefail
+	#set -eo pipefail
 	if [ $? == '0' ] ; then
 		echo "Using Sentieon"
 		sentieon driver -t ${{THREADS}} -r {input.ref} -i {input.bam} --algo Realigner -k {input.phase1} -k {input.mills} ${{LOCAL}}/{wildcards.sample}.lr.bam
 		sentieon driver -t ${{THREADS}} -r {input.ref} -i ${{LOCAL}}/{wildcards.sample}.lr.bam --algo QualCal -k {input.phase1} -k {input.mills} ${{LOCAL}}/{wildcards.sample}.recalibration.matrix.txt
-		sentieon driver -t ${{THREADS}} -r {input.ref} -i ${{LOCAL}}/{wildcards.sample}.lr.bam -q ${{LOCAL}}/{wildcards.sample}.recalibration.matrix.txt --algo QualCal -k {input.phase1} -k {input.mills} ${{LOCAL}}/{wildcards.sample}.recalibrationPost.matrix.txt --algo ReadWriter {output.bam}
+		sentieon driver -t ${{THREADS}} -r {input.ref} -i ${{LOCAL}}/{wildcards.sample}.lr.bam -q ${{LOCAL}}/{wildcards.sample}.recalibration.matrix.txt --algo QualCal -k {input.phase1} -k {input.mills} ${{LOCAL}}/{wildcards.sample}.recalibrationPost.matrix.txt --algo ReadWriter ${{LOCAL}}/{wildcards.sample}.bwa.final.bam
+		cp ${{LOCAL}}/{wildcards.sample}.bwa.final.bam {output.bam}
+		cp ${{LOCAL}}/{wildcards.sample}.bwa.final.bam.bai {output.index}
 
 	else
 		java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -T RealignerTargetCreator -R {input.ref} -known {input.phase1} -known {input.mills} -I {input.bam} -o ${{LOCAL}}/{wildcards.sample}.realignment.intervals
@@ -832,9 +858,11 @@ rule MuTect:
 		rulename = "MuTect",
 		R	 = config['version_R'],
 		batch    = config[config['host']]["job_mutect"],
+		normal   = lambda wildcards: config['matched_normal'][wildcards.Tumor][0],
 		vcforder = NGS_PIPELINE + "/scripts/vcfOrderCol.R",
 		sentieon =config["sentieon"],
-		mt       = "--max_alt_allele_in_normal_fraction 0.05 --max_alt_alleles_in_normal_count 4 --min_qscore 20 -rf MappingQuality -mmq 30"
+		mt_sen   ="--max_normal_alt_frac 0.05 --max_normal_alt_cnt 4 --min_base_qual 20 ",
+		mt_gatk  = "--max_alt_allele_in_normal_fraction 0.05 --max_alt_alleles_in_normal_count 4 --min_qscore 20 -rf MappingQuality -mmq 30"
 	shell: """
 	#######################
 	module load muTect/{version}
@@ -849,7 +877,7 @@ rule MuTect:
 			--interval {input.interval} \
 			--algo TNsnv --dbsnp {input.dbsnp} \
 			--tumor_sample {wildcards.Tumor} --normal_sample {params.normal} \
-			--call_stats_out {output.call_stats} --stdcov_out {output.coverage} {params.mt} {output.vcf}.vcf
+			--call_stats_out {output.call_stats} --stdcov_out {output.coverage} {params.mt_sen} {output.vcf}.vcf
 		
 	else
 		java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $MUTECT_JAR -T MuTect \
@@ -862,7 +890,7 @@ rule MuTect:
 			--coverage_file {output.coverage} \
 			--out {output.call_stats} \
 			--vcf {output.vcf}.vcf \
-			{params.mt}
+			{params.mt_gatk}
 	fi
 	{params.vcforder} -i {output.vcf}.vcf -o {output.vcf}
 	rm -rf {output.vcf}.vcf

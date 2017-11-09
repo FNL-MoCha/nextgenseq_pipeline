@@ -262,7 +262,7 @@ echo "{wildcards.base}/AnnotationInput
 	perl {input.convertor} {wildcards.base}/list >{output.all}.tmp
 	perl {input.geneanno} {input.ACMG} {output.all}.tmp >{output.all}
 
-	perl {input.coding} {input.blacklisted} {input.whitelisted} {wildcards.base}/AnnotationInput.annotations.final.txt 0.05 >{output.all}.tmp
+	perl {input.coding} {input.blacklisted} {input.whitelisted} {wildcards.base}/AnnotationInput.annotations.final.txt 0.01 >{output.all}.tmp
 	grep -P "Chr\\tStart\\tEnd\\tRef\\tAlt" {output.all}.tmp >{output.filtered}
 	grep -v -P "Chr\\tStart\\tEnd\\tRef\\tAlt" {output.all}.tmp >>{output.filtered}
 	rm -rf {output.all}.tmp {wildcards.base}/list

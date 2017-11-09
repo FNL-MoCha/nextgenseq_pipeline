@@ -47,6 +47,8 @@
 	"Panel_List"		: ["clin.snv.v1", "clin.cnv.v2", "clin.snv.v2", "nbl.panel", "seqcapez.rms.v1"],
 	"failed_exon_params": {
 		"wholegenome"		:{"Normal":"5","Tumor":"5"},
-		"sureselect.v5"		:{"Normal":"20","Tumor":"20"}
+		"sureselect.v5"		:{"Normal":"20","Tumor":"20"},
+		"sureselect.v6"		:{"Normal":"20","Tumor":"20"},
+		"K2A_manifest"		:{"Normal":"100","Tumor":"100"}
 	}
 }

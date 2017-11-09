@@ -6,7 +6,7 @@
 ############
 #       GATK Best Practices
 ############
-rule GATK_RNASeq_Trim:
+rule GATK_R1:
         input:  bam="{base}/{TIME}/{sample}/{sample}.star.dd.bam",
                 bai="{base}/{TIME}/{sample}/{sample}.star.dd.bam.bai",
                 ref=config["reference"],
@@ -18,7 +18,7 @@ rule GATK_RNASeq_Trim:
         version: config["GATK"]
         params:
                 rulename  = "gatk_R1",
-                batch     = config[config['host']]["job_gatk_RNA"]
+                batch     = config[config['host']]["job_gatk_R1"]
         shell: """
         #######################
         module load GATK/{version}
@@ -28,7 +28,7 @@ rule GATK_RNASeq_Trim:
 ############
 #       GATK Best Practices
 ############
-rule GATK_RNASeq_RTC:
+rule GATK_R2:
         input:  bam="{base}/{TIME}/{sample}/{sample}.star.trim.bam",
                 bai="{base}/{TIME}/{sample}/{sample}.star.trim.bai",
                 ref=config["reference"],
@@ -39,7 +39,7 @@ rule GATK_RNASeq_RTC:
         version: config["GATK"]
         params:
                 rulename  = "gatk_R2",
-                batch     = config[config['host']]["job_gatk_RNA"]
+                batch     = config[config['host']]["job_gatk_R2"]
         shell: """
         #######################
         module load GATK/{version}
@@ -49,7 +49,7 @@ rule GATK_RNASeq_RTC:
 ############
 #       GATK Best Practices
 ############
-rule GATK_RNASeq_IR:
+rule GATK_R3:
         input:  bam="{base}/{TIME}/{sample}/{sample}.star.trim.bam",
                 bai="{base}/{TIME}/{sample}/{sample}.star.trim.bai",
 		intervals="{base}/{TIME}/{sample}/{sample}.star.realignment.intervals",
@@ -62,7 +62,7 @@ rule GATK_RNASeq_IR:
         version: config["GATK"]
         params:
                 rulename  = "gatk_R3",
-                batch     = config[config['host']]["job_gatk_RNA"]
+                batch     = config[config['host']]["job_gatk_R3"]
         shell: """
         #######################
         module load GATK/{version}
@@ -72,7 +72,7 @@ rule GATK_RNASeq_IR:
 ############
 #       GATK Best Practices
 ############
-rule GATK_RNASeq_BR:
+rule GATK_R4:
         input:  bam="{base}/{TIME}/{sample}/{sample}.star.lr.bam",
                 bai="{base}/{TIME}/{sample}/{sample}.star.lr.bai",
                 ref=config["reference"],
@@ -83,7 +83,7 @@ rule GATK_RNASeq_BR:
         version: config["GATK"]
         params:
                 rulename  = "gatk_R4",
-                batch     = config[config['host']]["job_gatk_RNA"]
+                batch     = config[config['host']]["job_gatk_R4"]
         shell: """
         #######################
         module load GATK/{version}
@@ -93,7 +93,7 @@ rule GATK_RNASeq_BR:
 ############
 #       GATK Best Practices
 ############
-rule GATK_RNASeq_PR:
+rule GATK_R5:
         input:  bam="{base}/{TIME}/{sample}/{sample}.star.lr.bam",
                 bai="{base}/{TIME}/{sample}/{sample}.star.lr.bai",
 		mat="{base}/{TIME}/{sample}/{sample}.star.recalibration.matrix.txt",
@@ -106,7 +106,7 @@ rule GATK_RNASeq_PR:
         version: config["GATK"]
         params:
                 rulename  = "gatk_R5",
-                batch     = config[config['host']]["job_gatk_RNA"]
+                batch     = config[config['host']]["job_gatk_R5"]
         shell: """
         #######################
         module load GATK/{version}

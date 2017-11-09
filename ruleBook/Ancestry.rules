@@ -35,6 +35,7 @@ rule Ancestry:
 	echo "predpcoutput:   {output.ancestry}" >>{output.ancestry}.tmp
 
 	python {input.inferancestry}   --par {output.ancestry}.tmp
+	echo -e "#Sample ID\\tPopulation label\\tNumber of SNPs\\tPredicted PC1\\tPredicted PC2\\tPredicted PC3\\t% YRI ancestry\\t% CEU ancestry\\t% East Asian ancestry\\t% Native American Ancestry" >>{output.ancestry}
 	rm -rf {output.ancestry}.tmp {output.ancestry}.geno {output.ancestry}.snp {output.ancestry}.ind
 	#######################
 	"""
