@@ -475,17 +475,10 @@ rule BWA:
 	#######################
 	module load bwa/{version}
 	module load samtools/{params.samtools}
-	set +eo pipefail
-	module -q load {params.sentieon} 2>/dev/null
-	#set -eo pipefail
-	if [ $? == '0' ] ; then
-        	echo "Using Sentieon"
-		bwa mem -M -t ${{THREADS}} -R '@RG\\tID:{wildcards.sample}\\tSM:{wildcards.sample}\\tLB:{wildcards.sample}\\tPL:{params.platform}' {input.ref} {input.R1} {input.R2} | sentieon util sort -o ${{LOCAL}}/{wildcards.sample}.bwa.bam -t ${{THREADS}} --sam2bam -i -
-		cp ${{LOCAL}}/{wildcards.sample}.bwa.bam* {wildcards.base}/{TIME}/{wildcards.sample}/	
-	else
-		bwa mem -M -t ${{THREADS}} -R '@RG\\tID:{wildcards.sample}\\tSM:{wildcards.sample}\\tLB:{wildcards.sample}\\tPL:{params.platform}' {input.ref} {input.R1} {input.R2} | samtools view -Sbh - | samtools sort -m 30000000000 - {wildcards.base}/{TIME}/{wildcards.sample}/{wildcards.sample}.bwa
-		samtools index {wildcards.base}/{TIME}/{wildcards.sample}/{wildcards.sample}.bwa.bam
-	fi
+	module -q load {params.sentieon}
+        echo "Using Sentieon"
+	bwa mem -M -t ${{THREADS}} -R '@RG\\tID:{wildcards.sample}\\tSM:{wildcards.sample}\\tLB:{wildcards.sample}\\tPL:{params.platform}' {input.ref} {input.R1} {input.R2} | sentieon util sort -o ${{LOCAL}}/{wildcards.sample}.bwa.bam -t ${{THREADS}} --sam2bam -i -
+	cp ${{LOCAL}}/{wildcards.sample}.bwa.bam* {wildcards.base}/{TIME}/{wildcards.sample}/	
 	#######################
 	"""
 ############
@@ -759,21 +752,13 @@ rule Picard_MarkDup:
 	shell: """
 	#######################
 	module load picard/{version}
-	set +eo pipefail
-	module -q load {params.sentieon} 2>/dev/null
-	#set -eo pipefail
-	if [ $? == '0' ] ; then
-		echo "Using Sentieon"
-		sentieon driver -t ${{THREADS}} -i {input.bam} --algo LocusCollector --fun score_info ${{LOCAL}}/{wildcards.base}.markdup.txt.tmp
-		sentieon driver -t ${{THREADS}} -i {input.bam} --algo Dedup --score_info ${{LOCAL}}/{wildcards.base}.markdup.txt.tmp --metrics ${{LOCAL}}/{wildcards.base}.markdup.txt ${{LOCAL}}/{wildcards.sample}.{wildcards.base}.dd.bam
-		cp ${{LOCAL}}/{wildcards.base}.markdup.txt {output.metrics}
-		cp ${{LOCAL}}/{wildcards.sample}.{wildcards.base}.dd.bam {output.bam}
-		cp ${{LOCAL}}/{wildcards.sample}.{wildcards.base}.dd.bam.bai {output.index}
-	else
-		java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $PICARD_JAR MarkDuplicates AS=true M={output.metrics} I={input.bam} O={output.bam} REMOVE_DUPLICATES=false VALIDATION_STRINGENCY=SILENT
-		module load samtools/{params.samtools}
-		samtools index {output.bam}
-	fi
+	module -q load {params.sentieon}
+	echo "Using Sentieon"
+	sentieon driver -t ${{THREADS}} -i {input.bam} --algo LocusCollector --fun score_info ${{LOCAL}}/{wildcards.base}.markdup.txt.tmp
+	sentieon driver -t ${{THREADS}} -i {input.bam} --algo Dedup --score_info ${{LOCAL}}/{wildcards.base}.markdup.txt.tmp --metrics ${{LOCAL}}/{wildcards.base}.markdup.txt ${{LOCAL}}/{wildcards.sample}.{wildcards.base}.dd.bam
+	cp ${{LOCAL}}/{wildcards.base}.markdup.txt {output.metrics}
+	cp ${{LOCAL}}/{wildcards.sample}.{wildcards.base}.dd.bam {output.bam}
+	cp ${{LOCAL}}/{wildcards.sample}.{wildcards.base}.dd.bam.bai {output.index}
 	#######################
 	"""
 ############
@@ -817,24 +802,14 @@ rule GATK:
 	shell: """
 	#######################
 	module load GATK/{version}
-	set +eo pipefail
-	module -q load {params.sentieon} 2>/dev/null
-	#set -eo pipefail
-	if [ $? == '0' ] ; then
-		echo "Using Sentieon"
-		sentieon driver -t ${{THREADS}} -r {input.ref} -i {input.bam} --algo Realigner -k {input.phase1} -k {input.mills} ${{LOCAL}}/{wildcards.sample}.lr.bam
-		sentieon driver -t ${{THREADS}} -r {input.ref} -i ${{LOCAL}}/{wildcards.sample}.lr.bam --algo QualCal -k {input.phase1} -k {input.mills} ${{LOCAL}}/{wildcards.sample}.recalibration.matrix.txt
-		sentieon driver -t ${{THREADS}} -r {input.ref} -i ${{LOCAL}}/{wildcards.sample}.lr.bam -q ${{LOCAL}}/{wildcards.sample}.recalibration.matrix.txt --algo QualCal -k {input.phase1} -k {input.mills} ${{LOCAL}}/{wildcards.sample}.recalibrationPost.matrix.txt --algo ReadWriter ${{LOCAL}}/{wildcards.sample}.bwa.final.bam
-		cp ${{LOCAL}}/{wildcards.sample}.bwa.final.bam {output.bam}
-		cp ${{LOCAL}}/{wildcards.sample}.bwa.final.bam.bai {output.index}
+	module -q load {params.sentieon}
+	echo "Using Sentieon"
+	sentieon driver -t ${{THREADS}} -r {input.ref} -i {input.bam} --algo Realigner -k {input.phase1} -k {input.mills} ${{LOCAL}}/{wildcards.sample}.lr.bam
+	sentieon driver -t ${{THREADS}} -r {input.ref} -i ${{LOCAL}}/{wildcards.sample}.lr.bam --algo QualCal -k {input.phase1} -k {input.mills} ${{LOCAL}}/{wildcards.sample}.recalibration.matrix.txt
+	sentieon driver -t ${{THREADS}} -r {input.ref} -i ${{LOCAL}}/{wildcards.sample}.lr.bam -q ${{LOCAL}}/{wildcards.sample}.recalibration.matrix.txt --algo QualCal -k {input.phase1} -k {input.mills} ${{LOCAL}}/{wildcards.sample}.recalibrationPost.matrix.txt --algo ReadWriter ${{LOCAL}}/{wildcards.sample}.bwa.final.bam
+	cp ${{LOCAL}}/{wildcards.sample}.bwa.final.bam {output.bam}
+	cp ${{LOCAL}}/{wildcards.sample}.bwa.final.bam.bai {output.index}
 
-	else
-		java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -T RealignerTargetCreator -R {input.ref} -known {input.phase1} -known {input.mills} -I {input.bam} -o ${{LOCAL}}/{wildcards.sample}.realignment.intervals
-		java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -T IndelRealigner -R {input.ref} -known {input.phase1} -known {input.mills} -I {input.bam} --targetIntervals ${{LOCAL}}/{wildcards.sample}.realignment.intervals -o ${{LOCAL}}/{wildcards.sample}.lr.bam --maxReadsInMemory 1500000
-		java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -T BaseRecalibrator -R {input.ref} -knownSites {input.phase1} -knownSites {input.mills} -I ${{LOCAL}}/{wildcards.sample}.lr.bam -o ${{LOCAL}}/{wildcards.sample}.recalibration.matrix.txt
-		java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -T PrintReads -R {input.ref} -I ${{LOCAL}}/{wildcards.sample}.lr.bam -o {output.bam} -BQSR ${{LOCAL}}/{wildcards.sample}.recalibration.matrix.txt
-		mv -f {wildcards.base}/{TIME}/{wildcards.sample}/{wildcards.sample}.bwa.final.bai {output.index}
-	fi
 	sleep 60s
 	touch {output.index}
 	#######################
@@ -867,31 +842,14 @@ rule MuTect:
 	#######################
 	module load muTect/{version}
 	module load R/{params.R}
-	set +eo pipefail
-	module -q load {params.sentieon} 2>/dev/null
-	set -eo pipefail
-	if [ $? == '0' ] ; then
-		echo "Using Sentieon"
-		sentieon driver --read_filter MapQualFilter,min_map_qual=30 -t ${{THREADS}} -r {input.ref} \
-			-i {input[2]} -i {input[0]} \
-			--interval {input.interval} \
-			--algo TNsnv --dbsnp {input.dbsnp} \
-			--tumor_sample {wildcards.Tumor} --normal_sample {params.normal} \
-			--call_stats_out {output.call_stats} --stdcov_out {output.coverage} {params.mt_sen} {output.vcf}.vcf
-		
-	else
-		java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $MUTECT_JAR -T MuTect \
-			--reference_sequence {input.ref} \
-			--cosmic {input.cosmic} \
-			--dbsnp {input.dbsnp} \
-			--input_file:normal {input[2]} \
-			--input_file:tumor {input[0]} \
-			--intervals  {input.interval} \
-			--coverage_file {output.coverage} \
-			--out {output.call_stats} \
-			--vcf {output.vcf}.vcf \
-			{params.mt_gatk}
-	fi
+	module -q load {params.sentieon}
+	echo "Using Sentieon"
+	sentieon driver --read_filter MapQualFilter,min_map_qual=30 -t ${{THREADS}} -r {input.ref} \
+		-i {input[2]} -i {input[0]} \
+		--interval {input.interval} \
+		--algo TNsnv --dbsnp {input.dbsnp} \
+		--tumor_sample {wildcards.Tumor} --normal_sample {params.normal} \
+		--call_stats_out {output.call_stats} --stdcov_out {output.coverage} {params.mt_sen} {output.vcf}.vcf
 	{params.vcforder} -i {output.vcf}.vcf -o {output.vcf}
 	rm -rf {output.vcf}.vcf
 	#######################
