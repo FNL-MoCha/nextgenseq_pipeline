@@ -1,5 +1,6 @@
 {
 	"pipeline_version"	: "v3.0dev",
+	"mails"			: "-c patidarr@mail.nih.gov",
 	"mail"			: "-c patidarr@mail.nih.gov -c li.chen2@nih.gov -c dasbiswa@mail.nih.gov -c corinne.camalier@nih.gov",
 	"platform"		: "Illumina",
 	"samtools"		: "0.1.19",

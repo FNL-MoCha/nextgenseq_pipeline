@@ -1,0 +1,37 @@
+for subject in config['DNASeq']:
+	for sample in config['DNASeq'][subject]:
+		if config["sample_type"][sample] =='Tumor':
+				TARGET +=[subject+"/"+TIME+"/"+sample+"/MSI/"+sample+".MSI_Analysis.txt"]	
+############
+#       cnvkit
+############
+rule MSI:
+	input:
+		bam="{base}/{TIME}/{sample}/{sample}.bwa.final.bam",
+		interval= config["msi_interval"],
+		ref=config["reference"],
+		bed=lambda wildcards: config['target_intervals'][config['sample_captures'][wildcards.sample]].replace('target','targetbp'),
+		baseline=config['msi_baseline']
+	output:
+		"{base}/{TIME}/{sample}/MSI/{sample}.MSI_Analysis.txt"
+	params:
+		rulename  = "MSI",
+		batch     = config[config['host']]["job_msi"],
+	shell: """
+	#######################
+	module load samtools
+	source	/data/MoCha/patidarr/msings/msings-env/bin/activate
+	echo "Making mpileups"
+	samtools mpileup -f {input.ref} -d 100000 -A -E  {input.bam} -l /data/MoCha/patidarr/msings/doc/mSINGS_TCGA.msi_intervals | awk '{{if($4 >= 6) print $0}}' >{wildcards.base}/{TIME}/{wildcards.sample}/MSI/{wildcards.sample}.pileup
+
+	echo "Varscan Readcounts start"
+	java -Xmx${{MEM}}g -jar /data/MoCha/patidarr/msings/msings-env/bin/VarScan.v2.3.7.jar readcounts {wildcards.base}/{TIME}/{wildcards.sample}/MSI/{wildcards.sample}.pileup --variants-file /data/MoCha/patidarr/msings/doc/mSINGS_TCGA.msi_intervals --min-base-qual 10 --output-file {wildcards.base}/{TIME}/{wildcards.sample}/MSI/{wildcards.sample}.output
+	
+	echo "MSI Analyzer start"
+	msi analyzer {wildcards.base}/{TIME}/{wildcards.sample}/MSI/{wildcards.sample}.output /data/MoCha/patidarr/msings/doc/mSINGS_TCGA.bed -o {wildcards.base}/{TIME}/{wildcards.sample}/MSI/{wildcards.sample}.msi.txt
+
+	echo "MSI calls start"
+	msi count_msi_samples /data/MoCha/patidarr/msings/MSI_BASELINE.v33.txt {wildcards.base}/{TIME}/{wildcards.sample}/MSI/ -m 2.0 -t 0.2 0.2 -o {wildcards.base}/{TIME}/{wildcards.sample}/MSI/{wildcards.sample}.MSI_Analysis.txt
+	rm -rf {wildcards.base}/{TIME}/{wildcards.sample}/MSI/{wildcards.sample}.pileup {wildcards.base}/{TIME}/{wildcards.sample}/MSI/{wildcards.sample}.output
+	#######################
+	"""

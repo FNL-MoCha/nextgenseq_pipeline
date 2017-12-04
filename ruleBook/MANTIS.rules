@@ -1,18 +1,17 @@
 if 'matched_normal' in config:
 	for sample in config['matched_normal'].keys():
+			subject=SAMPLE_TO_SUBJECT[sample]
 			TARGET +=[subject+"/"+TIME+"/"+sample+"/MANTIS/"+sample+".txt"]
 
 rule MANTIS:
-	input:
-		bam="{subject}/{TIME}/{sample}/{sample}.bwa.final.bam",
+	input:	lambda wildcards: somaticPairs[wildcards.sample],
 	output:
 		"{subject}/{TIME}/{sample}/MANTIS/{sample}.txt",
 	params:
 		rulename = "MANTIS",
-		normal   = lambda wildcards: config['matched_normal'][wildcards.sample][0],
-		batch    = config[config['host']]['job_Sequenza']
+		batch    = config[config['host']]['job_MANTIS']
 	shell: """
 	#######################
-	python /data/MoCha/patidarr/MANTIS/mantis.py --bedfile /data/MoCha/patidarr/MANTIS/loci.bed --genome /data/MoCha/patidarr/ref/ucsc.hg19.fasta -n {wildcards.subject}/{TIME}/{params.normal}/{params.normal}.bwa.final.bam -t {input.bam}  -o {output} --threads ${{THREADS}}
+	python /data/MoCha/patidarr/MANTIS/mantis.py --bedfile /data/MoCha/patidarr/MANTIS/loci.bed --genome /data/MoCha/patidarr/ref/ucsc.hg19.fasta -n {input[2]} -t {input[0]} -o {wildcards.subject}/{TIME}/{wildcards.sample}/MANTIS/{wildcards.sample}.txt --threads ${{THREADS}}
 	#######################
 	"""

@@ -271,7 +271,7 @@ include: NGS_PIPELINE +"/ruleBook/hsMetrix.rules"
 include: NGS_PIPELINE +"/ruleBook/Consolidate.rules"
 include: NGS_PIPELINE +"/ruleBook/universal.rules"
 include: NGS_PIPELINE +"/ruleBook/mutationalSignature.rules"
-include: NGS_PIPELINE +"/ruleBook/NeoAntigen.rules"
+#include: NGS_PIPELINE +"/ruleBook/NeoAntigen.rules"
 include: NGS_PIPELINE +"/ruleBook/haplotypeCaller.rules"
 include: NGS_PIPELINE +"/ruleBook/platypus.rules"
 include: NGS_PIPELINE +"/ruleBook/bam2mpg.rules"
@@ -401,7 +401,7 @@ rule bbsplit:
 	if [ ${{count}} == '1' ] ; then
 		if [ {params.source} == 'PDX' ]; then
 			module load bbtools/{version}
-			bbtools bbsplit build=1 path={input.ref} in1={input.R[0]} in2={input.R[1]} basename={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_%_#.fastq.gz refstats={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_stat.txt
+			bbtools bbsplit build=1 -Xmx${{MEM}}g path={input.ref} in1={input.R[0]} in2={input.R[1]} basename={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_%_#.fastq.gz refstats={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_stat.txt
 			mv -f {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_1.fastq.gz {output.R1} 
 			mv -f {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_2.fastq.gz {output.R2}
 		else
@@ -415,7 +415,7 @@ rule bbsplit:
 		wait
 		if [ {params.source} == 'PDX' ]; then
 			module load bbtools/{version}
-			bbtools bbsplit build=1 path={input.ref} in1={output.R1} in2={output.R2} basename={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_%_#.fastq.gz refstats={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_stat.txt
+			bbtools bbsplit build=1 -Xmx${{MEM}}g path={input.ref} in1={output.R1} in2={output.R2} basename={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_%_#.fastq.gz refstats={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_stat.txt
 			mv -f {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_1.fastq.gz {output.R1}
                 	mv -f {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_2.fastq.gz {output.R2}
 		fi

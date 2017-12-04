@@ -58,7 +58,7 @@ rule RNASeqQC_2:
 		convertor=NGS_PIPELINE+"/scripts/transcript_coverage.R"
 	output: 
 		txt="{subject}/{TIME}/qc/{subject}.RnaSeqQC.txt",
-		plot="{subject}/{TIME}/qc/{subject}.transcriptCoverage.png"
+		#plot="{subject}/{TIME}/qc/{subject}.transcriptCoverage.png"
 	version: config['version_R']
 	params:
 		rulename  = "QC_Sum",
@@ -68,8 +68,6 @@ rule RNASeqQC_2:
 	module load R/{version}
 	export LC_ALL=C
 	cat {input.files} |sort |uniq |sed -e '/^$/d'>{output.txt}
-	list=`echo {input.files}|sed -e 's/RnaSeqQC/RnaSeqMetrics/g'`
-	{input.convertor} -f "${{list}}" -s "{wildcards.subject}" -o {output.plot}
 	#######################
 	"""
 rule RNASeqQC_3:

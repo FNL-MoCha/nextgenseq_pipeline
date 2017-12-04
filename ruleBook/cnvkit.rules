@@ -2,7 +2,8 @@ for subject in config['DNASeq']:
 	for sample in config['DNASeq'][subject]:
 		if config["sample_type"][sample] =='Tumor':
 			if config['sample_captures'][sample] in config['cnvkit_ref']:
-				TARGET +=[subject+"/"+TIME+"/"+sample+"/cnvkit/"+sample+".cns"]	
+				TARGET +=[subject+"/"+TIME+"/"+sample+"/cnvkit/"+sample+".cns"]
+				TARGET +=[subject+"/"+TIME+"/"+sample+"/cnvkit/"+sample+".seg"]
 			else:
 				for sample in config['matched_normal']: 
 					TARGET +=[subject+"/"+TIME+"/"+sample+"/cnvkit/"+sample+".cnr"]
@@ -14,7 +15,8 @@ rule cnvkitPooled:
 		bam="{base}/{TIME}/{sample}/{sample}.bwa.final.bam",
 		interval= lambda wildcards: config['cnvkit_ref'][config['sample_captures'][wildcards.sample]],
 	output:
-		"{base}/{TIME}/{sample}/cnvkit/{sample}.cns"
+		"{base}/{TIME}/{sample}/cnvkit/{sample}.cns",
+		"{base}/{TIME}/{sample}/cnvkit/{sample}.seg"
 	version: config["cnvkit"]
 	params:
 		rulename  = "cnvkit",
@@ -25,6 +27,8 @@ rule cnvkitPooled:
 	cnvkit.py batch -p ${{THREADS}} {input.bam} --reference {input.interval} --output-dir {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/cnvkit/
 	mv {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/cnvkit/{wildcards.sample}.bwa.final.cns {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/cnvkit/{wildcards.sample}.cns
 	mv {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/cnvkit/{wildcards.sample}.bwa.final.cnr {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/cnvkit/{wildcards.sample}.cnr
+	echo -e "ID\\tchrom\\tloc.start\\tloc.end\\tnum.mark\\tseg.mean" >{wildcards.base}/{wildcards.TIME}/{wildcards.sample}/cnvkit/{wildcards.sample}.seg
+	awk '{{OFS="\\t"}}{{print "{wildcards.sample}",$1,$2,$3,$7,$5}}'  {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/cnvkit/{wildcards.sample}.cnr >>{wildcards.base}/{wildcards.TIME}/{wildcards.sample}/cnvkit/{wildcards.sample}.seg
 	cnvkit.py scatter -s {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/cnvkit/{wildcards.sample}.cn{{s,r}} -o {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/cnvkit/{wildcards.sample}.pdf
 	#######################
 	"""
