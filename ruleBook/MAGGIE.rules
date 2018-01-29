@@ -1,0 +1,39 @@
+if 'DNASeq' in config:
+	for subject in config['DNASeq']:
+		for sample in config['DNASeq'][subject]:
+			TARGET    += [subject+"/"+TIME+"/"+sample+"/qc/"+sample+".bwa.codingsynon.sorted.vcf.gz"]
+if 'RNASeq' in config:
+	for subject  in config['RNASeq'].keys():
+		for sample in config['RNASeq'][subject]:
+			TARGET    +=  [subject+"/"+TIME+"/"+sample+"/qc/"+sample+".star.codingsynon.sorted.vcf.gz"]
+############
+# MAGGIE
+#############
+rule MAGGIE:
+	input:
+		bam="{subject}/{TIME}/{sample}/{sample}.{aligner}.final.bam",
+		interval=config["MAGGIE_BED"].replace(".bed",".padded.bed"),
+		interval2=config["MAGGIE_BED"],
+		ref=config["reference"],	
+	output:
+		"{subject}/{TIME}/{sample}/qc/{sample}.{aligner}.codingsynon.sorted.vcf.gz"
+	params:
+		rulename   ="MAGGIE",
+		batch      =config[config['host']]['job_MAGGIE'],
+	shell: """
+	#######################
+	module load samtools/1.2
+	samtools mpileup -ug -f {input.ref} -l {input.interval} {input.bam} |bcftools call -g 10 -c -O v -o ${{LOCAL}}/{wildcards.sample}.vcf
+	bgzip -i ${{LOCAL}}/{wildcards.sample}.vcf
+	tabix ${{LOCAL}}/{wildcards.sample}.vcf.gz
+	bcftools view -o ${{LOCAL}}/{wildcards.sample}.codingsynon.vcf.gz -O z -R {input.interval2} ${{LOCAL}}//{wildcards.sample}.vcf.gz
+
+	module load vcftools
+	vcf-sort -c ${{LOCAL}}/{wildcards.sample}.codingsynon.vcf.gz |bgzip > {wildcards.subject}/{wildcards.TIME}/{wildcards.sample}/qc/{wildcards.sample}.{wildcards.aligner}.codingsynon.sorted.vcf.gz
+	tabix  {wildcards.subject}/{wildcards.TIME}/{wildcards.sample}/qc/{wildcards.sample}.{wildcards.aligner}.codingsynon.sorted.vcf.gz
+
+
+	cp -rf {wildcards.subject}/{wildcards.TIME}/{wildcards.sample}/qc/{wildcards.sample}.{wildcards.aligner}.codingsynon.sorted.vcf.gz MAGGIE/{wildcards.sample}.codingsynon.sorted.vcf.gz
+	cp -rf {wildcards.subject}/{wildcards.TIME}/{wildcards.sample}/qc/{wildcards.sample}.{wildcards.aligner}.codingsynon.sorted.vcf.gz.tbi MAGGIE/{wildcards.sample}.codingsynon.sorted.vcf.gz.tbi
+	#######################
+	"""
