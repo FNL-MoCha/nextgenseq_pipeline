@@ -1,7 +1,6 @@
 rule HAPCALLER:
 	input: 	
 		bam="{subject}/{TIME}/{sample}/{sample}.bwa.final.bam",
-		bai="{subject}/{TIME}/{sample}/{sample}.bwa.final.bam.bai",
 		ref=config["reference"],
 		dbsnp=config["dbsnp"],
 		interval=lambda wildcards: config['target_intervals'][config['sample_captures'][wildcards.sample]].replace("target", "targetbp"),

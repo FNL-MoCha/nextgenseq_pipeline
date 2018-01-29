@@ -1,8 +1,14 @@
+sampleLOH={}
 if 'DNASeq' in config:
 	for subject in config['DNASeq']:
 		for sample in config['DNASeq'][subject]:
 			if config['sample_captures'][sample] not in config['Panel_List']:
+				if subject not in sampleLOH:
+					sampleLOH[subject] =[subject+"/"+TIME+"/"+sample+"/qc/"+sample+".roh"]
+				else:
+					sampleLOH[subject] +=[subject+"/"+TIME+"/"+sample+"/qc/"+sample+".roh"]
 				TARGET    += [subject+"/"+TIME+"/"+sample+"/qc/"+sample+".roh"]
+				TARGET    += [subject+"/"+TIME+"/"+subject+".loh.seg"]
 
 rule ROH:
 	input:
@@ -21,4 +27,15 @@ rule ROH:
 	grep ^RG {output} |awk '{{if ($6>150000) print $6}}' | awk '{{n += $1}}; END{{print (n/2881033286)*100}}' >{output}.txt
 	#######################
 	"""
-
+rule SampleLOH:
+	input: lambda wildcards: sampleLOH[wildcards.subject]
+	output: "{subject}/{TIME}/{subject}.loh.seg"
+	params:
+		rulename = "ROH",
+		batch    = config[config['host']]["job_default"]
+	shell: """
+	#######################
+	echo -e "ID\\tchrom\\tloc.start\\tloc.end\\tnum.mark\\tseg.mean" >{output}	
+	cat {input}|grep ^RG |awk '{{OFS="\\t"}}{{print $2,"chr"$3,$4,$5,$7,1}}' | sed -e 's/\~WES//g'>>{output}
+	#######################
+	"""

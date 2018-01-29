@@ -507,14 +507,15 @@ sub Platypus{
 	my $idx_NR = first { $format[$_] eq 'NR' } 0..$#format;
 	my $idx_NV = first { $format[$_] eq 'NV' } 0..$#format;
 	my $vaf = 0;
-	my $total =0;
+	my $total =$arr[$idx_NR];
+	my $ref=0;
 	if($arr[$idx_NR] !~ /,/ and $arr[$idx_NV] !~ /,/){
-		$total = $arr[$idx_NR]+$arr[$idx_NV];
 		if($arr[$idx_NV] >0){
 			$vaf =sprintf ("%.2f", ($arr[$idx_NV]/$total));
 		}
+		$ref=$total - $arr[$idx_NV];
 	}
-	return($arr[$idx_GT] ,$total, $arr[$idx_NR], $arr[$idx_NV], $vaf);
+	return($arr[$idx_GT] ,$total, $ref, $arr[$idx_NV], $vaf);
 }
 # Sub for getting index
 sub formatMuTect{

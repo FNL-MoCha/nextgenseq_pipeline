@@ -1,7 +1,16 @@
+CONSENSUS_VCF={}
 if 'DNASeq' in config:
 	for subject in config['DNASeq']:
-		for library in config['DNASeq'][subject]:
-			TARGET    += [subject+"/"+TIME+"/"+library+"/calls/"+library+".merged.vcf"]
+		for sample in config['DNASeq'][subject]:
+			TARGET    += [subject+"/"+TIME+"/"+sample+"/calls/"+sample+".merged.vcf"]
+			TARGET    += [subject+"/"+TIME+"/"+sample+"/calls/"+sample+".variants.maf"]
+			TARGET    += [subject+"/"+TIME+"/"+sample+"/calls/"+sample+".genemed.vcf"]
+			if config['sample_type'][sample] == 'Tumor':
+				if subject not in CONSENSUS_VCF:
+					CONSENSUS_VCF[subject] =[subject+"/"+TIME+"/"+sample+"/calls/"+sample+".merged.vcf"]
+				else:
+					TARGET    += [subject+"/"+TIME+"/"+subject+".consensus.vcf"]
+					CONSENSUS_VCF[subject] +=[subject+"/"+TIME+"/"+sample+"/calls/"+sample+".merged.vcf"]
 
 #######################
 # Merge HC with Platypus results for delivery
@@ -11,6 +20,7 @@ rule Merge:
 		hc="{subject}/{TIME}/{sample}/calls/{sample}.HC_DNASeq.raw.vcf",
 		plat="{subject}/{TIME}/{sample}/calls/{sample}.Platypus.raw.vcf",
 		ref=config["reference"],
+		script=NGS_PIPELINE+"/scripts/reformatVCF.pl"
 	output:
 		vcf="{subject}/{TIME}/{sample}/calls/{sample}.merged.vcf"
 	version: config["GATK"]
@@ -19,16 +29,82 @@ rule Merge:
 		batch    = config[config['host']]["job_HC_PLAT"]
 	shell: """
 	#######################
+	perl {input.script} {input.hc} vcf >${{LOCAL}}/HC.vcf
+	perl {input.script} {input.plat} vcf >${{LOCAL}}/PL.vcf
+
 	module load GATK/{version}
 	java -Xmx${{MEM}}g -XX:ParallelGCThreads=${{THREADS}}\
 		 -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR\
 		 -T CombineVariants\
 		 -R {input.ref}\
 		 -dcov 10000\
-		 --variant:HC {input.hc}\
-		 --variant:Platypus {input.plat}\
+		 --variant:HC ${{LOCAL}}/HC.vcf\
+		 --variant:Platypus ${{LOCAL}}/PL.vcf\
 		 -o {output} -genotypeMergeOptions PRIORITIZE\
 		 -priority HC,Platypus\
 		 -nt ${{THREADS}}
+	#######################
+	"""
+
+#######################
+# Convert to MAF to be loaded to cbioportal
+#######################
+rule vcf2maf:
+	input: 
+		vcf="{subject}/{TIME}/{sample}/calls/{sample}.merged.vcf",
+		ref=config["reference"]
+	output: "{subject}/{TIME}/{sample}/calls/{sample}.variants.maf"
+	params:
+		rulename = "vcf2maf",
+		batch    = config[config['host']]["job_HC_PLAT"]
+	shell: """
+	#######################
+	module load vcf2maf/1.6.14 samtools
+	cp {input.vcf} /${{LOCAL}}/
+	vcf2maf.pl --input-vcf ${{LOCAL}}/{wildcards.sample}.merged.vcf --output-maf ${{LOCAL}}/{wildcards.sample}.variants.maf --tumor-id {wildcards.sample} --ref-fasta {input.ref} --filter-vcf /fdb/VEP/89/cache/ExAC.r0.3.1.sites.vep.vcf.gz --vep-path /usr/local/apps/VEP/ensembl-tools-release-86/scripts/variant_effect_predictor/ --vep-forks ${{THREADS}} --vep-data /fdb/VEP/86/cache/
+	cp ${{LOCAL}}/{wildcards.sample}.merged.vep.vcf ${{LOCAL}}/{wildcards.sample}.variants.maf {output}
+	#######################
+	"""
+#######################
+# VCF file with variants overlapping MPACT v2.0 bed file
+#######################
+rule GeneMed:
+	input:
+		vcf="{subject}/{TIME}/{sample}/calls/{sample}.merged.vcf",
+		bed=config['MPACT_BED']
+	output:
+		"{subject}/{TIME}/{sample}/calls/{sample}.genemed.vcf"
+	params:
+		rulename ="GeneMed",
+		batch    = config[config['host']]["job_HC_PLAT"]
+	shell: """
+	#######################
+	module load bedtools
+	intersectBed -a {input.vcf} -b {input.bed} -u -header > {output}
+	#######################
+	"""
+#######################
+# VCF Consensus file for delivery
+#######################
+rule consensusVCF:
+	input: 
+		lambda wildcards: CONSENSUS_VCF[wildcards.subject]
+	output:
+		"{subject}/{TIME}/{subject}.consensus.vcf"	
+	params:
+		rulename = "consensusVCF",
+		batch    = config[config['host']]["job_HC_PLAT"]
+	shell: """
+	#######################
+	module load vcftools
+	cp {input} ${{LOCAL}}/
+	a=`/bin/ls -1 ${{LOCAL}}/*.vcf |wc -l`
+	b=`echo ${{a}}-1|bc`
+	for file in ${{LOCAL}}/*.vcf; do bgzip -c ${{file}} >${{file}}.gz; tabix -p vcf ${{file}}.gz; done
+	#for file in ${{LOCAL}}/*.vcf; do bcftools annotate -x FORMAT/PL ${{file}} -o ${{file}}.gz -O z; tabix -p vcf ${{file}}.gz; done
+	bcftools merge  ${{LOCAL}}/*.vcf.gz -O z -o ${{LOCAL}}/merge.vcf.gz
+	tabix -p vcf ${{LOCAL}}/merge.vcf.gz
+	
+	vcf-isec -f -n +${{a}} ${{LOCAL}}/merge.vcf.gz ${{LOCAL}}/{wildcards.subject}*.vcf.gz >{output}
 	#######################
 	"""

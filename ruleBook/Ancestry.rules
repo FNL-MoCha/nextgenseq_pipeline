@@ -1,8 +1,14 @@
+ANCESTRY={}
 if 'DNASeq' in config:
 	for subject in config['DNASeq']:
+		TARGET +=[subject+"/"+TIME+"/qc/"+subject+".ancestry.txt" ]
 		for sample in config['DNASeq'][subject]:
 			if config['sample_captures'][sample] not in config['Panel_List']:
 				TARGET    += [subject+"/"+TIME+"/"+sample+"/ancestry/"+sample+".ancestry"]
+				if subject not in ANCESTRY:
+					ANCESTRY[subject] = [subject+"/"+TIME+"/"+sample+"/ancestry/"+sample+".ancestry"]
+				else:
+					ANCESTRY[subject] += [subject+"/"+TIME+"/"+sample+"/ancestry/"+sample+".ancestry"]
 rule Ancestry:
 	input:
 		bam="{subject}/{TIME}/{sample}/{sample}.bwa.final.bam",
@@ -36,6 +42,19 @@ rule Ancestry:
 
 	python {input.inferancestry}   --par {output.ancestry}.tmp
 	echo -e "#Sample ID\\tPopulation label\\tNumber of SNPs\\tPredicted PC1\\tPredicted PC2\\tPredicted PC3\\t% YRI ancestry\\t% CEU ancestry\\t% East Asian ancestry\\t% Native American Ancestry" >>{output.ancestry}
+	sort {output.ancestry} -o {output.ancestry}
 	rm -rf {output.ancestry}.tmp {output.ancestry}.geno {output.ancestry}.snp {output.ancestry}.ind
+	#######################
+	"""
+rule PatientAncestry:
+	input: lambda wildcards: ANCESTRY[wildcards.subject]
+	output: "{subject}/{TIME}/qc/{subject}.ancestry.txt"
+	params:
+		rulename = "Ancestry_1",
+		batch    = config[config['host']]["job_default"],
+		script   =NGS_PIPELINE+"/scripts/patientAncestry.pl"
+	shell: """
+	#######################
+	perl {params.script} {input} |sort >{output}
 	#######################
 	"""

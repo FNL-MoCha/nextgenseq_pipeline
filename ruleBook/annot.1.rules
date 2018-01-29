@@ -51,7 +51,7 @@ fi
 #PATIENTS =[]
 #for subject in config['DNASeq'].keys():
 #        PATIENTS.append(subject)
-ANNO_FILES =["gene","clinseq","cadd","cosmic","pcg","clinvar","hgmd","match","mcg","docm","candl","tcc","civic","sift.out","coding.rare.txt","annotations.final.txt"]
+ANNO_FILES =["gene","cadd","cosmic","pcg","clinvar","hgmd","match","mcg","docm","candl","tcc","civic","sift.out","coding.rare.txt","annotations.final.txt"]
 TARGET = expand("AnnotationInput.{suff}", suff=ANNO_FILES)
 rule final:
         input:
@@ -110,30 +110,6 @@ rule Annovar_Gene:
 	mv {input.file}.gene.{params.build}_multianno.txt {output}
 	sed -i '1s/\./_/g' {output}
 	rm -rf {input.file}.gene.refGene.invalid_input {input.file}.gene.invalid_input
-	#######################
-	"""
-############
-# annotate_variation
-#	custom ref input. clinseq
-############
-rule Annovar_Clinseq:
-	input:
-		file="AnnotationInput.anno",
-		clinseq=config["annovar_data"]+config["annot_clinseq"]
-	output: "AnnotationInput.clinseq"
-	version: config["annovar"]
-	params:
-		rulename   = "Annot_clinseq",
-		batch      = config[config['host']]["job_annovar"],
-		RefData    = config["annovar_data"],
-		build      = config["build"],
-	shell: """
-	#######################
-	module load annovar/{version}
-	annotate_variation.pl {input.file} {params.RefData} -buildver {params.build} -otherinfo -filter -dbtype generic -genericdbfile `basename {input.clinseq}`
-	awk '{{OFS="\\t"}};{{print $3,$4,$5,$6,$7,$2}}' {input.file}.{params.build}_generic_dropped |sed -e 's/,/\\t/g' >{output}
-	head -1 {input.clinseq} >>{output}
-	rm -rf {input.file}.{params.build}_generic_dropped {input.file}.{params.build}_generic_filtered {input.file}.invalid_input
 	#######################
 	"""
 ################################
@@ -295,7 +271,6 @@ rule SIFT:
 rule CombineAnnotation:
 	input:
 		"AnnotationInput.gene",
-		"AnnotationInput.clinseq",
 		"AnnotationInput.cadd",
 		"AnnotationInput.cosmic",
 		"AnnotationInput.pcg",
@@ -326,7 +301,6 @@ rule CombineAnnotation:
 	#######################
 echo "AnnotationInput
 AnnotationInput.gene
-AnnotationInput.clinseq
 AnnotationInput.cadd
 AnnotationInput.sift.out
 AnnotationInput.clinvar

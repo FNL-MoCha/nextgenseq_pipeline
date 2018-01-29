@@ -10,7 +10,7 @@ while(<FH>){
 		if ($a[1] ~~ [60001..2699520] or $a[1] ~~ [154931044..155260560]){
 		}
 		else{
-			if ($a[1] >0.8){
+			if ($a[2] >0.8){
 				$homo++;
 			}
 			else{
@@ -20,12 +20,12 @@ while(<FH>){
 	}
 }
 my $result = $het/($het+$homo);
-
+#print "$het\t$homo\t$result\n\n";
 if ($result <0.3){
 	print "Male\n";
 }
 elsif($result >0.4){
-	print "Female";
+	print "Female\n";
 }
 else{
 	print "Probable Female\n";

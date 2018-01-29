@@ -1,4 +1,12 @@
-
+SUBJ_RSEM={}
+if 'RNASeq' in config:
+	for subject  in config['RNASeq'].keys():
+		for sample in config['RNASeq'][subject]:
+			if subject not in SUBJ_RSEM:
+				SUBJ_RSEM[subject] =[subject+"/"+TIME+"/"+sample+"/RSEM/"+sample+".genes.results"]
+			else:
+				SUBJ_RSEM[subject] +=[subject+"/"+TIME+"/"+sample+"/RSEM/"+sample+".genes.results"]
+				TARGET    +=  [subject+"/"+TIME+"/qc/"+subject+".RNASEQ_CoorelationHeatmap.pdf"]
 ############
 # RSEM 
 #############
@@ -25,5 +33,26 @@ rule RSEM:
 	{params.script} ${{LOCAL}}/{wildcards.sample}.isoforms.results ${{LOCAL}}/{wildcards.sample}.genes.results {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/RSEM/{wildcards.sample}.isoforms.results {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/RSEM/{wildcards.sample}.genes.results
 	#cp ${{LOCAL}}/{wildcards.sample}.genes.results {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/RSEM/{wildcards.sample}.genes.results
 	#cp ${{LOCAL}}/{wildcards.sample}.isoforms.results {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/RSEM/{wildcards.sample}.isoforms.results
+	#######################
+	"""
+############
+# RSEM Coorelation Plot
+############
+rule RNA_COOR:
+	input:
+		lambda wildcards: SUBJ_RSEM[wildcards.subject]
+	output:
+		"{subject}/{TIME}/qc/{subject}.RNASEQ_CoorelationHeatmap.pdf"
+	params:
+		rulename  ="coorlelationPlot",
+		batch     =config[config['host']]['job_RSEM'],
+		script1	  =NGS_PIPELINE+"/scripts/assemble_RNASEQ_gene.py",
+		script2   =NGS_PIPELINE+"/scripts/correlation_heatmap.R"
+	shell: """
+	#######################
+	cp {input} ${{LOCAL}}
+	python {params.script1} ${{LOCAL}} ${{LOCAL}}/{wildcards.subject}.csv
+	module load R
+	{params.script2} --input=${{LOCAL}}/{wildcards.subject}.csv --patient={wildcards.subject} --output={output}
 	#######################
 	"""

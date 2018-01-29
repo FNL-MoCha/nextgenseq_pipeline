@@ -251,13 +251,14 @@ if 'matched_rnaseq' in config:
 			# Its possible to have Matched RNASeq, i.e. Tumor only sequencing (Exome/RNA) but missing Corrosponding Normal
 			#print(Tumor, "Corrosponding RNASeq found but matched Normal not found")
 ###########################################################################
-localrules: Pipeline, RNASeq, IGV_Session, DBinput, AttachAnnotation, Expressed , symlink_tophatBam, copyNovoBam, Actionable_Germline, Actionable_RNAseq, Actionable_Somatic, Actionable_Variants, Actionable_fusion, Sub_Fusion, makeConfig, TargetInterval, QC_Summary_Patient,QC_Summary,UnionSomaticCalls,TOPHAT_LINK, SampleGT,QC_Sum, FormatInput, RNASeqQC_1,RNASeqQC1 RNASeqQC_2,RNASeqQC_3, Cuff_Mat, Gender
+localrules: Pipeline, RNASeq, IGV_Session, DBinput, AttachAnnotation, Expressed , symlink_tophatBam, copyNovoBam, Actionable_Germline, Actionable_RNAseq, Actionable_Somatic, Actionable_Variants, Actionable_fusion, Sub_Fusion, makeConfig, TargetInterval, QC_Summary_Patient,QC_Summary,UnionSomaticCalls,TOPHAT_LINK, SampleGT,QC_Sum, FormatInput, RNASeqQC_1,RNASeqQC1 RNASeqQC_2,RNASeqQC_3, Cuff_Mat
 #Circos, CoveragePlot, BoxPlot_Hotspot, makeConfig,Ideogram
 ###########################################################################
 #				Include Rule Book			  #
 ###########################################################################
-#include: NGS_PIPELINE +"/ruleBook/bamUtil.rules"
+include: NGS_PIPELINE +"/ruleBook/MAGGIE.rules"
 include: NGS_PIPELINE +"/ruleBook/ROH.rules"
+include: NGS_PIPELINE +"/ruleBook/variantsHeatmap.rules"
 include: NGS_PIPELINE +"/ruleBook/MSI.rules"
 include: NGS_PIPELINE +"/ruleBook/MANTIS.rules"
 include: NGS_PIPELINE +"/ruleBook/Ancestry.rules"
@@ -570,7 +571,7 @@ rule SampleGT:
 		mail     	= config["mail"],
 		mail_tool 	= NGS_PIPELINE + "/scripts/tsv2html.sh",
 		host	 	= config["host"],
-		diagnosis	= lambda wildcards: config['diagnosis'][subject]
+		diagnosis	= lambda wildcards: config['diagnosis'][wildcards.subject]
 	shell: """
 	#######################
 	mkdir -p {wildcards.subject}/{TIME}/qc/GT
