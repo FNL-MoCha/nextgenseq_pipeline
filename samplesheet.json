@@ -1,47 +1,82 @@
 {
     "DNASeq": {
-        "NCI0291": [ "NCI0291_B_E", "NCI0291_B_P", "NCI0291_T_E", "NCI0291_T_P"]
+        "128128": [
+            "128128_germline~WES", 
+            "128128~338-R~L42~WES", 
+            "128128~338-R~L43MZ1~WES", 
+            "128128~338-R~L43MZ4~WES" 
+        ]
     }, 
     "RNASeq": {
-        "NCI0291": [ "NCI0291_T_T"]
+        "128128": [
+            "128128~338-R~L42~RNASEQ", 
+            "128128~338-R~L43MZ1~RNASEQ", 
+            "128128~338-R~L43MZ4~RNASEQ" 
+        ]
     }, 
     "diagnosis": {
-        "NCI0291": "Glioblastoma"
+        "128128": "Melanoma"
     }, 
     "library": {
-        "NCI0291_B_E": ["NCI0291_B_E_HH3CWBGXX"], 
-        "NCI0291_B_P": ["NCI0291_B_P_HH3CWBGXX"], 
-        "NCI0291_T_E": ["NCI0291_T_E_HWHT3BGXX"], 
-        "NCI0291_T_P": ["NCI0291_T_P_HWHT3BGXX"], 
-        "NCI0291_T_T": ["NCI0291_T_T_HWJW5BGXX"]
+        "128128_germline~WES": [
+            "128128_germline~WES"
+        ], 
+        "128128~338-R~L42~RNASEQ": [
+            "128128~338-R~L42~RNASEQ"
+        ], 
+        "128128~338-R~L42~WES": [
+            "128128~338-R~L42~WES"
+        ], 
+        "128128~338-R~L43MZ1~RNASEQ": [
+            "128128~338-R~L43MZ1~RNASEQ"
+        ], 
+        "128128~338-R~L43MZ1~WES": [
+            "128128~338-R~L43MZ1~WES"
+        ], 
+        "128128~338-R~L43MZ4~RNASEQ": [
+            "128128~338-R~L43MZ4~RNASEQ"
+        ], 
+        "128128~338-R~L43MZ4~WES": [
+            "128128~338-R~L43MZ4~WES"
+        ] 
     }, 
     "matched_normal": {
-        "NCI0291_T_E": ["NCI0291_B_E"], 
-        "NCI0291_T_P": ["NCI0291_B_P"]
+        "128128~338-R~L42~WES": [
+            "128128_germline~WES"
+        ], 
+        "128128~338-R~L43MZ1~WES": [
+            "128128_germline~WES"
+        ], 
+        "128128~338-R~L43MZ4~WES": [
+            "128128_germline~WES"
+        ]
     }, 
-    "matched_rnaseq": {
-        "NCI0291_T_E": ["NCI0291_T_T"], 
-        "NCI0291_T_P": ["NCI0291_T_T"]
-    }, 
+    "matched_rnaseq": {}, 
     "sample_captures": {
-        "NCI0291_B_E": "clin.ex.v1", 
-        "NCI0291_B_P": "clin.snv.v1", 
-        "NCI0291_T_E": "clin.ex.v1", 
-        "NCI0291_T_P": "clin.snv.v1", 
-        "NCI0291_T_T": "access"
+        "128128_germline~WES": "sureselect.v5", 
+        "128128~338-R~L42~RNASEQ": "access", 
+        "128128~338-R~L42~WES": "sureselect.v5", 
+        "128128~338-R~L43MZ1~RNASEQ": "access", 
+        "128128~338-R~L43MZ1~WES": "sureselect.v5", 
+        "128128~338-R~L43MZ4~RNASEQ": "access", 
+        "128128~338-R~L43MZ4~WES": "sureselect.v5" 
     }, 
     "sample_type": {
-        "NCI0291_B_E": "Normal", 
-        "NCI0291_B_P": "Normal", 
-        "NCI0291_T_E": "Tumor", 
-        "NCI0291_T_P": "Tumor", 
-        "NCI0291_T_T": "RNASeq"
+        "128128_germline~WES": "Normal", 
+        "128128~338-R~L42~RNASEQ": "RNASeq", 
+        "128128~338-R~L42~WES": "Tumor", 
+        "128128~338-R~L43MZ1~RNASEQ": "RNASeq", 
+        "128128~338-R~L43MZ1~WES": "Tumor", 
+        "128128~338-R~L43MZ4~RNASEQ": "RNASeq", 
+        "128128~338-R~L43MZ4~WES": "Tumor" 
     }, 
     "source": {
-        "NCI0291_B_E": "hg19", 
-        "NCI0291_B_P": "hg19", 
-        "NCI0291_T_E": "hg19", 
-        "NCI0291_T_P": "hg19", 
-        "NCI0291_T_T": "hg19"
+        "128128_germline~WES": "hg19", 
+        "128128~338-R~L42~RNASEQ": "PDX", 
+        "128128~338-R~L42~WES": "PDX", 
+        "128128~338-R~L43MZ1~RNASEQ": "PDX", 
+        "128128~338-R~L43MZ1~WES": "PDX", 
+        "128128~338-R~L43MZ4~RNASEQ": "PDX", 
+        "128128~338-R~L43MZ4~WES": "PDX" 
     }
 }

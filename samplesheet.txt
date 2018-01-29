@@ -1,6 +1,8 @@
-custom ID	Type	Diagnosis	Type of sequencing	Enrichment step	FCID	Library ID	Matched normal	Matched RNA-seq lib	Case Name	Source	
-NCI0291	normal DNA	Glioblastoma	E-il	clin.ex.v1	HH3CWBGXX	NCI0291_B_E			example	hg19	
-NCI0291	normal DNA	Glioblastoma	E-il	clin.snv.v1	HH3CWBGXX	NCI0291_B_P			example	hg19	
-NCI0291	tumor DNA	Glioblastoma	E-il	clin.ex.v1	HWHT3BGXX	NCI0291_T_E	NCI0291_B_E	NCI0291_T_T	example	hg19	
-NCI0291	tumor DNA	Glioblastoma	E-il	clin.snv.v1	HWHT3BGXX	NCI0291_T_P	NCI0291_B_P	NCI0291_T_T	example	hg19	
-NCI0291	tumor RNA	Glioblastoma	T-il	access	HWJW5BGXX	NCI0291_T_T			example	hg19	
+##custom ID	Type	Diagnosis	Enrichment step	Source	FCID	Library ID	Matched normal	Matched RNA-seq lib	Case ID	Run ID
+128128	normal DNA	Melanoma	sureselect.v5	hg19		128128_germline~WES			CBTTAANXX	171012_D00719_0080_ACBTTAANXX
+128128	tumor DNA	Melanoma	sureselect.v5	PDX		128128~338-R~L42~WES	128128_germline~WES		C9J10ANXX	160902_D00719_0048_AC9J10ANXX
+128128	tumor DNA	Melanoma	sureselect.v5	PDX		128128~338-R~L43MZ1~WES	128128_germline~WES		C9JNEANXX	160902_D00719_0049_BC9JNEANXX
+128128	tumor DNA	Melanoma	sureselect.v5	PDX		128128~338-R~L43MZ4~WES	128128_germline~WES		C9JNEANXX	160902_D00719_0049_BC9JNEANXX
+128128	tumor RNA	Melanoma	access	PDX		128128~338-R~L42~RNASEQ			CAB7FANXX	161216_D00719_0066_ACAB7FANXX
+128128	tumor RNA	Melanoma	access	PDX		128128~338-R~L43MZ1~RNASEQ			CAB7FANXX	161216_D00719_0066_ACAB7FANXX
+128128	tumor RNA	Melanoma	access	PDX		128128~338-R~L43MZ4~RNASEQ			CAB7FANXX	161216_D00719_0066_ACAB7FANXX

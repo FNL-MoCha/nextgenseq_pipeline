@@ -19,10 +19,7 @@ else{
 }
 
 if (`hostname` =~ /cn/ or `hostname` =~ /biowulf.nih.gov/){
-	$dataDir="/data/khanlab/projects/DATA/";
-}
-elsif(`hostname` =~ /tghighmem/ or `hostname` =~ /tgcompute/ or `hostname` =~ /login01/){
-	$dataDir="/projects/Clinomics/DATA/";
+	$dataDir="/data/MoCha/DATA/";
 }
 elsif(`hostname` =~ /fr-s-hpc-head-1/){
 	print STDERR "Don't know the default Fastq Location\n";
@@ -51,8 +48,7 @@ if (!$mode){
 	exit;
 }
 if (!$dataDir){
-        print STDERR "On biowulf the raw data is stored in /data/khanlab/projects/DATA/\n";
-        print STDERR "On TGen the raw data is stored in /projects/Clinomics/DATA/\n";
+        print STDERR "On biowulf the raw data is stored in /data/MoCha/DATA/\n";
 	print STDERR "If your data is coming from somewhere else specify using this variable\n";
         exit;
 }
@@ -103,30 +99,6 @@ if (`hostname` =~ /cn/ or `hostname` =~ /biowulf.nih.gov/){
 		`sbatch -e $workDir/log/ngs-pipeline.e -o $workDir/log/ngs-pipeline.o --export=time=$mode,ngs=$NGS_PIPELINE,dataDir=$dataDir,workDir=$workDir,sheet=$sheet --cpus-per-task=1 --partition=ccr,norm --time=10-00:00:00 $NGS_PIPELINE/submit_snakemake.sh`;
 	}
 }
-elsif(`hostname` =~ /tghighmem/ or `hostname` =~ /tgcompute/ or `hostname` =~ /login01/){
-	if ($dryrun){
-		my $cmd= "(
-		export TMP=$NOW
-		export TIME=$time
-                module load snakemake/3.8.0
-                export NGS_PIPELINE=$NGS_PIPELINE
-                export WORK_DIR=$workDir
-                export DATA_DIR=$dataDir
-                export ACT_DIR=\"/Actionable/\"
-                export HOST=\"login01\"
-                SNAKEFILE=$NGS_PIPELINE/ngs_pipeline.rules
-                SAM_CONFIG=$sheet
-                snakemake --directory \$WORK_DIR --snakefile \$SNAKEFILE --configfile \$SAM_CONFIG --dryrun -p -r --ri -R RNASeq
-		rm -rf $workDir/ngs_pipeline_$NOW.csv
-		)";
-		print "$cmd\n";
-		exec "$cmd";	
-	}
-	else{
-		`mkdir -p "$workDir/log/"`;
-		`sbatchT -e $workDir/log/ngs-pipeline.e -o $workDir/log/ngs-pipeline.o --export=time=$mode,ngs=$NGS_PIPELINE,dataDir=$dataDir,workDir=$workDir,sheet=$sheet --cpus-per-task=1 --partition=batch --time=10-00:00:00 $NGS_PIPELINE/submit_snakemake.sh`;
-	}
-}
 elsif(`hostname` =~ /fr-s-hpc-head-1/){
 	if ($dryrun){
 		my $cmd= "(
@@ -158,7 +130,7 @@ else{
 }
 =head1 SYNOPSIS
 
- launch -mode d -datadir /projects/Clinomics/DATA/ -workdir /projects/Clinomics/Test_Run2 -s /projects/Clinomics/Test_Run2/SampleSheets/samplesheet.json
+ launch -mode d -datadir /data/MoCha/DATA/ -workdir /data/MoCha/processedDATA/ -s /data/MoCha/processedDATA/SampleSheets/samplesheet.json
  ###############################################################
  Arguments: 
 
@@ -172,13 +144,12 @@ else{
 			d =development mode <preset date 20160415>
 			<20160415> = to use this is caseID for the sample. this sould only be done with single subject json file
 
-	-d, -datadir	On biowulf the raw data is stored in /data/khanlab/projects/DATA/
-			  On TGen the raw data is stored in /projects/Clinomics/DATA/
+	-d, -datadir	On biowulf the raw data is stored in /data/MoCha/DATA/
 			  If your data is coming from somewhere else specify using this variable
-			  -datadir "/data/Clinomics/testData/"
+			  -datadir "/data/MoCha/DATA/"
 
 	-w, -workdir	Working directory where all the results will be stored. there are defaults to be used specific to host.
-	-s, -sheet 	A json file downloded from  https://fr-s-bsg-onc-d.ncifcrf.gov/onco.sandbox1/public/viewPatients/null/all/1 
+	-s, -sheet 	A json file created using $NGS_PIPELINE/scripts/makeJSON.py
 			this dictates how the pipeline will ran.
 				default name is samplesheet.json in working directory.
 				if present somewhere else please give full path.
@@ -201,30 +172,14 @@ else{
 		export TMP="20160415"
 		export TIME="20160415"
 		module load snakemake/3.8.0
-                export NGS_PIPELINE="/data/Clinomics/Tools/ngs_pipeline-dev/"
+                export NGS_PIPELINE="/data/MoCha/patidarr/ngs_pipeline/"
                 export WORK_DIR="`pwd`"
-                export DATA_DIR="/data/khanlab/projects/DATA/"
-                #export DATA_DIR="/data/Clinomics/DATA/"
+                export DATA_DIR="/data/MoCha/DATA/"
                 export ACT_DIR="/Actionable/"
                 export HOST="biowulf.nih.gov"
                 SNAKEFILE=$NGS_PIPELINE/ngs_pipeline.rules
                 SAM_CONFIG=$WORK_DIR/samplesheet.json
 		snakemake --directory $WORK_DIR --snakefile $SNAKEFILE --configfile $SAM_CONFIG --dryrun -p -r
-	#
-	#
-	#	TGen
-	#
-		export TMP="20160415"
-		export TIME="20160415"
-                module load snakemake/3.8.0
-                export NGS_PIPELINE="/projects/Clinomics/Tools/ngs_pipeline/"
-                export WORK_DIR="`pwd`"
-                export DATA_DIR="/projects/Clinomics/DATA/"
-                export ACT_DIR="/Actionable/"
-                export HOST="login01"
-                SNAKEFILE=$NGS_PIPELINE/ngs_pipeline.rules
-                SAM_CONFIG=$WORK_DIR/samplesheet.json
-		snakemake --directory $WORK_DIR --snakefile $SNAKEFILE --configfile $SAM_CONFIG --dryrun -p -r                                  
 	
 
 	#Summary 
