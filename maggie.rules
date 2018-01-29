@@ -1,0 +1,73 @@
+import itertools
+import os
+import collections
+import json
+import glob
+from snakemake.utils import R
+#from snakemake.utils import min_vession
+#min_version("3.2")
+#module load snakemake/3.8.0
+from snakemake.exceptions import MissingInputException
+
+#Author:        Rajesh Patidar
+#Email:         patidarr
+# This will make a output file for every model containing output of bcftools gtcheck
+
+# Snakemake Base location
+shell.prefix("""
+set -e -o pipefail
+module purge
+sleep 20s
+""")
+
+PATH="/data/MoCha/processedDATA/MAGGIE/"
+PAT_FILES = {}
+
+PATIENT ={}
+F=sorted(glob.glob(PATH+"/*WES.codingsynon.sorted.vcf.gz"),key=len)
+for files in F:
+	column = files.split("~")
+	patient=column[0].split("/")
+	if "_germline" not in patient[5]:
+		PATIENT[patient[5]] =["/data/MoCha/processedDATA/"+patient[5]+"/20170910/qc/"+patient[5]+".maggie.txt"]
+		if patient[5] not in  PAT_FILES:
+			PAT_FILES[patient[5]] =[files]
+		
+F=sorted(glob.glob(PATH+"/*RNASEQ.codingsynon.sorted.vcf.gz"),key=len)
+for files in F:
+	column = files.split("~")
+	patient=column[0].split("/")
+	if patient[5] not in  PAT_FILES:
+		PATIENT[patient[5]] =["/data/MoCha/processedDATA/"+patient[5]+"/20170910/qc/"+patient[5]+".maggie.txt"]
+		PAT_FILES[patient[5]] =[files]
+
+#################################
+localrules: Final
+#################################
+rule Final:
+	input:	PATIENT.values()
+#################################
+#	This rule will make the Patient Level file
+#################################
+rule PatientLevel:
+	input:
+		lambda wildcards: PAT_FILES[wildcards.patient]
+	output:
+		txt="/data/MoCha/processedDATA/{patient}/20170910/qc/{patient}.maggie.txt",
+		pdf="/data/MoCha/processedDATA/{patient}/20170910/qc/{patient}.maggie.pdf"
+	params:
+		rulename   = "MAGGIE",
+	shell:"""
+	#################################
+	module load samtools/1.2
+	echo -e "Model\tSample\tScore\tSites" >{output.txt}
+	for file2 in {PATH}/*.codingsynon.sorted.vcf.gz	
+		do
+			name=`basename ${{file2}} .codingsynon.sorted.vcf.gz`
+			score=`bcftools gtcheck -g {input} -G 1 ${{file2}} |grep ^CN |cut -f2,4 |awk '{{OFS="\\t"}}{{print +$1,$2}}'`
+			echo -e "{wildcards.patient}\\t${{name}}\\t${{score}}"
+		done >>{output.txt}
+	module load R
+	/data/MoCha/patidarr/ngs_pipeline/scripts/PlotMaggie.R --input={output.txt} --patient={wildcards.patient} --output={output.pdf}
+	#################################
+	"""
