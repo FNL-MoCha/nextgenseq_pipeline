@@ -35,6 +35,12 @@ nature = whichSignatures(tumor.ref = sigs.input,
                 sample.id = sample,
                 contexts.needed = TRUE,
                 tri.counts.method = 'default')
+a <-cosmic$weights
+a$Sample <-sample
+a<-a[ , order(names(a))]
+a <-data.frame(a)
+
+write.table(a, gsub("pdf", "txt", output), quote = FALSE, sep = "\t", row.names = FALSE)
 
 pdf(output,width=10)
 plotSignatures(cosmic, sub='Mutational Signature Based on COSMIC')

@@ -14,7 +14,7 @@ suppressPackageStartupMessages(library("stats"))
 
 option_list <- list(
 	make_option(c("-f", "--file"), help="File containing list of numbers"),
-	make_option("--stat", help="Any of Mean, Median, SD, MAD, Min, Max, summary, sum")
+	make_option("--stat", help="Any of Mean, Median, SD, MAD, Min, Max, summary, sum, var")
     )
 opt <- parse_args(OptionParser(option_list=option_list))
 
@@ -63,10 +63,14 @@ if(strcmp(toupper(opt$stat), 'MAX')){
 }
 if(strcmp(toupper(opt$stat), 'SUMMARY')){
         out <-summary(inData$V1)
-	print(out)
+	print(out[3])
 #        cat(out, "\n")
 }
 if(strcmp(toupper(opt$stat), 'SUM')){
         out <-sum(inData$V1)
+        cat(out, "\n")
+}
+if(strcmp(toupper(opt$stat), 'VAR')){
+        out <-var(inData$V1)
         cat(out, "\n")
 }

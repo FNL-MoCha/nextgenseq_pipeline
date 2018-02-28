@@ -10,6 +10,7 @@ if 'DNASeq' in config:
 					CONSENSUS_VCF[subject] =[subject+"/"+TIME+"/"+sample+"/calls/"+sample+".merged.vcf"]
 				else:
 					TARGET    += [subject+"/"+TIME+"/"+subject+".consensus.vcf"]
+					TARGET    += [subject+"/"+TIME+"/"+subject+".consensus.maf"]
 					CONSENSUS_VCF[subject] +=[subject+"/"+TIME+"/"+sample+"/calls/"+sample+".merged.vcf"]
 
 #######################
@@ -56,13 +57,17 @@ rule vcf2maf:
 	output: "{subject}/{TIME}/{sample}/calls/{sample}.variants.maf"
 	params:
 		rulename = "vcf2maf",
+		isoforms = config['mskcc_isoforms'],
+		script   = NGS_PIPELINE+"/scripts/filterMAF.pl",
 		batch    = config[config['host']]["job_HC_PLAT"]
 	shell: """
 	#######################
 	module load vcf2maf/1.6.14 samtools
 	cp {input.vcf} /${{LOCAL}}/
-	vcf2maf.pl --input-vcf ${{LOCAL}}/{wildcards.sample}.merged.vcf --output-maf ${{LOCAL}}/{wildcards.sample}.variants.maf --tumor-id {wildcards.sample} --ref-fasta {input.ref} --filter-vcf /fdb/VEP/89/cache/ExAC.r0.3.1.sites.vep.vcf.gz --vep-path /usr/local/apps/VEP/ensembl-tools-release-86/scripts/variant_effect_predictor/ --vep-forks ${{THREADS}} --vep-data /fdb/VEP/86/cache/
-	cp ${{LOCAL}}/{wildcards.sample}.merged.vep.vcf ${{LOCAL}}/{wildcards.sample}.variants.maf {output}
+	vcf2maf.pl --input-vcf ${{LOCAL}}/{wildcards.sample}.merged.vcf --output-maf ${{LOCAL}}/{wildcards.sample}.variants.maf --tumor-id {wildcards.sample} --ref-fasta {input.ref} --filter-vcf /fdb/VEP/89/cache/ExAC.r0.3.1.sites.vep.vcf.gz --vep-path /usr/local/apps/VEP/ensembl-tools-release-86/scripts/variant_effect_predictor/ --vep-forks ${{THREADS}} --vep-data /fdb/VEP/86/cache/ --custom-enst {params.isoforms}
+	{params.script} ${{LOCAL}}/{wildcards.sample}.variants.maf >${{LOCAL}}/{wildcards.sample}.variants.filtered.maf
+	cp ${{LOCAL}}/{wildcards.sample}.merged.vep.vcf {wildcards.subject}/{TIME}/{wildcards.sample}/calls/
+	cp ${{LOCAL}}/{wildcards.sample}.variants.filtered.maf {wildcards.subject}/{TIME}/{wildcards.sample}/calls/{wildcards.sample}.variants.maf
 	#######################
 	"""
 #######################
@@ -93,6 +98,7 @@ rule consensusVCF:
 		"{subject}/{TIME}/{subject}.consensus.vcf"	
 	params:
 		rulename = "consensusVCF",
+		fix      = NGS_PIPELINE+"/scripts/fixconsensesVCF.pl",
 		batch    = config[config['host']]["job_HC_PLAT"]
 	shell: """
 	#######################
@@ -105,6 +111,29 @@ rule consensusVCF:
 	bcftools merge  ${{LOCAL}}/*.vcf.gz -O z -o ${{LOCAL}}/merge.vcf.gz
 	tabix -p vcf ${{LOCAL}}/merge.vcf.gz
 	
-	vcf-isec -f -n +${{a}} ${{LOCAL}}/merge.vcf.gz ${{LOCAL}}/{wildcards.subject}*.vcf.gz >{output}
+	vcf-isec -f -n +${{a}} ${{LOCAL}}/merge.vcf.gz ${{LOCAL}}/{wildcards.subject}*.vcf.gz |{params.fix} - {wildcards.subject} > {output}
+	#######################
+	"""
+#######################
+# Convert to MAF to be loaded to cbioportal
+#######################
+rule vcf2maf_pat:
+	input:
+		vcf="{subject}/{TIME}/{subject}.consensus.vcf",
+		ref=config["reference"]
+	output: "{subject}/{TIME}/{subject}.consensus.maf"
+	params:
+		rulename = "vcf2maf",
+		isoforms = config['mskcc_isoforms'],
+		script   = NGS_PIPELINE+"/scripts/filterMAF.pl",
+		batch    = config[config['host']]["job_HC_PLAT"]
+	shell: """
+	#######################
+	module load vcf2maf/1.6.14 samtools
+	cp {input.vcf} /${{LOCAL}}/
+	vcf2maf.pl --input-vcf ${{LOCAL}}/{wildcards.subject}.consensus.vcf --output-maf ${{LOCAL}}/{wildcards.subject}.consensus.maf --tumor-id {wildcards.subject} --ref-fasta {input.ref} --filter-vcf /fdb/VEP/89/cache/ExAC.r0.3.1.sites.vep.vcf.gz --vep-path /usr/local/apps/VEP/ensembl-tools-release-86/scripts/variant_effect_predictor/ --vep-forks ${{THREADS}} --vep-data /fdb/VEP/86/cache/ --custom-enst {params.isoforms}
+	{params.script} ${{LOCAL}}/{wildcards.subject}.consensus.maf >${{LOCAL}}/{wildcards.subject}.consensus.filtered.maf
+	cp ${{LOCAL}}/{wildcards.subject}.consensus.vep.vcf {wildcards.subject}/{TIME}/
+	cp ${{LOCAL}}/{wildcards.subject}.consensus.filtered.maf {wildcards.subject}/{TIME}/{wildcards.subject}.consensus.maf
 	#######################
 	"""

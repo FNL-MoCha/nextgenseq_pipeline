@@ -39,7 +39,7 @@ rule variantHeatmap_pileup:
 	params:
 		rulename  = "variantHeatmap",
 		script    = NGS_PIPELINE+"/scripts/mpileup.v1.pl",
-		batch     = config[config['host']]["job_default"]
+		batch     = config[config['host']]["job_copynumber"]
 	shell: """
 	#######################
 	module load samtools

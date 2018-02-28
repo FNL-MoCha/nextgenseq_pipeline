@@ -288,7 +288,7 @@ include: NGS_PIPELINE +"/ruleBook/cnvkit.rules"
 include: NGS_PIPELINE +"/ruleBook/MethlySeq.rules"
 include: NGS_PIPELINE +"/ruleBook/RSEM.rules"
 #include: NGS_PIPELINE +"/ruleBook/HotSpot_Pileup.rules"
-
+include: NGS_PIPELINE +"/ruleBook/PyClone.rules"
 ###########################################################################
 # we have to do it this way as some samples may not have rna or tumor     #
 ###########################################################################

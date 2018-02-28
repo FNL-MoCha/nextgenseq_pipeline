@@ -20,6 +20,7 @@
 	"version_blast"		: "2.5.0+",
 	"VEP"			: "86",
 	"IEDB"			: "/data/MoCha/patidarr/IEDB/",
+	"mskcc_isoforms"	: "/data/MoCha/patidarr/ref/annotation/isoform_overrides_at_mskcc",
 	"target_intervals"	:{
 		"wholegenome"		: "/data/MoCha/patidarr/ref/design/WholeGenome.target.hg19.merged.bed",
 		"access" 		: "/data/MoCha/patidarr/ref/design/IlluminaAccessKitRNASeq.target.hg19.merged.bed",
