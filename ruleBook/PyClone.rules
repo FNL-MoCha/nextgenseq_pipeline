@@ -1,0 +1,50 @@
+PYCLONE={}
+if 'DNASeq' in config:
+	for subject in config['DNASeq']:
+		for sample in config['DNASeq'][subject]:
+			if config['sample_type'][sample] == 'Tumor':
+				if sample in config['matched_normal']:
+					TARGET    += [subject+"/"+TIME+"/PyClone/"+sample+".tsv"]
+					TARGET    += [subject+"/"+TIME+"/PyClone/trace/alpha.tsv.bz2"]
+					if subject in PYCLONE:
+						PYCLONE[subject] +=[subject+"/"+TIME+"/PyClone/"+sample+".tsv"]
+					else:
+						PYCLONE[subject] =[subject+"/"+TIME+"/PyClone/"+sample+".tsv"]
+
+#######################
+# input tsv file for PyClone
+#######################
+rule makePyCloneInput:
+	input:
+		vars="{subject}/{TIME}/Actionable/{sample}.unionSomaticVars.txt",
+		copynumber="{subject}/{TIME}/{sample}/sequenza/{sample}.txt",
+		gender="{subject}/{TIME}/{sample}/qc/{sample}.gender",
+		script=NGS_PIPELINE+"/scripts/makePyCloneInput.pl"
+	output:
+		"{subject}/{TIME}/PyClone/{sample}.tsv"
+	params:
+		rulename = "makePyCloneInput",
+		batch    = config[config['host']]["job_default"]
+	shell: """
+	#######################
+	{input.script} {input.vars} {input.copynumber} {input.gender} >{output}
+	#######################
+	"""
+#######################
+# Run PyClone
+#######################
+rule PyClone:
+	input:
+		lambda wildcards: PYCLONE[wildcards.subject]
+	output:
+		"{subject}/{TIME}/PyClone/trace/alpha.tsv.bz2"
+	params:
+		rulename = "PyClone",
+		batch    = config[config['host']]["job_pyclone"]
+	shell: """
+	#######################
+	module load pyclone
+	names=`for i in  {input}; do basename ${{i}}|cut -f3 -d '~'; done`
+	PyClone run_analysis_pipeline --in_files {input} --working_dir {wildcards.subject}/{TIME}/PyClone/ --samples ${{names}}
+	#######################
+	"""
