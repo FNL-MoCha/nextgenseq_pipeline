@@ -45,6 +45,6 @@ rule PyClone:
 	#######################
 	module load pyclone
 	names=`for i in  {input}; do basename ${{i}}|cut -f3 -d '~'; done`
-	PyClone run_analysis_pipeline --in_files {input} --working_dir {wildcards.subject}/{TIME}/PyClone/ --samples ${{names}}
+	PyClone run_analysis_pipeline --in_files {input} --working_dir {wildcards.subject}/{TIME}/PyClone/ --samples ${{names}} --max_clusters 10 --density pyclone_binomial 
 	#######################
 	"""

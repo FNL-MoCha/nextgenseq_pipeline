@@ -191,15 +191,12 @@ def _ontarget(bam):
     return stats 
     
 
-print string.join(['#Patient', 'Sample', 'Diagnosis', 'Gender',
+print string.join(['#Patient', 'Sample', 'Diagnosis', 'Gender', 'PF Generated', "% Human",
                    'total_reads', 'mapped_reads',
                    'percent_mapped',
                    'ontarget_reads', 'percent_ontarget', 
                    'unique_ontarget_reads',
                    'percent_unique_ontarget',
-                   'min_mapq',
-                   'mean_mapq',
-                   'stddev_mapq',
                    'hq_unique_ontarget_reads',
                    'percent_hq_unique_ontarget', 
                    'percent_hq_unique_positions_at_5x', 
@@ -210,8 +207,7 @@ print string.join(['#Patient', 'Sample', 'Diagnosis', 'Gender',
                    'percent_hq_unique_positions_at_50x',
 		   'percent_hq_unique_positions_at_100x',
 		   'percent_hq_unique_positions_at_200x',
-		   'percent_hq_unique_positions_at_400x',
-		   'percent_hq_unique_positions_at_1000x'
+		   'percent_hq_unique_positions_at_400x'
                   ], "\t") 
 
 for filename in [argv[1]]:
@@ -236,7 +232,7 @@ for filename in [argv[1]]:
                                              float(stats2['unique_ontarget_reads'])) * 100
         stats2['percent_hq_unique_ontarget'] = "%2.2F" % stats2['percent_hq_unique_ontarget']
 
-        print string.join([argv[4], argv[5], argv[6], argv[7],
+        print string.join([argv[4], argv[5], argv[6], argv[7], argv[8], argv[9],
                            str(stats1['total_reads']),
                            str(stats1['mapped_reads']),
                            str(stats1['percent_mapped']),
@@ -244,9 +240,6 @@ for filename in [argv[1]]:
                            str(stats2['percent_ontarget']),
                            str(stats2['unique_ontarget_reads']),
                            str(stats2['percent_unique_ontarget']),
-                           str(stats2['min_mapq']),
-                           str(stats2['mean_mapq']),
-                           str(stats2['stddev_mapq']),
                            str(stats2['hq_unique_ontarget_reads']),
                            str(stats2['percent_hq_unique_ontarget']),
                            str(stats3['percent_at_5']),
@@ -258,5 +251,4 @@ for filename in [argv[1]]:
 			   str(stats3['percent_at_100']),
 			   str(stats3['percent_at_200']),
 			   str(stats3['percent_at_400']),
-			   str(stats3['percent_at_1000']),
                           ], "\t"), "\n"; 

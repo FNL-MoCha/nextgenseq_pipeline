@@ -40,23 +40,27 @@ MAIL=config['mail']
 ###########################################################################
 shell.prefix("""
 set -e -o pipefail
-module purge
 sleep 20s
-if [ {HOST} == 'biowulf.nih.gov' ]
-	then
-		MEM=`echo "${{SLURM_MEM_PER_NODE}} / 1024 "|bc`
-		LOCAL="/lscratch/${{SLURM_JOBID}}/"
-		THREADS=${{SLURM_CPUS_ON_NODE}}
-elif [ {HOST} == 'login01' ]
-	then
-		module load slurm
-		module load gcc/4.8.1
-		MEM=`scontrol show job ${{SLURM_JOB_ID}} | grep "MinMemoryNode"| perl -n -e'/MinMemoryNode=(\d*)G/ && print $1'`
-		mkdir -p /projects/scratch/ngs_pipeline_{NOW}_${{SLURM_JOB_ID}}/
-		LOCAL="/projects/scratch/ngs_pipeline_{NOW}_${{SLURM_JOB_ID}}/"
-		THREADS=`scontrol show job ${{SLURM_JOB_ID}} | grep  "MinCPUsNode" | perl -n -e'/MinCPUsNode=(\d*)/ && print $1'`
-fi
+MEM=`echo "${{SLURM_MEM_PER_NODE}} / 1024 "|bc`
+LOCAL="/lscratch/${{SLURM_JOBID}}/"
+THREADS=${{SLURM_CPUS_ON_NODE}}
 """)
+#module purge
+#if [ {HOST} == 'biowulf.nih.gov' ]
+#	then
+#		MEM=`echo "${{SLURM_MEM_PER_NODE}} / 1024 "|bc`
+#		LOCAL="/lscratch/${{SLURM_JOBID}}/"
+#		THREADS=${{SLURM_CPUS_ON_NODE}}
+#elif [ {HOST} == 'login01' ]
+#	then
+#		module load slurm
+#		module load gcc/4.8.1
+#		MEM=`scontrol show job ${{SLURM_JOB_ID}} | grep "MinMemoryNode"| perl -n -e'/MinMemoryNode=(\d*)G/ && print $1'`
+#		mkdir -p /projects/scratch/ngs_pipeline_{NOW}_${{SLURM_JOB_ID}}/
+#		LOCAL="/projects/scratch/ngs_pipeline_{NOW}_${{SLURM_JOB_ID}}/"
+#		THREADS=`scontrol show job ${{SLURM_JOB_ID}} | grep  "MinCPUsNode" | perl -n -e'/MinCPUsNode=(\d*)/ && print $1'`
+#fi
+#""")
 ###########################################################################
 #
 #			Conversion
@@ -215,6 +219,8 @@ for subject in config['DNASeq']:
 for sample in config['matched_normal'].keys():
 	local  = []
 	subject=SAMPLE_TO_SUBJECT[sample]
+	TARGET += [subject+"/"+TIME+"/"+sample+"/calls/"+sample+".MuTect.maf"],
+	TARGET += [subject+"/"+TIME+"/"+sample+"/calls/"+sample+".MuTect2.maf"],
 	local.extend(
 		[ (subject+"/"+TIME+"/"+sample+"/calls/"+sample+".MuTect.snpEff.txt"),
 		  (subject+"/"+TIME+"/"+sample+"/calls/"+sample+".strelka.snvs.snpEff.txt"),
@@ -251,7 +257,7 @@ if 'matched_rnaseq' in config:
 			# Its possible to have Matched RNASeq, i.e. Tumor only sequencing (Exome/RNA) but missing Corrosponding Normal
 			#print(Tumor, "Corrosponding RNASeq found but matched Normal not found")
 ###########################################################################
-localrules: Pipeline, RNASeq, IGV_Session, DBinput, AttachAnnotation, Expressed , symlink_tophatBam, copyNovoBam, Actionable_Germline, Actionable_RNAseq, Actionable_Somatic, Actionable_Variants, Actionable_fusion, Sub_Fusion, makeConfig, TargetInterval, QC_Summary_Patient,QC_Summary,UnionSomaticCalls,TOPHAT_LINK, SampleGT,QC_Sum, FormatInput, RNASeqQC_1,RNASeqQC1 RNASeqQC_2,RNASeqQC_3, Cuff_Mat
+localrules: Pipeline, RNASeq, IGV_Session, DBinput, AttachAnnotation, symlink_tophatBam, copyNovoBam, Actionable_Germline, Actionable_RNAseq, Actionable_Somatic, Actionable_Variants, Actionable_fusion, Sub_Fusion, makeConfig, TargetInterval, QC_Summary_Patient,QC_Summary,UnionSomaticCalls,TOPHAT_LINK, SampleGT,QC_Sum, FormatInput, RNASeqQC_1,RNASeqQC1 RNASeqQC_2,RNASeqQC_3, Cuff_Mat
 #Circos, CoveragePlot, BoxPlot_Hotspot, makeConfig,Ideogram
 ###########################################################################
 #				Include Rule Book			  #
@@ -260,7 +266,7 @@ include: NGS_PIPELINE +"/ruleBook/MAGGIE.rules"
 include: NGS_PIPELINE +"/ruleBook/ROH.rules"
 include: NGS_PIPELINE +"/ruleBook/variantsHeatmap.rules"
 include: NGS_PIPELINE +"/ruleBook/MSI.rules"
-include: NGS_PIPELINE +"/ruleBook/MANTIS.rules"
+#include: NGS_PIPELINE +"/ruleBook/MANTIS.rules"
 include: NGS_PIPELINE +"/ruleBook/Ancestry.rules"
 include: NGS_PIPELINE +"/ruleBook/mergeHC_PLAT.rules"
 include: NGS_PIPELINE +"/ruleBook/verifyBamID.rules"
@@ -270,12 +276,12 @@ include: NGS_PIPELINE +"/ruleBook/readDepth.rules"
 include: NGS_PIPELINE +"/ruleBook/failedExon.rules"
 include: NGS_PIPELINE +"/ruleBook/hsMetrix.rules"
 include: NGS_PIPELINE +"/ruleBook/Consolidate.rules"
-include: NGS_PIPELINE +"/ruleBook/universal.rules"
+#include: NGS_PIPELINE +"/ruleBook/universal.rules"
 include: NGS_PIPELINE +"/ruleBook/mutationalSignature.rules"
 #include: NGS_PIPELINE +"/ruleBook/NeoAntigen.rules"
 include: NGS_PIPELINE +"/ruleBook/haplotypeCaller.rules"
 include: NGS_PIPELINE +"/ruleBook/platypus.rules"
-include: NGS_PIPELINE +"/ruleBook/bam2mpg.rules"
+#include: NGS_PIPELINE +"/ruleBook/bam2mpg.rules"
 include: NGS_PIPELINE +"/ruleBook/gatk_RNASeq.rules"
 include: NGS_PIPELINE +"/ruleBook/ideogram.rules"
 include: NGS_PIPELINE +"/ruleBook/Actionable.rules"
@@ -288,16 +294,16 @@ include: NGS_PIPELINE +"/ruleBook/cnvkit.rules"
 include: NGS_PIPELINE +"/ruleBook/MethlySeq.rules"
 include: NGS_PIPELINE +"/ruleBook/RSEM.rules"
 #include: NGS_PIPELINE +"/ruleBook/HotSpot_Pileup.rules"
-include: NGS_PIPELINE +"/ruleBook/PyClone.rules"
+#include: NGS_PIPELINE +"/ruleBook/PyClone.rules"
 ###########################################################################
 # we have to do it this way as some samples may not have rna or tumor     #
 ###########################################################################
 for subject in SUBJECT_ANNO.keys():
-        for group in SUBJECT_ANNO[subject].keys():
-                TARGET +=[subject+"/"+TIME+"/"+subject+"/db/"+subject+"."+group]
-                TARGET +=[subject+"/"+TIME+ACT_DIR+subject+"."+group+".actionable.txt"]
-                for varFile in SUBJECT_ANNO[subject][group]:
-                        TARGET.append(varFile)
+	for group in SUBJECT_ANNO[subject].keys():
+		#TARGET +=[subject+"/"+TIME+"/"+subject+"/db/"+subject+"."+group]
+		#TARGET +=[subject+"/"+TIME+ACT_DIR+subject+"."+group+".actionable.txt"]
+		for varFile in SUBJECT_ANNO[subject][group]:
+			TARGET.append(varFile)
 ###########################################################################
 
 
@@ -358,7 +364,7 @@ rule Pipeline:
 		chmod g+rw {WORK_DIR}/${{sub}}/{TIME}/successful.txt 	
 		chgrp {params.group} {WORK_DIR}/${{sub}}/{TIME}/successful.txt
         done
-	ssh {params.host} "{params.mail} --location {WORK_DIR} --host {params.host} --head --version {version} {WORK_DIR}/ngs_pipeline_{NOW}.csv |mutt -e \\\"my_hdr Content-Type: text/html\\\" -s ' ngs-pipeline Status' `whoami`@mail.nih.gov {params.email}"
+	ssh {params.host} "{params.mail} --location {WORK_DIR} --host {params.host} --head --version {version} {WORK_DIR}/ngs_pipeline_{NOW}.csv |mutt -e \\\"my_hdr Content-Type: text/html\\\" -s ' ngs-pipeline Status' `whoami`@mail.nih.gov"
 	rm -rf {WORK_DIR}/ngs_pipeline_{NOW}.csv
 	#######################
 	"""
@@ -476,35 +482,10 @@ rule BWA:
 	#######################
 	module load bwa/{version}
 	module load samtools/{params.samtools}
-	module -q load {params.sentieon}
-        echo "Using Sentieon"
+	module load {params.sentieon}
+	echo "Using Sentieon"
 	bwa mem -M -t ${{THREADS}} -R '@RG\\tID:{wildcards.sample}\\tSM:{wildcards.sample}\\tLB:{wildcards.sample}\\tPL:{params.platform}' {input.ref} {input.R1} {input.R2} | sentieon util sort -o ${{LOCAL}}/{wildcards.sample}.bwa.bam -t ${{THREADS}} --sam2bam -i -
 	cp ${{LOCAL}}/{wildcards.sample}.bwa.bam* {wildcards.base}/{TIME}/{wildcards.sample}/	
-	#######################
-	"""
-############
-#	Novoalign
-############
-rule NOVOALIGN:
-	input: R=lambda wildcards: FQ[wildcards.sample],
-		index=config["Novo_index"]
-	output:
-		temp("{subject}/{TIME}/{sample}/{sample}.novo.bam"),
-		temp("{subject}/{TIME}/{sample}/{sample}.novo.bam.bai")
-	version: config["novocraft"]
-	resources: novoalign=1
-	params:
-		rulename  = "novoalign",
-		batch     = config[config['host']]["job_novoalign"],
-		samtools  = config["samtools"],
-		platform  = config["platform"]
-	shell: """
-	#######################
-	module load samtools/{params.samtools}
-	module load novocraft/{version}
-
-	novoalign -c ${{THREADS}} -d {input.index} -f {input.R[0]} {input.R[1]} -a AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAG AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA -c 30 -e 100 -F STDFQ --hlimit 7 -i 200 100 -l 30 -o SAM \"@RG\\tID:{wildcards.sample}\\tSM:{wildcards.sample}\\tLB:{wildcards.sample}\\tPL:{params.platform}\"  -p 5,2 -t 250  | samtools view -Sbh - | samtools sort -m 30000000000 - {wildcards.subject}/{TIME}/{wildcards.sample}/{wildcards.sample}.novo
-	samtools index {wildcards.subject}/{TIME}/{wildcards.sample}/{wildcards.sample}.novo.bam
 	#######################
 	"""
 ############
@@ -598,27 +579,6 @@ rule SampleGT:
 	#######################
 	"""
 ############
-#       BamQC
-############
-rule BamQC:
-	input:
-		bam="{base}/{TIME}/{sample}/{sample}.bwa.final.bam",
-		bai="{base}/{TIME}/{sample}/{sample}.bwa.final.bam.bai",
-		interval= lambda wildcards: config['target_intervals'][config['sample_captures'][wildcards.sample]].replace('.bed', '.gff'),
-	output:
-		"{base}/{TIME}/{sample}/qc/BamQC/qualimapReport.html"
-	version: config["qualimap"]
-	params:
-		rulename = "bamqc",
-		batch	 = config[config['host']]["job_qualimap"],
-		outdir	 ="{base}/{TIME}/{sample}/qc/BamQC",
-	shell: """
-	#######################
-	module load qualimap/{version}
-	qualimap bamqc -c -bam {input.bam} -outdir {params.outdir} -gff {input.interval} -nt ${{THREADS}} --java-mem-size=${{MEM}}G
-	#######################
-	"""
-############
 #       QC_Sum
 ############
 rule QC_Sum:
@@ -669,7 +629,7 @@ rule HotSpotCoverage:
 	shell: """
 	#######################
 	module load samtools/{params.samtools}
-	module load bedtools/{version}
+	module load bedtools/2.22.0
 	slopBed -i {input.interval} -g {input.genome} -b 50 >${{LOCAL}}/Region.bed
 	samtools view -hF 0x400 -q 30 -L ${{LOCAL}}/Region.bed {input.bam} | samtools view -ShF 0x4 - | samtools view -SuF 0x200 - | bedtools coverage -abam - -b {input.interval} >{output}
 	#######################
@@ -753,34 +713,13 @@ rule Picard_MarkDup:
 	shell: """
 	#######################
 	module load picard/{version}
-	module -q load {params.sentieon}
+	module load {params.sentieon}
 	echo "Using Sentieon"
 	sentieon driver -t ${{THREADS}} -i {input.bam} --algo LocusCollector --fun score_info ${{LOCAL}}/{wildcards.base}.markdup.txt.tmp
 	sentieon driver -t ${{THREADS}} -i {input.bam} --algo Dedup --score_info ${{LOCAL}}/{wildcards.base}.markdup.txt.tmp --metrics ${{LOCAL}}/{wildcards.base}.markdup.txt ${{LOCAL}}/{wildcards.sample}.{wildcards.base}.dd.bam
 	cp ${{LOCAL}}/{wildcards.base}.markdup.txt {output.metrics}
 	cp ${{LOCAL}}/{wildcards.sample}.{wildcards.base}.dd.bam {output.bam}
 	cp ${{LOCAL}}/{wildcards.sample}.{wildcards.base}.dd.bam.bai {output.index}
-	#######################
-	"""
-############
-# copy novo bam to novo.final bam
-############
-rule CopyNovoBam:
-	input:
-		bam="{base}/{TIME}/{sample}/{sample}.novo.dd.bam",
-		bai="{base}/{TIME}/{sample}/{sample}.novo.dd.bam.bai",
-	output:
-		bam="{base}/{TIME}/{sample}/{sample}.novo.final.bam",
-		bai="{base}/{TIME}/{sample}/{sample}.novo.final.bam.bai",
-	params:
-		rulename = "copy",
-		batch    = config[config['host']]['job_default']
-	shell: """
-	#######################
-
-	mv {input.bam} {output.bam}
-	mv {input.bai} {output.bai}
-
 	#######################
 	"""
 ############
@@ -795,15 +734,13 @@ rule GATK:
 	output:
 		bam="{base}/{TIME}/{sample}/{sample}.bwa.final.bam",
 		index="{base}/{TIME}/{sample}/{sample}.bwa.final.bam.bai",
-	version: config["GATK"]
 	params:
 		rulename  = "gatk",
 		batch     = config[config['host']]["job_gatk"],
 		sentieon  = config["sentieon"],
 	shell: """
 	#######################
-	module load GATK/{version}
-	module -q load {params.sentieon}
+	module load {params.sentieon}
 	echo "Using Sentieon"
 	sentieon driver -t ${{THREADS}} -r {input.ref} -i {input.bam} --algo Realigner -k {input.phase1} -k {input.mills} ${{LOCAL}}/{wildcards.sample}.lr.bam
 	sentieon driver -t ${{THREADS}} -r {input.ref} -i ${{LOCAL}}/{wildcards.sample}.lr.bam --algo QualCal -k {input.phase1} -k {input.mills} ${{LOCAL}}/{wildcards.sample}.recalibration.matrix.txt
@@ -838,21 +775,78 @@ rule MuTect:
 		vcforder = NGS_PIPELINE + "/scripts/vcfOrderCol.R",
 		sentieon =config["sentieon"],
 		mt_sen   ="--max_normal_alt_frac 0.05 --max_normal_alt_cnt 4 --min_base_qual 20 ",
-		mt_gatk  = "--max_alt_allele_in_normal_fraction 0.05 --max_alt_alleles_in_normal_count 4 --min_qscore 20 -rf MappingQuality -mmq 30"
 	shell: """
 	#######################
-	module load muTect/{version}
-	module load R/{params.R}
-	module -q load {params.sentieon}
+	module load {params.sentieon}
 	echo "Using Sentieon"
-	sentieon driver --read_filter MapQualFilter,min_map_qual=30 -t ${{THREADS}} -r {input.ref} \
+	sentieon driver --temp_dir ${{LOCAL}}/\
+		--read_filter MapQualFilter,min_map_qual=30 -t ${{THREADS}} -r {input.ref} \
 		-i {input[2]} -i {input[0]} \
 		--interval {input.interval} \
 		--algo TNsnv --dbsnp {input.dbsnp} \
 		--tumor_sample {wildcards.Tumor} --normal_sample {params.normal} \
-		--call_stats_out {output.call_stats} --stdcov_out {output.coverage} {params.mt_sen} {output.vcf}.vcf
-	{params.vcforder} -i {output.vcf}.vcf -o {output.vcf}
-	rm -rf {output.vcf}.vcf
+		--call_stats_out {output.call_stats} --stdcov_out {output.coverage} {params.mt_sen} ${{LOCAL}}/{wildcards.Tumor}.vcf
+	{params.vcforder} -i ${{LOCAL}}/{wildcards.Tumor}.vcf -o {output.vcf}
+	#######################
+	"""
+############
+#       MuTect2
+############
+rule MuTect2:
+	input:
+		lambda wildcards: somaticPairs[wildcards.Tumor],
+		ref=config["reference"],
+		dbsnp=config["dbsnp"],
+		cosmic=config["cosmic"],
+		Twobit=config["reference"].replace('.fasta', '.2bit'),
+		interval=lambda wildcards: config['target_intervals'][pairedCapture[wildcards.Tumor]].replace("target","targetbp")
+	output:
+		vcf="{subject}/{TIME}/{Tumor}/calls/{Tumor}.MuTect2.raw.vcf",
+	params:
+		rulename = "MuTect2",
+		batch    = config[config['host']]["job_mutect"],
+		normal   = lambda wildcards: config['matched_normal'][wildcards.Tumor][0],
+		vcforder = NGS_PIPELINE + "/scripts/vcfOrderCol.R",
+		sentieon =config["sentieon"],
+		script2=NGS_PIPELINE+"/scripts/joinAdjacentSNPs.py",
+		mt_sen   ="--max_normal_alt_frac 0.05 --max_normal_alt_cnt 4 --min_base_qual 20 ",
+	shell: """
+	#######################
+	module load {params.sentieon}
+	sentieon driver --temp_dir ${{LOCAL}}/\
+		--read_filter MapQualFilter,min_map_qual=30 -t ${{THREADS}} -r {input.ref} \
+		-i {input[2]} -i {input[0]} \
+		--interval {input.interval} \
+		--algo TNhaplotyper --dbsnp {input.dbsnp} \
+		--tumor_sample {wildcards.Tumor} --normal_sample {params.normal} ${{LOCAL}}/{wildcards.Tumor}.vcf
+	{params.vcforder} -i ${{LOCAL}}/{wildcards.Tumor}.vcf -o ${{LOCAL}}/{wildcards.Tumor}.1.vcf
+	module load samtools
+	python {params.script2} -v ${{LOCAL}}/{wildcards.Tumor}.1.vcf -o {output.vcf} 1 {input[2]} {input.Twobit}	
+	#######################
+	"""
+############
+#	vcf2MAF on MuTect output
+############
+rule muTect2maf:
+	input:
+		vcf="{subject}/{TIME}/{sample}/calls/{sample}.{caller}.raw.vcf",
+		ref=config["reference"]
+	output:
+		"{subject}/{TIME}/{sample}/calls/{sample}.{caller}.maf",
+	version: config["vcf2maf"]
+	params:
+		rulename = "vcf2maf",
+		isoforms = config['mskcc_isoforms'],
+		batch    = config[config['host']]["job_HC_PLAT"],
+		VEP      = config['VEP'],
+		normal   = lambda wildcards: config['matched_normal'][wildcards.sample][0],
+	shell: """
+	#######################
+	module load vcf2maf/{version} samtools VEP/{params.VEP}
+	grep -P "#" {input.vcf} >${{LOCAL}}/input.vcf
+	grep -P "\\tPASS\\t" {input.vcf} >>${{LOCAL}}/input.vcf
+        vcf2maf.pl --input-vcf ${{LOCAL}}/input.vcf --output-maf ${{LOCAL}}/{wildcards.sample}.{wildcards.caller}.maf --tumor-id {wildcards.sample} --normal-id {params.normal} --ref-fasta {input.ref} --filter-vcf /fdb/VEP/89/cache/ExAC.r0.3.1.sites.vep.vcf.gz --vep-path  $VEPHOME --vep-forks ${{THREADS}} --vep-data $VEP_CACHEDIR --custom-enst {params.isoforms}
+        cp ${{LOCAL}}/{wildcards.sample}.{wildcards.caller}.maf {wildcards.subject}/{TIME}/{wildcards.sample}/calls/{wildcards.sample}.{wildcards.caller}.maf
 	#######################
 	"""
 ############

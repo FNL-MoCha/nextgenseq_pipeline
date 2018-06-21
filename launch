@@ -80,7 +80,7 @@ if (`hostname` =~ /cn/ or `hostname` =~ /biowulf.nih.gov/){
 		my $cmd = "(
 		export TMP=$NOW
 		export TIME=$time
-		module load snakemake/3.8.0
+		module load snakemake/4.5.1
 		export NGS_PIPELINE=$NGS_PIPELINE
 		export WORK_DIR=$workDir
 		export DATA_DIR=$dataDir
@@ -96,31 +96,8 @@ if (`hostname` =~ /cn/ or `hostname` =~ /biowulf.nih.gov/){
 	}
 	else{
 		`mkdir -p "$workDir/log/"`;
-		`sbatch -e $workDir/log/ngs-pipeline.e -o $workDir/log/ngs-pipeline.o --export=time=$mode,ngs=$NGS_PIPELINE,dataDir=$dataDir,workDir=$workDir,sheet=$sheet --cpus-per-task=1 --partition=ccr,norm --time=10-00:00:00 $NGS_PIPELINE/submit_snakemake.sh`;
-	}
-}
-elsif(`hostname` =~ /fr-s-hpc-head-1/){
-	if ($dryrun){
-		my $cmd= "(
-		export TMP=$NOW
-		export TIME=$time
-		module load snakemake/3.8.0
-		export NGS_PIPELINE=$NGS_PIPELINE
-		export WORK_DIR=$workDir
-		export DATA_DIR=$dataDir
-		export ACT_DIR=\"/Actionable/\"
-		export HOST=\"moab\"
-		SNAKEFILE=$NGS_PIPELINE/ngs_pipeline.rules
-		SAM_CONFIG=$sheet
-		snakemake --directory \$WORK_DIR --snakefile \$SNAKEFILE --configfile \$SAM_CONFIG --dryrun -p -r --ri -R RNASeq
-		rm -rf $workDir/ngs_pipeline_$NOW.csv
-		)";
-		print "$cmd\n";
-		exec "$cmd";
-	}
-	else{
-		`mkdir -p "$workDir/log/"`;
-		`qsub -W umask=022 -e $workDir/log/ngs-pipeline.e -o $workDir/log/ngs-pipeline.o -v time=$mode,ngs=$NGS_PIPELINE,dataDir=$dataDir,workDir=$workDir,sheet=$sheet -l nodes=1:ppn=1,mem=1gb,walltime=96:00:00 $NGS_PIPELINE/submit_snakemake.sh`
+		`sbatch -e $workDir/log/ngs-pipeline.e -o $workDir/log/ngs-pipeline.o --export=time=$mode,ngs=$NGS_PIPELINE,dataDir=$dataDir,workDir=$workDir,sheet=$sheet --cpus-per-task=1 --partition=norm --time=05-00:00:00 $NGS_PIPELINE/submit_snakemake.sh`;
+		#`sbatch -e $workDir/log/ngs-pipeline.e -o $workDir/log/ngs-pipeline.o --export=time=$mode,ngs=$NGS_PIPELINE,dataDir=$dataDir,workDir=$workDir,sheet=$sheet --cpus-per-task=1 --partition=norm --time=10:00:00 $NGS_PIPELINE/submit_snakemake.sh`;
 	}
 }
 else{
@@ -171,7 +148,7 @@ else{
 	#
 		export TMP="20160415"
 		export TIME="20160415"
-		module load snakemake/3.8.0
+		module load snakemake/4.5.1
                 export NGS_PIPELINE="/data/MoCha/patidarr/ngs_pipeline/"
                 export WORK_DIR="`pwd`"
                 export DATA_DIR="/data/MoCha/DATA/"

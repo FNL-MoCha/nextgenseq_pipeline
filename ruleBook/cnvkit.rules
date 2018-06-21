@@ -10,9 +10,9 @@ for subject in config['DNASeq']:
 					subCNV[subject]  =[subject+"/"+TIME+"/"+sample+"/cnvkit/"+sample+".seg"]
 				else:
 					subCNV[subject] +=[subject+"/"+TIME+"/"+sample+"/cnvkit/"+sample+".seg"]
-			else:
-				for sample in config['matched_normal']: 
-					TARGET +=[subject+"/"+TIME+"/"+sample+"/cnvkit/"+sample+".cnr"]
+#			else:
+#				for sample in config['matched_normal']: 
+#					TARGET +=[subject+"/"+TIME+"/"+sample+"/cnvkit/"+sample+".cnr"]
 ############
 #       cnvkit
 ############

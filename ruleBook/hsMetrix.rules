@@ -37,7 +37,7 @@ rule HSMetrics:
 		batch	= config[config['host']]["job_hsMetrics"],
 	shell: """
 	#######################
-	module load picard/{version}
+	module load picard/1.129
 	java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $PICARD_JAR CalculateHsMetrics BAIT_INTERVALS={input.probe_intervals} TARGET_INTERVALS={input.target_intervals} INPUT={input.bam} OUTPUT={output} METRIC_ACCUMULATION_LEVEL=ALL_READS REFERENCE_SEQUENCE={params.reference} QUIET=true  VALIDATION_STRINGENCY=SILENT
 	#######################
 	"""

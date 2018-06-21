@@ -35,6 +35,7 @@
 	"somaticActSites" : "hg19_SomaticActionableSites.txt",
 	"hotspot_call" : "hg19_hotspot_pos.txt",
 	"ACMG"	       : "hg19_ACMG.txt",
-	"gc50Base"     : "hg19.gc50Base.txt.gz"
+	"gc50Base"     : "hg19.gc50Base.txt.gz",
+	"gl_cancerAss" : "CancerAssociatedGenes.bed"
 
 }

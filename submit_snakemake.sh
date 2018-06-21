@@ -5,7 +5,7 @@
 # 
 # Usually slurm can translate the PBS varibles so no need to initialize the sbatch variables.
 #set -eo pipefail
-module load snakemake/3.8.0
+module load snakemake/4.5.1
 if [[ $time == 'd' ]]; then
 	export TIME="20160415"
 elif [[ $time == 'p' ]]; then
@@ -37,16 +37,14 @@ NOW=$(date +"%Y%m%d_%H%M%S")
 #export TIME=$(date +"%Y%m%d%H")
 export TMP="$NOW"
 if [[ `hostname` =~ "cn" ]] || [ `hostname` == 'biowulf.nih.gov' ]; then
-	#module load snakemake/3.5.5.nl
 	export HOST="biowulf.nih.gov"
 elif [[ `hostname` =~ "tghighmem" ]] || [[ `hostname` =~ "tgcompute" ]] || [ `hostname` == 'login01' ] ; then
-	#module load snakemake/3.5.5
 	export HOST="login01"
 elif [[ `hostname` =~ "fr-s-hpc-head-1" ]] ; then
 	export HOST="moab"
 else 
 	echo -e "Host `hostname` is not recognized\n"
-	echo -e "This pipeline is customized to run on biowulf.nih.gov or TGen Cluster @ KhanLab\n";
+	echo -e "This pipeline is customized to run on biowulf.nih.gov\n";
 	echo -e "If you would like to use it on another system, you have to change config/config_cluster.json and some hardcoded system dependencies\n";
 	exit;
 fi
@@ -60,7 +58,8 @@ fi
 export ACT_DIR="/Actionable/"
 SNAKEFILE=$NGS_PIPELINE/ngs_pipeline.rules
 
-cmd="--directory $WORK_DIR --snakefile $SNAKEFILE --configfile $SAM_CONFIG --jobscript $NGS_PIPELINE/scripts/jobscript.sh --jobname {params.rulename}.{jobid} --nolock  --ri -k -p -T -r -j 3000 --resources DeFuse=25 --resources SIFT=8 --stats ngs_pipeline_${NOW}.stats -R RNASeq "
+cmd="--directory $WORK_DIR --snakefile $SNAKEFILE --configfile $SAM_CONFIG --jobscript $NGS_PIPELINE/scripts/jobscript.sh --jobname {params.rulename}.{jobid} --nolock  --ri -k -p -T -r -j 3000 --resources DeFuse=25 --resources SIFT=8 --stats ngs_pipeline_${NOW}.stats -R RNASeq"
+#cmd="--directory $WORK_DIR --snakefile $SNAKEFILE --configfile $SAM_CONFIG --jobscript $NGS_PIPELINE/scripts/jobscript.sh --jobname {params.rulename}.{jobid} --nolock  --ri -k -p -T -r -j 3000 --resources DeFuse=25 --resources SIFT=8 --stats ngs_pipeline_${NOW}.stats -R RNASeq --restart-times 1"
 #cmd="--directory $WORK_DIR --snakefile $SNAKEFILE --configfile $SAM_CONFIG --jobscript $NGS_PIPELINE/scripts/jobscript.sh --jobname {params.rulename}.{jobid} --nolock  --ri -k -p -T -r -j 3000 --resources DeFuse=25 --resources SIFT=8 --stats ngs_pipeline_${NOW}.stats -R makeConfig RNASeq "
 umask 022
 if [ $HOST   == 'biowulf.nih.gov' ]; then

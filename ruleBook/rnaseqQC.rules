@@ -47,10 +47,15 @@ rule RNASeqQC_1:
 	params:
 		rulename  = "RnaSeqMetrics",
 		batch     = config[config['host']]["job_default"],
+		source    = lambda wildcards: config['source'][wildcards.sample],
 		diagnosis = lambda wildcards: config['diagnosis'][subject]
 	shell: """
 	#######################
-	perl {input.convertor} {wildcards.subject}/{TIME}/{wildcards.sample}/qc/fastqc/{wildcards.sample}_R1_fastqc/fastqc_data.txt {input.file2} {input.file1} {wildcards.subject} {wildcards.sample} "{params.diagnosis}" >{output}
+	human="NA"
+	if [[ {params.source} = 'PDX' ]]; then
+		human=`grep hg19 {wildcards.subject}/{TIME}/FQ/{wildcards.sample}_stat.txt|cut -f2`
+	fi	
+	perl {input.convertor} {wildcards.subject}/{TIME}/{wildcards.sample}/qc/fastqc/{wildcards.sample}_R1_fastqc/fastqc_data.txt {input.file2} {input.file1} {wildcards.subject} {wildcards.sample} "{params.diagnosis}" ${{human}} >{output}
 	#######################
 	"""
 rule RNASeqQC_2:
@@ -59,13 +64,11 @@ rule RNASeqQC_2:
 	output: 
 		txt="{subject}/{TIME}/qc/{subject}.RnaSeqQC.txt",
 		#plot="{subject}/{TIME}/qc/{subject}.transcriptCoverage.png"
-	version: config['version_R']
 	params:
 		rulename  = "QC_Sum",
 		batch     = config[config['host']]["job_covplot"]
 	shell: """
 	#######################
-	module load R/{version}
 	export LC_ALL=C
 	cat {input.files} |sort |uniq |sed -e '/^$/d'>{output.txt}
 	#######################

@@ -12,6 +12,6 @@ rule MANTIS:
 		batch    = config[config['host']]['job_MANTIS']
 	shell: """
 	#######################
-	python /data/MoCha/patidarr/MANTIS/mantis.py --bedfile /data/MoCha/patidarr/MANTIS/loci.bed --genome /data/MoCha/patidarr/ref/ucsc.hg19.fasta -n {input[2]} -t {input[0]} -o {wildcards.subject}/{TIME}/{wildcards.sample}/MANTIS/{wildcards.sample}.txt --threads ${{THREADS}}
+	python /data/MoCha/patidarr/MANTIS-1.0.4/mantis.py --bedfile /data/MoCha/patidarr/MANTIS/loci.bed --genome /data/MoCha/patidarr/ref/ucsc.hg19.fasta -n {input[2]} -t {input[0]} -o {wildcards.subject}/{TIME}/{wildcards.sample}/MANTIS/{wildcards.sample}.txt --threads ${{THREADS}}
 	#######################
 	"""

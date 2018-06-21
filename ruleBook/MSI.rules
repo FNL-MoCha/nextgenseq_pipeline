@@ -33,5 +33,6 @@ rule MSI:
 	echo "MSI calls start"
 	msi count_msi_samples /data/MoCha/patidarr/msings/MSI_BASELINE.v33.txt {wildcards.base}/{TIME}/{wildcards.sample}/MSI/ -m 2.0 -t 0.2 0.2 -o {wildcards.base}/{TIME}/{wildcards.sample}/MSI/{wildcards.sample}.MSI_Analysis.txt
 	rm -rf {wildcards.base}/{TIME}/{wildcards.sample}/MSI/{wildcards.sample}.pileup {wildcards.base}/{TIME}/{wildcards.sample}/MSI/{wildcards.sample}.output
+	dos2unix {wildcards.base}/{TIME}/{wildcards.sample}/MSI/{wildcards.sample}.MSI_Analysis.txt
 	#######################
 	"""

@@ -45,7 +45,7 @@ rule RNA_COOR:
 		"{subject}/{TIME}/qc/{subject}.RNASEQ_CoorelationHeatmap.pdf"
 	params:
 		rulename  ="coorlelationPlot",
-		batch     =config[config['host']]['job_RSEM'],
+		batch     =config[config['host']]['job_default'],
 		script1	  =NGS_PIPELINE+"/scripts/assemble_RNASEQ_gene.py",
 		script2   =NGS_PIPELINE+"/scripts/correlation_heatmap.R"
 	shell: """

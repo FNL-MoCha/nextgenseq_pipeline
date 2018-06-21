@@ -15,10 +15,8 @@
 	"rsemIndex"		: "/data/MoCha/patidarr/ref/Index/RSEM/hg19_UCSC_RefGene_rsem",
 	"reference"		: "/data/MoCha/patidarr/ref/ucsc.hg19.fasta",
 	"HLA"			: "/data/MoCha/patidarr/ref/HLA/",
-	"version_R"		: "3.4.0_gcc-4.9.1",
+	"version_R"		: "3.5.0",
 	"version_python"	: "2.7",
-	"version_blast"		: "2.5.0+",
-	"VEP"			: "86",
 	"IEDB"			: "/data/MoCha/patidarr/IEDB/",
 	"mskcc_isoforms"	: "/data/MoCha/patidarr/ref/annotation/isoform_overrides_at_mskcc",
 	"target_intervals"	:{

@@ -97,8 +97,7 @@ rule TOPHAT:
 		ref=config['Bowtie2Index']
 	shell: """
 	#######################
-	module load tophat/{version}
-	module load samtools/{params.samtools}
+	module load tophat/{version} bowtie samtools/{params.samtools}
 	tophat -p ${{THREADS}} -o ${{LOCAL}} --keep-fasta-order --rg-id {wildcards.sample} --no-coverage-search --rg-sample {wildcards.sample} --rg-library {wildcards.sample} --rg-platform ILLUMINA --fusion-search --fusion-min-dist 100000 --mate-inner-dist 84 --mate-std-dev 74 {params.ref} {input.R1} {input.R2}
 	cp -rf ${{LOCAL}}/* {wildcards.base}/{TIME}/{wildcards.sample}/tophat_{wildcards.sample}/
 	samtools index {wildcards.base}/{TIME}/{wildcards.sample}/tophat_{wildcards.sample}/accepted_hits.bam
@@ -280,7 +279,9 @@ rule FUSION_CATCHER:
 	#######################
 	module load fusioncatcher/{version}
 	fusioncatcher -p ${{THREADS}} -i {input.R1},{input.R2} -o ${{LOCAL}}/
-	cp ${{LOCAL}}/final-list_candidate-fusion-genes.GRCh37.txt {wildcards.base}/{TIME}/{wildcards.sample}/fusion/fusion-catcher.txt
+	cp ${{LOCAL}}/final-list_candidate-fusion-genes.txt {wildcards.base}/{TIME}/{wildcards.sample}/fusion/fusion-catcher.txt
+	cp ${{LOCAL}}/final-list_candidate-fusion-genes.hg19.txt {wildcards.base}/{TIME}/{wildcards.sample}/fusion/fusion-catcher.hg19.txt
+	cp ${{LOCAL}}/summary_candidate_fusions.txt {wildcards.base}/{TIME}/{wildcards.sample}/fusion/fusion-catcher-summary.txt
 	#######################
 	"""
 ############
@@ -303,7 +304,7 @@ rule DeFuse:
 		parallel = NGS_PIPELINE + "/scripts/parallel"
 	shell: """
 	#######################
-	module load defuse/{version}
+	module load defuse/{version} bowtie/1.2.2
 	export TMPDIR="${{LOCAL}}/temp/R"
 	export TMP="${{LOCAL}}/temp/R"
 	export TEMP="${{LOCAL}}/temp/R"
@@ -311,7 +312,7 @@ rule DeFuse:
 	gunzip -c {input.R1} >${{LOCAL}}/{wildcards.sample}_R1.fastq &
 	gunzip -c {input.R2} >${{LOCAL}}/{wildcards.sample}_R2.fastq &
 	wait
-	defuse.pl -c {params.defuse_config} \
+	defuse.pl --dataset /fdb/defuse/hg19_ens69_newgmap/\
 		-1 ${{LOCAL}}/{wildcards.sample}_R1.fastq\
 		-2 ${{LOCAL}}/{wildcards.sample}_R2.fastq\
 		-p ${{THREADS}} \
@@ -417,11 +418,13 @@ rule HapCall_RNASeq:
 	version: config["GATK"]
 	params:
 		rulename = "HC_RNA",
-		batch    = config[config['host']]["job_HC"]
+		sentieon  = config["sentieon"],
+		batch    = config[config['host']]["job_HC_R"]
 	shell: """
 	#######################
+	module load {params.sentieon}
+	sentieon driver -t ${{THREADS}} -r {input.ref} -i {input.bam} --algo Haplotyper --trim_soft_clip --call_conf 20 --emit_conf 20 -d {input.dbsnp} ${{LOCAL}}/{wildcards.sample}.vcf
 	module load GATK/{version}
-	java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -T HaplotypeCaller -R {input.ref} -I {input.bam} -o ${{LOCAL}}/{wildcards.sample}.vcf --dbsnp {input.dbsnp} -dontUseSoftClippedBases -stand_call_conf 30 -stand_emit_conf 30
 	java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -T VariantFiltration -R {input.ref} -V ${{LOCAL}}/{wildcards.sample}.vcf -window 35 -cluster 3 --filterExpression "FS > 30.0 || QD < 2" -filterName "RNASeqFilters_FS_QD" -o {output.vcf}
 	#######################
 	"""

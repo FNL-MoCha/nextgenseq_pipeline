@@ -1,6 +1,6 @@
 TARGET     += expand("{subject}/{TIME}/qc/{subject}.coveragePlot.png",TIME=TIME, subject=PATIENTS)
 TARGET     += expand("{subject}/{TIME}/qc/{subject}.hotspot_coverage.png", TIME=TIME, subject=PATIENTS)
-if 'subject' in config:
+if 'DNASeq' in config:
 	for subject in config['DNASeq']:
 		for library in config['DNASeq'][subject]:
 			if config['sample_captures'][library] not in config['Panel_List']:
@@ -63,7 +63,7 @@ rule BoxPlot_Hotspot:
 	shell: """
 	#######################
 	cp -f {input.covFiles} ${{LOCAL}}
-	module load R/{version}
+	module load R/3.4
 	R --vanilla --slave --silent --args ${{LOCAL}} {output} {wildcards.subject} <{input.boxplot}
 	#######################
 	"""

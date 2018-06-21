@@ -39,7 +39,7 @@ rule variantHeatmap_pileup:
 	params:
 		rulename  = "variantHeatmap",
 		script    = NGS_PIPELINE+"/scripts/mpileup.v1.pl",
-		batch     = config[config['host']]["job_copynumber"]
+		batch     = config[config['host']]["job_default"]
 	shell: """
 	#######################
 	module load samtools
@@ -57,14 +57,14 @@ rule variantHeatmap_Matrix:
 	params:
 		rulename  = "variantHeatmap",
 		script    = NGS_PIPELINE+"/scripts/heatmap.R",
-		batch     = config[config['host']]["job_copynumber"]
+		batch     = config[config['host']]["job_default"]
 	shell: """
 	#######################
 	module load R
-	paste {wildcards.subject}/{wildcards.TIME}/variantHeatmap/{wildcards.subject}.positions {input} >{output}
+	paste {wildcards.subject}/{wildcards.TIME}/variantHeatmap/{wildcards.subject}.positions {input} |sed -e 's/~WES//g' > {output}
 	sam=`awk '{{print NF}}' {output}|uniq`
 	if [ "${{sam}}" -gt 7 ]; then
 		{params.script} -s {wildcards.subject}
 	fi
 	#######################
-	"""		
+	"""

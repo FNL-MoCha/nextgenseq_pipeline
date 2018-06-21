@@ -24,14 +24,19 @@ rule QC:
                 bedtools        = config['bedtools'],
 		python		= config["version_python"],
 		tool_perl       = NGS_PIPELINE+ "/scripts/addAttributes.pl",
+		source		= lambda wildcards: config['source'][wildcards.sample],
                 batch           = config[config['host']]["job_c_QC"],
                 diagnosis       = lambda wildcards: config['diagnosis'][wildcards.base]
         shell:  """
         #######################
-        module load python/{params.python}
-        module load samtools/{version}
-        module load bedtools/{params.bedtools}
-        python {input.tool} {input.bam} {input.target_intervals} ${{LOCAL}} {wildcards.base} {wildcards.sample}  "{params.diagnosis}" `cat {input.gender}`> {output}.tmp
+	module load python/{params.python}
+	module load samtools/{version}
+	module load bedtools/{params.bedtools}
+	human="NA"
+	if [[ {params.source} = 'PDX' ]]; then
+		human=`grep hg19 {wildcards.base}/{TIME}/FQ/{wildcards.sample}_stat.txt|cut -f2`
+	fi
+	python {input.tool} {input.bam} {input.target_intervals} ${{LOCAL}} {wildcards.base} {wildcards.sample}  "{params.diagnosis}" `cat {input.gender}` `grep ^Total {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/{wildcards.sample}_R1_fastqc/fastqc_data.txt|cut -f2` ${{human}} > {output}.tmp
 	perl   {params.tool_perl} {wildcards.sample} {input.hsMatrix} {output}.tmp  {output}
 	rm -rf {output}.tmp
         #######################

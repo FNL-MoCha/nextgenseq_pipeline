@@ -5,6 +5,8 @@ if 'DNASeq' in config:
 			TARGET    += [subject+"/"+TIME+"/"+sample+"/calls/"+sample+".merged.vcf"]
 			TARGET    += [subject+"/"+TIME+"/"+sample+"/calls/"+sample+".variants.maf"]
 			TARGET    += [subject+"/"+TIME+"/"+sample+"/calls/"+sample+".genemed.vcf"]
+			if config['sample_type'][sample] == 'Normal':
+				TARGET    += [subject+"/"+TIME+"/"+sample+"/calls/"+sample+".oncology.vcf"]
 			if config['sample_type'][sample] == 'Tumor':
 				if subject not in CONSENSUS_VCF:
 					CONSENSUS_VCF[subject] =[subject+"/"+TIME+"/"+sample+"/calls/"+sample+".merged.vcf"]
@@ -21,7 +23,9 @@ rule Merge:
 		hc="{subject}/{TIME}/{sample}/calls/{sample}.HC_DNASeq.raw.vcf",
 		plat="{subject}/{TIME}/{sample}/calls/{sample}.Platypus.raw.vcf",
 		ref=config["reference"],
-		script=NGS_PIPELINE+"/scripts/reformatVCF.pl"
+		Twobit=config["reference"].replace('.fasta', '.2bit'),
+		script=NGS_PIPELINE+"/scripts/reformatVCF.pl",
+		script2=NGS_PIPELINE+"/scripts/joinAdjacentSNPs.py"
 	output:
 		vcf="{subject}/{TIME}/{sample}/calls/{sample}.merged.vcf"
 	version: config["GATK"]
@@ -30,7 +34,9 @@ rule Merge:
 		batch    = config[config['host']]["job_HC_PLAT"]
 	shell: """
 	#######################
-	perl {input.script} {input.hc} vcf >${{LOCAL}}/HC.vcf
+	module load samtools
+	python {input.script2} -v {input.hc} -o ${{LOCAL}}/HC.vcf.tmp 1 {wildcards.subject}/{wildcards.TIME}/{wildcards.sample}/{wildcards.sample}.bwa.final.bam {input.Twobit}	
+	perl {input.script} ${{LOCAL}}/HC.vcf.tmp vcf >${{LOCAL}}/HC.vcf
 	perl {input.script} {input.plat} vcf >${{LOCAL}}/PL.vcf
 
 	module load GATK/{version}
@@ -54,7 +60,10 @@ rule vcf2maf:
 	input: 
 		vcf="{subject}/{TIME}/{sample}/calls/{sample}.merged.vcf",
 		ref=config["reference"]
-	output: "{subject}/{TIME}/{sample}/calls/{sample}.variants.maf"
+	output: 
+		"{subject}/{TIME}/{sample}/calls/{sample}.variants.maf",
+		"{subject}/{TIME}/{sample}/calls/{sample}.merged.vep.vcf"
+	version: config["vcf2maf"]
 	params:
 		rulename = "vcf2maf",
 		isoforms = config['mskcc_isoforms'],
@@ -62,9 +71,9 @@ rule vcf2maf:
 		batch    = config[config['host']]["job_HC_PLAT"]
 	shell: """
 	#######################
-	module load vcf2maf/1.6.14 samtools
+	module load vcf2maf/{version} VEP/92
 	cp {input.vcf} /${{LOCAL}}/
-	vcf2maf.pl --input-vcf ${{LOCAL}}/{wildcards.sample}.merged.vcf --output-maf ${{LOCAL}}/{wildcards.sample}.variants.maf --tumor-id {wildcards.sample} --ref-fasta {input.ref} --filter-vcf /fdb/VEP/89/cache/ExAC.r0.3.1.sites.vep.vcf.gz --vep-path /usr/local/apps/VEP/ensembl-tools-release-86/scripts/variant_effect_predictor/ --vep-forks ${{THREADS}} --vep-data /fdb/VEP/86/cache/ --custom-enst {params.isoforms}
+	vcf2maf.pl --input-vcf ${{LOCAL}}/{wildcards.sample}.merged.vcf --output-maf ${{LOCAL}}/{wildcards.sample}.variants.maf --tumor-id {wildcards.sample} --ref-fasta {input.ref} --filter-vcf /fdb/VEP/89/cache/ExAC.r0.3.1.sites.vep.vcf.gz --vep-path $VEP_HOME/ --vep-forks ${{THREADS}} --vep-data $VEP_CACHEDIR --custom-enst {params.isoforms}
 	{params.script} ${{LOCAL}}/{wildcards.sample}.variants.maf >${{LOCAL}}/{wildcards.sample}.variants.filtered.maf
 	cp ${{LOCAL}}/{wildcards.sample}.merged.vep.vcf {wildcards.subject}/{TIME}/{wildcards.sample}/calls/
 	cp ${{LOCAL}}/{wildcards.sample}.variants.filtered.maf {wildcards.subject}/{TIME}/{wildcards.sample}/calls/{wildcards.sample}.variants.maf
@@ -75,17 +84,38 @@ rule vcf2maf:
 #######################
 rule GeneMed:
 	input:
-		vcf="{subject}/{TIME}/{sample}/calls/{sample}.merged.vcf",
+		vcf="{subject}/{TIME}/{sample}/calls/{sample}.merged.vep.vcf",
 		bed=config['MPACT_BED']
 	output:
 		"{subject}/{TIME}/{sample}/calls/{sample}.genemed.vcf"
 	params:
 		rulename ="GeneMed",
-		batch    = config[config['host']]["job_HC_PLAT"]
+		batch    = config[config['host']]["job_default"],
+		script   = NGS_PIPELINE+"/scripts/filter_vep.pl"
 	shell: """
 	#######################
 	module load bedtools
-	intersectBed -a {input.vcf} -b {input.bed} -u -header > {output}
+	intersectBed -a {input.vcf} -b {input.bed} -u -header |{params.script} - > {output}
+	#######################
+	"""
+#######################
+# VCF file with variants 33 genes, list provided by Anand Dutta
+# This is to be loaded on PDMR Germline Mutations Associated with Cancer (*.vcf)
+#######################
+rule GermlineMutationAssWithCancer:
+	input:
+		vcf="{subject}/{TIME}/{sample}/calls/{sample}.merged.vep.vcf",
+		bed=config["annovar_data"]+config["gl_cancerAss"]
+	output:
+		"{subject}/{TIME}/{sample}/calls/{sample}.oncology.vcf"
+	params:
+		rulename ="GermlineMutationAssWithCancer",
+		batch    = config[config['host']]["job_default"],
+		script   = NGS_PIPELINE+"/scripts/filter_vep.pl"
+	shell: """
+	#######################
+	module load bedtools
+	intersectBed -a {input.vcf} -b {input.bed} -u -header |{params.script} - > {output}
 	#######################
 	"""
 #######################
@@ -106,6 +136,7 @@ rule consensusVCF:
 	cp {input} ${{LOCAL}}/
 	a=`/bin/ls -1 ${{LOCAL}}/*.vcf |wc -l`
 	b=`echo ${{a}}-1|bc`
+	for file in ${{LOCAL}}/*.vcf; do sed -i 's/ID=AF,Number=1,Type=Integer/ID=AF,Number=1,Type=Float/g' ${{file}}; done
 	for file in ${{LOCAL}}/*.vcf; do bgzip -c ${{file}} >${{file}}.gz; tabix -p vcf ${{file}}.gz; done
 	#for file in ${{LOCAL}}/*.vcf; do bcftools annotate -x FORMAT/PL ${{file}} -o ${{file}}.gz -O z; tabix -p vcf ${{file}}.gz; done
 	bcftools merge  ${{LOCAL}}/*.vcf.gz -O z -o ${{LOCAL}}/merge.vcf.gz
@@ -122,6 +153,7 @@ rule vcf2maf_pat:
 		vcf="{subject}/{TIME}/{subject}.consensus.vcf",
 		ref=config["reference"]
 	output: "{subject}/{TIME}/{subject}.consensus.maf"
+	version: config['vcf2maf']
 	params:
 		rulename = "vcf2maf",
 		isoforms = config['mskcc_isoforms'],
@@ -129,9 +161,9 @@ rule vcf2maf_pat:
 		batch    = config[config['host']]["job_HC_PLAT"]
 	shell: """
 	#######################
-	module load vcf2maf/1.6.14 samtools
+	module load vcf2maf/{version} VEP/92
 	cp {input.vcf} /${{LOCAL}}/
-	vcf2maf.pl --input-vcf ${{LOCAL}}/{wildcards.subject}.consensus.vcf --output-maf ${{LOCAL}}/{wildcards.subject}.consensus.maf --tumor-id {wildcards.subject} --ref-fasta {input.ref} --filter-vcf /fdb/VEP/89/cache/ExAC.r0.3.1.sites.vep.vcf.gz --vep-path /usr/local/apps/VEP/ensembl-tools-release-86/scripts/variant_effect_predictor/ --vep-forks ${{THREADS}} --vep-data /fdb/VEP/86/cache/ --custom-enst {params.isoforms}
+	vcf2maf.pl --input-vcf ${{LOCAL}}/{wildcards.subject}.consensus.vcf --output-maf ${{LOCAL}}/{wildcards.subject}.consensus.maf --tumor-id {wildcards.subject} --ref-fasta {input.ref} --filter-vcf /fdb/VEP/89/cache/ExAC.r0.3.1.sites.vep.vcf.gz --vep-path $VEP_HOME/ --vep-forks ${{THREADS}} --vep-data $VEP_CACHEDIR --custom-enst {params.isoforms}
 	{params.script} ${{LOCAL}}/{wildcards.subject}.consensus.maf >${{LOCAL}}/{wildcards.subject}.consensus.filtered.maf
 	cp ${{LOCAL}}/{wildcards.subject}.consensus.vep.vcf {wildcards.subject}/{TIME}/
 	cp ${{LOCAL}}/{wildcards.subject}.consensus.filtered.maf {wildcards.subject}/{TIME}/{wildcards.subject}.consensus.maf
