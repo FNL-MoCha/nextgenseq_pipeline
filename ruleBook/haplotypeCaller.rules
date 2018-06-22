@@ -15,7 +15,7 @@ rule HAPCALLER:
 	#######################
 	module -q load {params.sentieon} 2>/dev/null
 	echo "Using Sentieon"
-	sentieon driver -t ${{THREADS}} -r {input.ref} -i {input.bam} --interval {input.interval} --algo Haplotyper -d {input.dbsnp} --min_base_qual 20 --min_map_qual 30 ${{LOCAL}}/{wildcards.sample}.HC_DNASeq.raw.vcf
+	sentieon driver --temp_dir ${{LOCAL}}/ -t ${{THREADS}} -r {input.ref} -i {input.bam} --interval {input.interval} --algo Haplotyper -d {input.dbsnp} --min_base_qual 20 --min_map_qual 30 ${{LOCAL}}/{wildcards.sample}.HC_DNASeq.raw.vcf
 	cp ${{LOCAL}}/{wildcards.sample}.HC_DNASeq.raw.vcf {output.vcf}
 	#######################
 	"""

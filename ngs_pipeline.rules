@@ -85,18 +85,14 @@ for sample in config['library'].keys():
 				FQ[sample] =[DATA_DIR+fq+"/"+fq+"_R1.fastq.gz", DATA_DIR+fq+"/"+fq+"_R2.fastq.gz"]
 			elif os.path.isfile(DATA_DIR+"Sample_"+fq+"/Sample_"+fq+"_R1.fastq.gz"):
 				FQ[sample] =[DATA_DIR+"Sample_"+fq+"/Sample_"+fq+"_R1.fastq.gz", DATA_DIR+"Sample_"+fq+"/Sample_"+fq+"_R2.fastq.gz"]
-			elif os.path.exists(DATA_DIR+fq+"/"):
-				R1=glob.glob(DATA_DIR+fq+"/*_R1*.fastq.gz")
-				R2=glob.glob(DATA_DIR+fq+"/*_R2*.fastq.gz")
+			elif os.path.exists(DATA_DIR+fq):
+				R1=glob.glob(DATA_DIR+fq)
 				FQ[sample] =[]
 				FQ[sample].extend(R1)
-				FQ[sample].extend(R2)
-			elif os.path.exists(DATA_DIR+"Sample_"+fq+"/"):
-				R1=glob.glob(DATA_DIR+"Sample_"+fq+"/*_R1*.fastq.gz")
-				R2=glob.glob(DATA_DIR+"Sample_"+fq+"/*_R2*.fastq.gz")
+			elif os.path.exists(DATA_DIR+"Sample_"+fq):
+				R1=glob.glob(DATA_DIR+"Sample_"+fq)
 				FQ[sample] =[]
 				FQ[sample].extend(R1)
-				FQ[sample].extend(R2)
 			else:
 				print("#####################################")
 				print("")
@@ -257,7 +253,7 @@ if 'matched_rnaseq' in config:
 			# Its possible to have Matched RNASeq, i.e. Tumor only sequencing (Exome/RNA) but missing Corrosponding Normal
 			#print(Tumor, "Corrosponding RNASeq found but matched Normal not found")
 ###########################################################################
-localrules: Pipeline, RNASeq, IGV_Session, DBinput, AttachAnnotation, symlink_tophatBam, copyNovoBam, Actionable_Germline, Actionable_RNAseq, Actionable_Somatic, Actionable_Variants,  makeConfig, TargetInterval, QC_Summary_Patient,QC_Summary,UnionSomaticCalls,TOPHAT_LINK, SampleGT,QC_Sum, FormatInput, RNASeqQC_1,RNASeqQC1 RNASeqQC_2,RNASeqQC_3, Cuff_Mat
+localrules: Pipeline, RNASeq, IGV_Session, DBinput, AttachAnnotation, Actionable_Germline, Actionable_RNAseq, Actionable_Somatic, Actionable_Variants,  makeConfig, QC_Summary_Patient,QC_Summary,UnionSomaticCalls,TOPHAT_LINK, SampleGT,QC_Sum, FormatInput, RNASeqQC2,RNASeqQC3, Cuff_Mat
 #Circos, CoveragePlot, BoxPlot_Hotspot, makeConfig,Ideogram
 ###########################################################################
 #				Include Rule Book			  #
@@ -289,7 +285,7 @@ include: NGS_PIPELINE +"/ruleBook/UnionSomaticMutations.rules"
 include: NGS_PIPELINE +"/ruleBook/plots.rules"
 include: NGS_PIPELINE +"/ruleBook/annot.rules"
 include: NGS_PIPELINE +"/ruleBook/featureCount.rules"
-include: NGS_PIPELINE +"/ruleBook/Sequenza.rules"
+#include: NGS_PIPELINE +"/ruleBook/Sequenza.rules"
 include: NGS_PIPELINE +"/ruleBook/cnvkit.rules"
 include: NGS_PIPELINE +"/ruleBook/MethlySeq.rules"
 include: NGS_PIPELINE +"/ruleBook/RSEM.rules"
@@ -400,41 +396,45 @@ rule bbsplit:
 		work_dir =  WORK_DIR
 	shell: """
 	#######################
-	R1=`echo "{input.R}" |sed -e 's/ /\\n/g' |grep "_R1"`
-	R2=`echo "${{R1}}" |sed -e 's/_R2/_R1/g'`	
-
-	count=`echo {input.R}|grep -o _R1 |wc -l`
-	echo "#########${{count}}#########"
-	if [ ${{count}} == '1' ] ; then
+	if [ -d {input[0]} ]; then
+		echo "This is a directory"
+		name=`basename {input[0]}`
+		obj_get -v MoCha ${{name}}_R1.fastq.gz --directory ${{LOCAL}}/
+		obj_get -v MoCha ${{name}}_R2.fastq.gz --directory ${{LOCAL}}/
+		
 		if [ {params.source} == 'PDX' ]; then
 			module load bbtools/{version}
-			bbtools bbsplit build=1 -Xmx${{MEM}}g path={input.ref} in1={input.R[0]} in2={input.R[1]} basename={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_%_#.fastq.gz refstats={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_stat.txt
+			bbtools bbsplit build=1 -Xmx${{MEM}}g path={input.ref} in1=${{LOCAL}}/${{name}}_R1.fastq.gz in2=${{LOCAL}}/${{name}}_R2.fastq.gz basename={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_%_#.fastq.gz refstats={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_stat.txt
 			mv -f {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_1.fastq.gz {output.R1} 
 			mv -f {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_2.fastq.gz {output.R2}
+			rm -rf {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_mm10_?.fastq.gz
 		else
-			echo "This is what I should be running normally 1 "
-			ln -sf {input.R[0]} {params.work_dir}/{output.R1}
-			ln -sf {input.R[1]} {params.work_dir}/{output.R2}
+			cp ${{LOCAL}}/${{name}}_R1.fastq.gz {params.work_dir}/{output.R1}
+			cp ${{LOCAL}}/${{name}}_R1.fastq.gz {params.work_dir}/{output.R2}
 		fi
 	else
-		zcat ${{R1}} |gzip >{output.R1} &
-		zcat ${{R2}} |gzip >{output.R2} &
-		wait
+		echo "Files are already here"
+		R2=`echo "{input[0]}" |sed -e 's/_R1/_R2/g'`
 		if [ {params.source} == 'PDX' ]; then
 			module load bbtools/{version}
-			bbtools bbsplit build=1 -Xmx${{MEM}}g path={input.ref} in1={output.R1} in2={output.R2} basename={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_%_#.fastq.gz refstats={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_stat.txt
+			bbtools bbsplit build=1 -Xmx${{MEM}}g path={input.ref} in1={input[0]} in2=${{R2}} basename={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_%_#.fastq.gz refstats={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_stat.txt
 			mv -f {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_1.fastq.gz {output.R1}
-                	mv -f {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_2.fastq.gz {output.R2}
-		fi
-	fi
-	
+			mv -f {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_2.fastq.gz {output.R2}
+			rm -rf {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_mm10_?.fastq.gz
+		else
+			cp {input[0]} {params.work_dir}/{output.R1}
+			cp ${{R2}}    {params.work_dir}/{output.R2}
+		fi	
+	fi		
 	#######################
 	"""
 ############
 #	FASTQC
 ############
 rule FASTQC:
-	input: R=lambda wildcards: FQ[wildcards.sample]
+	input:
+		R1 = "{base}/{TIME}/FQ/{sample}_R1.fastq.gz",
+		R2 = "{base}/{TIME}/FQ/{sample}_R2.fastq.gz",
 	output:
 		"{base}/{TIME}/{sample}/qc/fastqc/{sample}_R1_fastqc.html",
 		"{base}/{TIME}/{sample}/qc/fastqc/{sample}_R2_fastqc.html"
@@ -445,16 +445,14 @@ rule FASTQC:
 	shell: """
 	#######################
 	module load fastqc/{version}
-	R1=`echo "{input.R}" |sed -e 's/ /\\n/g' |grep "_R1"`
-	R2=`echo "{input.R}" |sed -e 's/ /\\n/g' |grep "_R2"`
-
-	echo "Working on ${{R1}}"
-	zcat ${{R1}} |fastqc --extract -t ${{THREADS}} -o {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/ -d ${{LOCAL}} /dev/stdin
+	
+	echo "Working on {input.R1}"
+	zcat {input.R1} |fastqc --extract -t ${{THREADS}} -o {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/ -d ${{LOCAL}} /dev/stdin
 	mv -f {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/stdin_fastqc.html {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/{wildcards.sample}_R1_fastqc.html
 	mv -f {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/stdin_fastqc      {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/{wildcards.sample}_R1_fastqc
 	mv -f {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/stdin_fastqc.zip  {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/{wildcards.sample}_R1_fastqc.zip
-	echo "Working on ${{R2}}"
-	zcat ${{R2}} |fastqc --extract -t ${{THREADS}} -o {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/ -d ${{LOCAL}} /dev/stdin
+	echo "Working on {input.R2}"
+	zcat {input.R2} |fastqc --extract -t ${{THREADS}} -o {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/ -d ${{LOCAL}} /dev/stdin
 	mv -f {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/stdin_fastqc.html {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/{wildcards.sample}_R2_fastqc.html
 	mv -f {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/stdin_fastqc      {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/{wildcards.sample}_R2_fastqc
 	mv -f {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/stdin_fastqc.zip  {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/{wildcards.sample}_R2_fastqc.zip
@@ -742,9 +740,9 @@ rule GATK:
 	#######################
 	module load {params.sentieon}
 	echo "Using Sentieon"
-	sentieon driver -t ${{THREADS}} -r {input.ref} -i {input.bam} --algo Realigner -k {input.phase1} -k {input.mills} ${{LOCAL}}/{wildcards.sample}.lr.bam
-	sentieon driver -t ${{THREADS}} -r {input.ref} -i ${{LOCAL}}/{wildcards.sample}.lr.bam --algo QualCal -k {input.phase1} -k {input.mills} ${{LOCAL}}/{wildcards.sample}.recalibration.matrix.txt
-	sentieon driver -t ${{THREADS}} -r {input.ref} -i ${{LOCAL}}/{wildcards.sample}.lr.bam -q ${{LOCAL}}/{wildcards.sample}.recalibration.matrix.txt --algo QualCal -k {input.phase1} -k {input.mills} ${{LOCAL}}/{wildcards.sample}.recalibrationPost.matrix.txt --algo ReadWriter ${{LOCAL}}/{wildcards.sample}.bwa.final.bam
+	sentieon driver --temp_dir ${{LOCAL}}/ -t ${{THREADS}} -r {input.ref} -i {input.bam} --algo Realigner -k {input.phase1} -k {input.mills} ${{LOCAL}}/{wildcards.sample}.lr.bam
+	sentieon driver --temp_dir ${{LOCAL}}/ -t ${{THREADS}} -r {input.ref} -i ${{LOCAL}}/{wildcards.sample}.lr.bam --algo QualCal -k {input.phase1} -k {input.mills} ${{LOCAL}}/{wildcards.sample}.recalibration.matrix.txt
+	sentieon driver --temp_dir ${{LOCAL}}/ -t ${{THREADS}} -r {input.ref} -i ${{LOCAL}}/{wildcards.sample}.lr.bam -q ${{LOCAL}}/{wildcards.sample}.recalibration.matrix.txt --algo QualCal -k {input.phase1} -k {input.mills} ${{LOCAL}}/{wildcards.sample}.recalibrationPost.matrix.txt --algo ReadWriter ${{LOCAL}}/{wildcards.sample}.bwa.final.bam
 	cp ${{LOCAL}}/{wildcards.sample}.bwa.final.bam {output.bam}
 	cp ${{LOCAL}}/{wildcards.sample}.bwa.final.bam.bai {output.index}
 

@@ -21,7 +21,7 @@ rule GATK_R1:
         shell: """
         #######################
         module load {params.sentieon}
-        sentieon driver -r {input.ref} -t ${{THREADS}} -i {input.bam} --algo RNASplitReadsAtJunction --reassign_mapq 255:60 {output.bam}
+        sentieon driver --temp_dir ${{LOCAL}}/ -r {input.ref} -t ${{THREADS}} -i {input.bam} --algo RNASplitReadsAtJunction --reassign_mapq 255:60 {output.bam}
 
         #module load GATK/{version}    
         #java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -T SplitNCigarReads -R {input.ref} -I {input.bam} -o {output.bam} -rf ReassignOneMappingQuality -RMQF 255 -RMQT 60 -U ALLOW_N_CIGAR_READS
@@ -37,7 +37,8 @@ rule GATK_R2:
                 phase1=config["1000G_phase1"],
                 mills=config["Mills_and_1000G"]
         output:
-                intervals=temp("{base}/{TIME}/{sample}/{sample}.star.realignment.intervals"),
+                bam=temp("{base}/{TIME}/{sample}/{sample}.star.lr.bam"),
+                index=temp("{base}/{TIME}/{sample}/{sample}.star.lr.bam.bai"),
         version: config["GATK"]
         params:
                 rulename  = "gatk_R2",
@@ -45,41 +46,14 @@ rule GATK_R2:
                 batch     = config[config['host']]["job_gatk_R2"]
         shell: """
         #######################
-        touch {output.intervals}
-        #module load GATK/{version}
-        #java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -T RealignerTargetCreator -nt ${{THREADS}} -R {input.ref} -known {input.phase1} -known {input.mills} -I {input.bam} -o {output.intervals}
-        ######################
-        """
-############
-#       GATK Best Practices
-############
-rule GATK_R3:
-        input:  bam="{base}/{TIME}/{sample}/{sample}.star.trim.bam",
-                bai="{base}/{TIME}/{sample}/{sample}.star.trim.bam.bai",
-		intervals="{base}/{TIME}/{sample}/{sample}.star.realignment.intervals",
-                ref=config["reference"],
-                phase1=config["1000G_phase1"],
-                mills=config["Mills_and_1000G"]
-        output:
-                bam=temp("{base}/{TIME}/{sample}/{sample}.star.lr.bam"),
-                index=temp("{base}/{TIME}/{sample}/{sample}.star.lr.bam.bai"),
-        version: config["GATK"]
-        params:
-                rulename  = "gatk_R3",
-                sentieon  = config["sentieon"],
-                batch     = config[config['host']]["job_gatk_R3"]
-        shell: """
-        #######################
         module load {params.sentieon}
-        sentieon driver -r {input.ref}  -t ${{THREADS}} -i {input.bam} --algo Realigner -k {input.mills}  -k {input.phase1} {output.bam}
-        #module load GATK/{version}
-        #java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -T IndelRealigner -R {input.ref} -known {input.phase1} -known {input.mills} -I {input.bam} --targetIntervals {input.intervals} -o {output.bam}
+        sentieon driver --temp_dir ${{LOCAL}}/  -r {input.ref}  -t ${{THREADS}} -i {input.bam} --algo Realigner -k {input.mills}  -k {input.phase1} {output.bam}
 	######################
         """
 ############
 #       GATK Best Practices
 ############
-rule GATK_R4:
+rule GATK_R3:
         input:  bam="{base}/{TIME}/{sample}/{sample}.star.lr.bam",
                 bai="{base}/{TIME}/{sample}/{sample}.star.lr.bam.bai",
                 ref=config["reference"],
@@ -89,21 +63,19 @@ rule GATK_R4:
                 mat=temp("{base}/{TIME}/{sample}/{sample}.star.recalibration.matrix.txt"),
         version: config["GATK"]
         params:
-                rulename  = "gatk_R4",
+                rulename  = "gatk_R3",
                 sentieon  = config["sentieon"],
-                batch     = config[config['host']]["job_gatk_R4"]
+                batch     = config[config['host']]["job_gatk_R3"]
         shell: """
         #######################
 	module load {params.sentieon}
-	sentieon driver -r {input.ref} -t ${{THREADS}} -i {input.bam} --algo QualCal -k {input.phase1} -k {input.mills} {output.mat}
-        #module load GATK/{version}
-        #java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -T BaseRecalibrator -R {input.ref} -knownSites {input.phase1} -knownSites {input.mills} -I {input.bam} -o {output.mat}
+	sentieon driver --temp_dir ${{LOCAL}}/ -r {input.ref} -t ${{THREADS}} -i {input.bam} --algo QualCal -k {input.phase1} -k {input.mills} {output.mat}
         ######################
         """
 ############
 #       GATK Best Practices
 ############
-rule GATK_R5:
+rule GATK_R4:
         input:  bam="{base}/{TIME}/{sample}/{sample}.star.lr.bam",
                 bai="{base}/{TIME}/{sample}/{sample}.star.lr.bam.bai",
 		mat="{base}/{TIME}/{sample}/{sample}.star.recalibration.matrix.txt",
@@ -115,15 +87,12 @@ rule GATK_R5:
                 index="{base}/{TIME}/{sample}/{sample}.star.final.bam.bai",
         version: config["GATK"]
         params:
-                rulename  = "gatk_R5",
+                rulename  = "gatk_R4",
                 sentieon  = config["sentieon"],
-                batch     = config[config['host']]["job_gatk_R5"]
+                batch     = config[config['host']]["job_gatk_R4"]
         shell: """
         #######################
 	module load {params.sentieon}
-	sentieon driver -t ${{THREADS}} -r {input.ref} -i {input.bam} -q {input.mat} --algo QualCal -k {input.phase1} -k {input.mills} ${{LOCAL}}/{wildcards.sample}.recalibrationPost.matrix.txt --algo ReadWriter {output.bam}	
-        #module load GATK/{version}
-        #java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -nct ${{THREADS}} -T PrintReads -R {input.ref} -I {input.bam} -o {output.bam} -BQSR {input.mat}
-        #mv {wildcards.base}/{TIME}/{wildcards.sample}/{wildcards.sample}.star.final.bai {output.index}
+	sentieon driver --temp_dir ${{LOCAL}}/ -t ${{THREADS}} -r {input.ref} -i {input.bam} -q {input.mat} --algo QualCal -k {input.phase1} -k {input.mills} ${{LOCAL}}/{wildcards.sample}.recalibrationPost.matrix.txt --algo ReadWriter {output.bam}	
         ######################
         """

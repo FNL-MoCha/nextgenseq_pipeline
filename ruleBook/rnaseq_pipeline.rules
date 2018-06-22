@@ -397,7 +397,7 @@ rule STAR:
 	VALIDATION_STRINGENCY=SILENT\
 	INPUT={wildcards.sample}_pass2Aligned.out.sam\
 	OUTPUT={params.home}/{wildcards.base}/{TIME}/{wildcards.sample}/{wildcards.sample}.star.bam\
-	SORT_ORDER=coordinate RGLB={wildcards.sample} RGPU={wildcards.sample} RGPL=ILLUMINA RGSM={wildcards.sample} RGCN=khanlab
+	SORT_ORDER=coordinate RGLB={wildcards.sample} RGPU={wildcards.sample} RGPL=ILLUMINA RGSM={wildcards.sample} RGCN=MoCha
 
 	echo "Finished Step 5"
 	module load samtools/{params.samtools}
@@ -423,9 +423,7 @@ rule HapCall_RNASeq:
 	shell: """
 	#######################
 	module load {params.sentieon}
-	sentieon driver -t ${{THREADS}} -r {input.ref} -i {input.bam} --algo Haplotyper --trim_soft_clip --call_conf 20 --emit_conf 20 -d {input.dbsnp} ${{LOCAL}}/{wildcards.sample}.vcf
-	module load GATK/{version}
-	java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $GATK_JAR -T VariantFiltration -R {input.ref} -V ${{LOCAL}}/{wildcards.sample}.vcf -window 35 -cluster 3 --filterExpression "FS > 30.0 || QD < 2" -filterName "RNASeqFilters_FS_QD" -o {output.vcf}
+	sentieon driver --temp_dir ${{LOCAL}}/ -t ${{THREADS}} -r {input.ref} -i {input.bam} --algo Haplotyper --trim_soft_clip --call_conf 20 --emit_conf 20 -d {input.dbsnp} ${{LOCAL}}/{wildcards.sample}.vcf
 	#######################
 	"""
 ############

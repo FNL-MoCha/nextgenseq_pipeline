@@ -36,7 +36,7 @@ rule RNASeqQC1:
 	java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $PICARD_JAR CollectAlignmentSummaryMetrics VALIDATION_STRINGENCY=SILENT REFERENCE_SEQUENCE={params.ref} INPUT={input.bam} OUTPUT={output.table} ADAPTER_SEQUENCE=null
 	#######################
 	"""
-rule RNASeqQC_1:
+rule RNASeqQC2:
 	input:
 		"{subject}/{TIME}/{sample}/qc/fastqc/{sample}_R1_fastqc.html",
 		file1="{subject}/{TIME}/{sample}/qc/{sample}.RnaSeqMetrics.txt",
@@ -58,7 +58,7 @@ rule RNASeqQC_1:
 	perl {input.convertor} {wildcards.subject}/{TIME}/{wildcards.sample}/qc/fastqc/{wildcards.sample}_R1_fastqc/fastqc_data.txt {input.file2} {input.file1} {wildcards.subject} {wildcards.sample} "{params.diagnosis}" ${{human}} >{output}
 	#######################
 	"""
-rule RNASeqQC_2:
+rule RNASeqQC3:
 	input : files=lambda wildcards: SUB_QC[wildcards.subject],
 		convertor=NGS_PIPELINE+"/scripts/transcript_coverage.R"
 	output: 
@@ -73,7 +73,7 @@ rule RNASeqQC_2:
 	cat {input.files} |sort |uniq |sed -e '/^$/d'>{output.txt}
 	#######################
 	"""
-rule RNASeqQC_3:
+rule RNASeqQC4:
 	input : RNA_QC_ALL
 	output: "RnaSeqQC.txt"
 	params:

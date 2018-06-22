@@ -8,7 +8,7 @@ rule PLATYPUS:
 	output:
 		vcf="{subject}/{TIME}/{sample}/calls/{sample}.Platypus.raw.vcf"
 	version: config["platypus"]
-	log: "log/platypus.{subject}"
+	log: "log/platypus.{subject}.{TIME}.{sample}"
 	params:
 		rulename = "PLAT",
 		batch    = config[config['host']]["job_platypus"]
