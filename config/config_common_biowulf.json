@@ -68,6 +68,7 @@
 	"msi_interval"		: "/data/MoCha/patidarr/ref/MSI/SS.v5.native.msi_intervals",
 	"msi_baseline"		: "/data/MoCha/patidarr/ref/MSI/MSI_BASELINE.txt",
 	"rRNA_interval"		: "/data/MoCha/patidarr/ref/GTF/rRNA_interval_file",
+	"hugo_list"		: "/data/MoCha/patidarr/ref/hugo_entrez.txt",
 	"GTF"			: {
 				"ENS" : "/data/MoCha/patidarr/ref/GTF/06302016_ensembl.gtf",
 				"UCSC": "/data/MoCha/patidarr/ref/GTF/06302016_refseq.gtf"

@@ -1,0 +1,69 @@
+if 'DNASeq' in config:
+	for subject in config['DNASeq']:
+		for sample in config['DNASeq'][subject]:
+			if config['sample_type'][sample] == 'Tumor':
+				TARGET    += [subject+"/"+TIME+"/oncoKB/"+subject+".maf"]
+				TARGET    += [subject+"/"+TIME+"/oncoKB/"+subject+".cnv"]
+				TARGET    += [subject+"/"+TIME+"/oncoKB/"+subject+".oncoKB.clinical.txt"]
+rule oncoKB_MAF:
+	input:
+		maf="{subject}/{TIME}/{subject}.consensus.maf",
+	output:
+		maf="{subject}/{TIME}/oncoKB/{subject}.maf",
+		clinical="{subject}/{TIME}/oncoKB/{subject}.clinical.txt"
+	params:
+		rulename  = "oncoKB",
+		batch     = config[config['host']]["job_default"],
+		work_dir  =  WORK_DIR,
+		diagnosis = lambda wildcards: config['diagnosis'][wildcards.subject]
+	shell: """
+	#######################
+	echo -e "SAMPLE_ID\\tONCOTREE_CODE" >{output.clinical}
+	echo -e "{wildcards.subject}\\t{params.diagnosis}" >>{output.clinical}
+	ssh -q helix.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/oncokb-annotator/MafAnnotator.py -i {input.maf} -o {output.maf} -t {params.diagnosis}'
+	#######################
+	"""
+
+rule oncoKB_CNV:
+	input:
+		lambda wildcards: subCNV[wildcards.subject]
+	output:
+		cnv="{subject}/{TIME}/oncoKB/{subject}.cnv",
+	params:
+		rulename  = "oncoKB",
+		batch     = config[config['host']]["job_default"],
+		work_dir  = WORK_DIR,
+		hugo      = config["hugo_list"],
+		script    = NGS_PIPELINE+"/scripts/processCNA.pl",
+		script2   = NGS_PIPELINE+"/scripts/filterCNA.pl",
+		diagnosis = lambda wildcards: config['diagnosis'][wildcards.subject]
+	shell: """
+	#######################
+	for file in {input}
+	do	
+		name=`basename ${{file}} .seg`
+		perl {params.script} {wildcards.subject}/{TIME}/${{name}}/cnvkit/${{name}}.cns {params.hugo} ${{name}} >{wildcards.subject}/{TIME}/oncoKB/${{name}}.tmp.cnv.txt
+	done
+	paste {params.hugo} {wildcards.subject}/{TIME}/oncoKB/*.tmp.cnv.txt |perl {params.script2} - {wildcards.subject} >{wildcards.subject}/{TIME}/oncoKB/{wildcards.subject}.cnv.txt
+	rm -rf {wildcards.subject}/{TIME}/oncoKB/*.tmp.cnv.txt
+	ssh -q helix.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/oncokb-annotator/CnaAnnotator.py -i {wildcards.subject}/{TIME}/oncoKB/{wildcards.subject}.cnv.txt -o {output.cnv} -t {params.diagnosis}'
+	rm -rf {wildcards.subject}/{TIME}/oncoKB/{wildcards.subject}.cnv.txt
+	#######################
+	"""
+
+rule oncoKB_Summary:
+	input:
+		maf="{subject}/{TIME}/oncoKB/{subject}.maf",
+		clinical="{subject}/{TIME}/oncoKB/{subject}.clinical.txt",
+		cnv="{subject}/{TIME}/oncoKB/{subject}.cnv"
+	output:
+		clinical="{subject}/{TIME}/oncoKB/{subject}.oncoKB.clinical.txt",
+	params:
+		rulename  = "oncoKB",
+		batch     = config[config['host']]["job_default"],
+		work_dir  = WORK_DIR,
+	shell: """
+	#######################
+	ssh -q helix.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/oncokb-annotator/ClinicalDataAnnotator.py -i {input.clinical} -o {output.clinical} -a {input.maf},{input.cnv}'
+	#######################
+	"""

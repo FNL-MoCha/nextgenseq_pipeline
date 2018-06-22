@@ -258,6 +258,7 @@ localrules: Pipeline, RNASeq, IGV_Session, DBinput, AttachAnnotation, Actionable
 ###########################################################################
 #				Include Rule Book			  #
 ###########################################################################
+include: NGS_PIPELINE +"/ruleBook/oncoKB.annotator.rules"
 include: NGS_PIPELINE +"/ruleBook/MAGGIE.rules"
 include: NGS_PIPELINE +"/ruleBook/ROH.rules"
 include: NGS_PIPELINE +"/ruleBook/variantsHeatmap.rules"
@@ -316,7 +317,7 @@ onerror:
         shell("find .snakemake/ ! -readable -prune -group $USER -exec chgrp -f {GROUP} {{}} \;")
 	shell("find {PATIENTS} -group $USER -exec chgrp -f {GROUP} {{}} \;")
 	shell("find {PATIENTS} \( -type f -user $USER -exec chmod g+rw {{}} \; \) , \( -type d -user $USER -exec chmod g+rwx {{}} \; \)")
-	shell("ssh {HOST} \"echo 'ngs-pipeline version {VERSION} failed on {PATIENTS}. Error occured on {HOST}. Working Dir:  {WORK_DIR}' |mutt -s ' ngs-pipeline Status' `whoami`@mail.nih.gov \"")
+	shell("ssh -q {HOST} \"echo 'ngs-pipeline version {VERSION} failed on {PATIENTS}. Error occured on {HOST}. Working Dir:  {WORK_DIR}' |mutt -s ' ngs-pipeline Status' `whoami`@mail.nih.gov \"")
 	shell("find .snakemake/ ! -readable -prune -group $USER -exec chgrp -f {GROUP} {{}} \;")
 onstart:
 	f = open('ngs_pipeline_%s.csv' % NOW , 'w')
@@ -326,7 +327,7 @@ onstart:
 		print (subject,diagnosis,TIME,sep='\t', end='\n',file=f)
 	
 	shell("for sub in {PATIENTS}; do rm -rf {WORK_DIR}/${{sub}}/{TIME}/successful.txt ; done")
-	shell("ssh {HOST} \"echo 'ngs-pipeline version {VERSION} started on {PATIENTS} on {HOST}. Working Dir:  {WORK_DIR}' |mutt -s ' ngs-pipeline Status' `whoami`@mail.nih.gov \"")
+	shell("ssh -q {HOST} \"echo 'ngs-pipeline version {VERSION} started on {PATIENTS} on {HOST}. Working Dir:  {WORK_DIR}' |mutt -s ' ngs-pipeline Status' `whoami`@mail.nih.gov \"")
 onsuccess:
 	shell("find .snakemake/ ! -readable -prune \( -type f -user $USER -exec chmod g+r {{}} \; \) , \( -type d -user $USER -exec chmod g+rwx {{}} \; \)")
 	shell("find .snakemake/ ! -readable -prune -group $USER -exec chgrp -f {GROUP} {{}} \;")
@@ -360,7 +361,7 @@ rule Pipeline:
 		chmod g+rw {WORK_DIR}/${{sub}}/{TIME}/successful.txt 	
 		chgrp {params.group} {WORK_DIR}/${{sub}}/{TIME}/successful.txt
         done
-	ssh {params.host} "{params.mail} --location {WORK_DIR} --host {params.host} --head --version {version} {WORK_DIR}/ngs_pipeline_{NOW}.csv |mutt -e \\\"my_hdr Content-Type: text/html\\\" -s ' ngs-pipeline Status' `whoami`@mail.nih.gov"
+	ssh -q {params.host} "{params.mail} --location {WORK_DIR} --host {params.host} --head --version {version} {WORK_DIR}/ngs_pipeline_{NOW}.csv |mutt -e \\\"my_hdr Content-Type: text/html\\\" -s ' ngs-pipeline Status' `whoami`@mail.nih.gov"
 	rm -rf {WORK_DIR}/ngs_pipeline_{NOW}.csv
 	#######################
 	"""
@@ -573,7 +574,7 @@ rule SampleGT:
 	sed -i 's/Sample_//g' {wildcards.subject}/{TIME}/qc/{wildcards.subject}.genotyping.txt
 	sed -i 's/.bwa//g' {wildcards.subject}/{TIME}/qc/{wildcards.subject}.genotyping.txt
 	sed -i 's/.star//g' {wildcards.subject}/{TIME}/qc/{wildcards.subject}.genotyping.txt
-	ssh {params.host} "sh {params.mail_tool} --name {wildcards.subject} --diagnosis '{params.diagnosis}' --head {WORK_DIR}/{wildcards.subject}/{TIME}/qc/{wildcards.subject}.genotyping.txt | mutt -e \\\"my_hdr Content-Type: text/html\\\" -s 'Genotyping Result on {wildcards.subject}' `whoami`@mail.nih.gov {params.mail} "
+	ssh -q {params.host} "sh {params.mail_tool} --name {wildcards.subject} --diagnosis '{params.diagnosis}' --head {WORK_DIR}/{wildcards.subject}/{TIME}/qc/{wildcards.subject}.genotyping.txt | mutt -e \\\"my_hdr Content-Type: text/html\\\" -s 'Genotyping Result on {wildcards.subject}' `whoami`@mail.nih.gov {params.mail} "
 	#######################
 	"""
 ############
