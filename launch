@@ -80,7 +80,7 @@ if (`hostname` =~ /cn/ or `hostname` =~ /biowulf.nih.gov/){
 		my $cmd = "(
 		export TMP=$NOW
 		export TIME=$time
-		module load snakemake/4.5.1
+		module load snakemake/5.1.3
 		export NGS_PIPELINE=$NGS_PIPELINE
 		export WORK_DIR=$workDir
 		export DATA_DIR=$dataDir
@@ -148,7 +148,7 @@ else{
 	#
 		export TMP="20160415"
 		export TIME="20160415"
-		module load snakemake/4.5.1
+		module load snakemake/5.1.3
                 export NGS_PIPELINE="/data/MoCha/patidarr/ngs_pipeline/"
                 export WORK_DIR="`pwd`"
                 export DATA_DIR="/data/MoCha/DATA/"

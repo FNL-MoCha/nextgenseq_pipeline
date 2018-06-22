@@ -5,7 +5,7 @@
 # 
 # Usually slurm can translate the PBS varibles so no need to initialize the sbatch variables.
 #set -eo pipefail
-module load snakemake/4.5.1
+module load snakemake/5.1.3
 if [[ $time == 'd' ]]; then
 	export TIME="20160415"
 elif [[ $time == 'p' ]]; then
