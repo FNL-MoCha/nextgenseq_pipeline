@@ -424,6 +424,7 @@ rule HapCall_RNASeq:
 	#######################
 	module load {params.sentieon}
 	sentieon driver --temp_dir ${{LOCAL}}/ -t ${{THREADS}} -r {input.ref} -i {input.bam} --algo Haplotyper --trim_soft_clip --call_conf 20 --emit_conf 20 -d {input.dbsnp} ${{LOCAL}}/{wildcards.sample}.vcf
+	cp ${{LOCAL}}/{wildcards.sample}.vcf {output.vcf}
 	#######################
 	"""
 ############

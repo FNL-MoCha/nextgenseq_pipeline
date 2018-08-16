@@ -286,7 +286,7 @@ include: NGS_PIPELINE +"/ruleBook/UnionSomaticMutations.rules"
 include: NGS_PIPELINE +"/ruleBook/plots.rules"
 include: NGS_PIPELINE +"/ruleBook/annot.rules"
 include: NGS_PIPELINE +"/ruleBook/featureCount.rules"
-#include: NGS_PIPELINE +"/ruleBook/Sequenza.rules"
+include: NGS_PIPELINE +"/ruleBook/Sequenza.rules"
 include: NGS_PIPELINE +"/ruleBook/cnvkit.rules"
 include: NGS_PIPELINE +"/ruleBook/MethlySeq.rules"
 include: NGS_PIPELINE +"/ruleBook/RSEM.rules"
@@ -411,11 +411,12 @@ rule bbsplit:
 			rm -rf {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_mm10_?.fastq.gz
 		else
 			cp ${{LOCAL}}/${{name}}_R1.fastq.gz {params.work_dir}/{output.R1}
-			cp ${{LOCAL}}/${{name}}_R1.fastq.gz {params.work_dir}/{output.R2}
+			cp ${{LOCAL}}/${{name}}_R2.fastq.gz {params.work_dir}/{output.R2}
 		fi
 	else
-		echo "Files are already here"
+		echo "Files are still here"
 		R2=`echo "{input[0]}" |sed -e 's/_R1/_R2/g'`
+		obj_put -v MoCha --force --progressbar {input[0]} ${{R2}}
 		if [ {params.source} == 'PDX' ]; then
 			module load bbtools/{version}
 			bbtools bbsplit build=1 -Xmx${{MEM}}g path={input.ref} in1={input[0]} in2=${{R2}} basename={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_%_#.fastq.gz refstats={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_stat.txt
@@ -426,6 +427,8 @@ rule bbsplit:
 			cp {input[0]} {params.work_dir}/{output.R1}
 			cp ${{R2}}    {params.work_dir}/{output.R2}
 		fi	
+		rm -rf {input[0]} ${{R2}}
+		touch {params.work_dir}/{output.R1} {params.work_dir}/{output.R2}
 	fi		
 	#######################
 	"""
@@ -574,7 +577,10 @@ rule SampleGT:
 	sed -i 's/Sample_//g' {wildcards.subject}/{TIME}/qc/{wildcards.subject}.genotyping.txt
 	sed -i 's/.bwa//g' {wildcards.subject}/{TIME}/qc/{wildcards.subject}.genotyping.txt
 	sed -i 's/.star//g' {wildcards.subject}/{TIME}/qc/{wildcards.subject}.genotyping.txt
-	ssh -q {params.host} "sh {params.mail_tool} --name {wildcards.subject} --diagnosis '{params.diagnosis}' --head {WORK_DIR}/{wildcards.subject}/{TIME}/qc/{wildcards.subject}.genotyping.txt | mutt -e \\\"my_hdr Content-Type: text/html\\\" -s 'Genotyping Result on {wildcards.subject}' `whoami`@mail.nih.gov {params.mail} "
+	lines=$(cat {wildcards.subject}/{TIME}/qc/{wildcards.subject}.genotyping.txt|wc -l)
+	if [ ${{lines}}  -gt 2 ]; then
+		ssh -q {params.host} "sh {params.mail_tool} --name {wildcards.subject} --diagnosis '{params.diagnosis}' --head {WORK_DIR}/{wildcards.subject}/{TIME}/qc/{wildcards.subject}.genotyping.txt | mutt -e \\\"my_hdr Content-Type: text/html\\\" -s 'Genotyping Result on {wildcards.subject}' `whoami`@mail.nih.gov {params.mail} "
+	fi
 	#######################
 	"""
 ############
@@ -836,8 +842,9 @@ rule muTect2maf:
 	params:
 		rulename = "vcf2maf",
 		isoforms = config['mskcc_isoforms'],
-		batch    = config[config['host']]["job_HC_PLAT"],
+		batch    = config[config['host']]["job_vcf2maf"],
 		VEP      = config['VEP'],
+		script   = NGS_PIPELINE+"/scripts/filterMAF.pl",
 		normal   = lambda wildcards: config['matched_normal'][wildcards.sample][0],
 	shell: """
 	#######################
@@ -845,7 +852,7 @@ rule muTect2maf:
 	grep -P "#" {input.vcf} >${{LOCAL}}/input.vcf
 	grep -P "\\tPASS\\t" {input.vcf} >>${{LOCAL}}/input.vcf
         vcf2maf.pl --input-vcf ${{LOCAL}}/input.vcf --output-maf ${{LOCAL}}/{wildcards.sample}.{wildcards.caller}.maf --tumor-id {wildcards.sample} --normal-id {params.normal} --ref-fasta {input.ref} --filter-vcf /fdb/VEP/89/cache/ExAC.r0.3.1.sites.vep.vcf.gz --vep-path  $VEPHOME --vep-forks ${{THREADS}} --vep-data $VEP_CACHEDIR --custom-enst {params.isoforms}
-        cp ${{LOCAL}}/{wildcards.sample}.{wildcards.caller}.maf {wildcards.subject}/{TIME}/{wildcards.sample}/calls/{wildcards.sample}.{wildcards.caller}.maf
+        {params.script} ${{LOCAL}}/{wildcards.sample}.{wildcards.caller}.maf {wildcards.subject}/{TIME}/{wildcards.sample}/calls/{wildcards.sample}.{wildcards.caller}.maf
 	#######################
 	"""
 ############

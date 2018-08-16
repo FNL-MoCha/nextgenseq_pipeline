@@ -3,13 +3,11 @@ if 'matched_normal' in config:
 	if len(config['matched_normal']) > 0:
 		for Tumor in config['matched_normal']:
 			for Normal in config['matched_normal'][Tumor]:
-				if config['sample_captures'][Tumor] not in config['Panel_List']:
-					SequenzaPairs[Tumor] = ["{subject}/{TIME}/{sample}/{sample}.mpileup.gz".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[Normal], sample=Normal), "{subject}/{TIME}/{sample}/{sample}.mpileup.gz".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[Tumor], sample=Tumor) ]
+				SequenzaPairs[Tumor] = ["{subject}/{TIME}/{sample}/{sample}.mpileup.gz".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[Normal], sample=Normal), "{subject}/{TIME}/{sample}/{sample}.mpileup.gz".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[Tumor], sample=Tumor) ]
 	for sample in config['matched_normal'].keys():
 		subject=SAMPLE_TO_SUBJECT[sample]
-		if config['sample_captures'][sample] not in config['Panel_List']:
-			TARGET +=[subject+"/"+TIME+"/"+sample+"/sequenza/"+sample+"/"+sample+"_alternative_fit.pdf"]	
-			TARGET +=[subject+"/"+TIME+"/"+sample+"/sequenza/"+sample+".txt"]
+		TARGET +=[subject+"/"+TIME+"/"+sample+"/sequenza/"+sample+"/"+sample+"_alternative_fit.pdf"]	
+		TARGET +=[subject+"/"+TIME+"/"+sample+"/sequenza/"+sample+".txt"]
 
 ############
 #       GenotypeFile

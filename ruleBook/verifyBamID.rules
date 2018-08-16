@@ -47,6 +47,7 @@ rule conpair_pile:
 	shell: """
 	#######################
 	module load conpair/{version}
+	module load python
 	run_gatk_pileup_for_sample.py -B {input.bam} -O {output} -R {input.ref} -M {input.marker}
 	#######################
 	"""
@@ -65,7 +66,7 @@ rule conpair_concod:
 		batch    = config[config['host']]["job_default"]
 	shell: """
 	#######################
-	module load conpair/{version}
+	module load conpair/{version} python
 	verify_concordance.py -T {input[0]} -N {input[1]} -O {output} -C 20 -Q 30 -B 20 -M {input.marker}
 	#######################
 	"""
@@ -86,6 +87,7 @@ rule conpair_conta:
 	shell: """
 	#######################
 	module load conpair/{version}
+	module load python
 	estimate_tumor_normal_contamination.py -T {input[0]} -N {input[1]} -O {output} -Q 30 -M {input.marker}
 	sed -i 's/Tumor sample contamination level: /{wildcards.Tumor}\\t/g' {output}
 	sed -i 's/Normal sample contamination level: /{params.normal}\\t/g' {output}

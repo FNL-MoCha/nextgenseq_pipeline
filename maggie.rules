@@ -24,7 +24,8 @@ PATH="/data/MoCha/processedDATA/MAGGIE/"
 PAT_FILES = {}
 
 PATIENT ={}
-F=sorted(glob.glob(PATH+"/*WES.codingsynon.sorted.vcf.gz"),key=len)
+#F=glob.glob(PATH+"*WES*gz")
+F=sorted(glob.glob(PATH+"*WES*gz"))
 for files in F:
 	column = files.split("~")
 	patient=column[0].split("/")
@@ -33,7 +34,7 @@ for files in F:
 		if patient[5] not in  PAT_FILES:
 			PAT_FILES[patient[5]] =[files]
 		
-F=sorted(glob.glob(PATH+"/*RNASEQ.codingsynon.sorted.vcf.gz"),key=len)
+F=sorted(glob.glob(PATH+"*RNASEQ*gz"))
 for files in F:
 	column = files.split("~")
 	patient=column[0].split("/")
@@ -42,7 +43,7 @@ for files in F:
 		PAT_FILES[patient[5]] =[files]
 
 #################################
-localrules: Final
+#localrules: Final
 #################################
 rule Final:
 	input:	PATIENT.values()
