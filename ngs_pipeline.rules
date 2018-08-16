@@ -852,7 +852,7 @@ rule muTect2maf:
 	grep -P "#" {input.vcf} >${{LOCAL}}/input.vcf
 	grep -P "\\tPASS\\t" {input.vcf} >>${{LOCAL}}/input.vcf
         vcf2maf.pl --input-vcf ${{LOCAL}}/input.vcf --output-maf ${{LOCAL}}/{wildcards.sample}.{wildcards.caller}.maf --tumor-id {wildcards.sample} --normal-id {params.normal} --ref-fasta {input.ref} --filter-vcf /fdb/VEP/89/cache/ExAC.r0.3.1.sites.vep.vcf.gz --vep-path  $VEPHOME --vep-forks ${{THREADS}} --vep-data $VEP_CACHEDIR --custom-enst {params.isoforms}
-        {params.script} ${{LOCAL}}/{wildcards.sample}.{wildcards.caller}.maf {wildcards.subject}/{TIME}/{wildcards.sample}/calls/{wildcards.sample}.{wildcards.caller}.maf
+        {params.script} ${{LOCAL}}/{wildcards.sample}.{wildcards.caller}.maf > {wildcards.subject}/{TIME}/{wildcards.sample}/calls/{wildcards.sample}.{wildcards.caller}.maf
 	#######################
 	"""
 ############
