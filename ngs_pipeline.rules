@@ -45,22 +45,6 @@ MEM=`echo "${{SLURM_MEM_PER_NODE}} / 1024 "|bc`
 LOCAL="/lscratch/${{SLURM_JOBID}}/"
 THREADS=${{SLURM_CPUS_ON_NODE}}
 """)
-#module purge
-#if [ {HOST} == 'biowulf.nih.gov' ]
-#	then
-#		MEM=`echo "${{SLURM_MEM_PER_NODE}} / 1024 "|bc`
-#		LOCAL="/lscratch/${{SLURM_JOBID}}/"
-#		THREADS=${{SLURM_CPUS_ON_NODE}}
-#elif [ {HOST} == 'login01' ]
-#	then
-#		module load slurm
-#		module load gcc/4.8.1
-#		MEM=`scontrol show job ${{SLURM_JOB_ID}} | grep "MinMemoryNode"| perl -n -e'/MinMemoryNode=(\d*)G/ && print $1'`
-#		mkdir -p /projects/scratch/ngs_pipeline_{NOW}_${{SLURM_JOB_ID}}/
-#		LOCAL="/projects/scratch/ngs_pipeline_{NOW}_${{SLURM_JOB_ID}}/"
-#		THREADS=`scontrol show job ${{SLURM_JOB_ID}} | grep  "MinCPUsNode" | perl -n -e'/MinCPUsNode=(\d*)/ && print $1'`
-#fi
-#""")
 ###########################################################################
 #
 #			Conversion
@@ -151,9 +135,6 @@ TARGET     += ["{subject}/{TIME}/{sample}/qc/{sample}.bwa.hotspot.depth".format(
 TARGET     += ["{subject}/{TIME}/{sample}/qc/{sample}.bwa.gt".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in SAMPLES]
 TARGET     += ["{subject}/{TIME}/{sample}/qc/{sample}.gender".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in SAMPLES]
 TARGET     += expand("{subject}/{TIME}/qc/{subject}.genotyping.txt", TIME=TIME, subject=PATIENTS)
-TARGET     += expand("{subject}/{TIME}/annotation/AnnotationInput.coding.rare.txt", TIME=TIME, subject=PATIENTS)
-TARGET     += expand("{subject}/{TIME}/annotation/{subject}.Annotations.coding.rare.txt", TIME=TIME, subject=PATIENTS)
-#TARGET     += expand("{subject}/{TIME}/igv/session_{subject}.xml", TIME=TIME, subject=PATIENTS)
 
 if len(config['matched_normal']) > 0:
 	for Tumor in config['matched_normal']:
@@ -162,98 +143,13 @@ if len(config['matched_normal']) > 0:
 			NormalBam  = "{subject}/{TIME}/{sample}/{sample}.bwa.final".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[Normal], sample=Normal)
 			pairedCapture[Tumor] = config['sample_captures'][Tumor]
 			somaticPairs[Tumor] = [TumorBam + ".bam" , TumorBam + ".bam.bai", NormalBam + ".bam", NormalBam + ".bam.bai"]
-###########################################################################
-# This is to make list of DB file list. (germline, variants, somatic, rnaseq)
-SUBJECT_ANNO = dict([(key, {}) for key in PATIENTS])
-def add_to_SUBJECT_ANNO(subject, category, file_list):
-	if category not in SUBJECT_ANNO[subject]:
-		SUBJECT_ANNO[subject][category] = file_list
-	else:
-		SUBJECT_ANNO[subject][category].extend(file_list)
-###########################################################################
-SUBJECT_VCFS = {}
-SOMATIC =[]
-###########################################################################
-# This is to find out if we need to make variants db file or germline file.
-ACT_TYPE =[]
-DECIDE_GL={}
-for subject in config['DNASeq'].keys():
-	normal = None
-	tumor  = None
-	pair   = None
-	for sample in config['DNASeq'][subject]:
-		if config['sample_type'][sample] == 'Tumor':
-			tumor = 'yes'
-			if sample in config['matched_normal'].keys():
-				pair  = 'yes'
-		elif config['sample_type'][sample] == 'Normal':
-			normal = 'yes'
-	if pair =='yes':
-		DECIDE_GL[subject] = 'gl_only'
-	elif pair == None:
-		if tumor == None and normal =='yes':
-			DECIDE_GL[subject] = 'gl_only'
-		else:
-			ACT_TYPE +=[subject]
-##########################################################################
-# To create lists to be filled in SUBJECT_ANNO
-for subject in config['DNASeq']:
-	local  = []
-	for sample in config['DNASeq'][subject]:
-		local.extend([(subject+"/"+TIME+"/"+sample+"/calls/"+sample+".HC_DNASeq.snpEff.txt"),
-			      (subject+"/"+TIME+"/"+sample+"/calls/"+sample+".Platypus.snpEff.txt")
-			    ])
-	if subject not in SUBJECT_VCFS:
-		SUBJECT_VCFS[subject] = local
-	if subject in ACT_TYPE:
-		germline = [w.replace('snpEff','annotated') for w in local]
-		add_to_SUBJECT_ANNO(subject,"variants",germline)
-	else:
-		germline = [w.replace('snpEff','annotated') for w in local]
-		add_to_SUBJECT_ANNO(subject,"germline",germline)
-	TARGET.extend(local)	
 for sample in config['matched_normal'].keys():
 	local  = []
 	subject=SAMPLE_TO_SUBJECT[sample]
 	TARGET += [subject+"/"+TIME+"/"+sample+"/calls/"+sample+".MuTect.maf"],
 	TARGET += [subject+"/"+TIME+"/"+sample+"/calls/"+sample+".MuTect2.maf"],
-	local.extend(
-		[ (subject+"/"+TIME+"/"+sample+"/calls/"+sample+".MuTect.snpEff.txt"),
-		  (subject+"/"+TIME+"/"+sample+"/calls/"+sample+".strelka.snvs.snpEff.txt"),
-		  (subject+"/"+TIME+"/"+sample+"/calls/"+sample+".strelka.indels.snpEff.txt")
-		]
-	)
-	SOMATIC     +=[subject+"/"+TIME+"/"+sample+"/calls/"+sample+".MuTect.annotated.txt"]
-	SOMATIC     +=[subject+"/"+TIME+"/"+sample+"/calls/"+sample+".strelka.snvs.annotated.txt"]
-	SOMATIC     +=[subject+"/"+TIME+"/"+sample+"/calls/"+sample+".strelka.indels.annotated.txt"]
-	TARGET.extend(SOMATIC)
-	if subject in SUBJECT_VCFS:
-		SUBJECT_VCFS[subject].extend(local)
-	somatic = [w.replace('snpEff','annotated') for w in local]
-	if sample in config['matched_rnaseq']:
-		somatic = [w.replace('MuTect.annotated','MuTect.annotated.expressed') for w in somatic]
-		somatic = [w.replace('strelka.snvs.annotated','strelka.snvs.annotated.expressed') for w in somatic]
-		somatic = [w.replace('strelka.indels.annotated','strelka.indels.annotated.expressed') for w in somatic]
-	add_to_SUBJECT_ANNO(subject,"somatic",somatic)
 ###########################################################################
-###########################################################################
-# Expressed Mutations
-expressedPairs = {}
-if 'matched_rnaseq' in config:
-	if len(config['matched_rnaseq']) > 0:
-		for Tumor in config['matched_rnaseq']:
-			if Tumor in config['matched_normal'].keys():
-				for RNASample in config['matched_rnaseq'][Tumor]:
-					subject=SAMPLE_TO_SUBJECT[Tumor]
-					RNASeqBam    = subject + "/"+TIME+ "/" + RNASample + "/calls/"+RNASample + ".HC_RNASeq.snpEff.txt"
-					expressedPairs[Tumor] = RNASeqBam
-					TARGET += ["{subject}/{TIME}/{sample}/calls/{sample}.MuTect.annotated.expressed.txt".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[Tumor],  sample=Tumor)]
-					TARGET += ["{subject}/{TIME}/{sample}/calls/{sample}.strelka.snvs.annotated.expressed.txt".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[Tumor], sample=Tumor)]
-					TARGET += ["{subject}/{TIME}/{sample}/calls/{sample}.strelka.indels.annotated.expressed.txt".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[Tumor], sample=Tumor)]
-			# Its possible to have Matched RNASeq, i.e. Tumor only sequencing (Exome/RNA) but missing Corrosponding Normal
-			#print(Tumor, "Corrosponding RNASeq found but matched Normal not found")
-###########################################################################
-localrules: Pipeline, RNASeq, IGV_Session, DBinput, AttachAnnotation, Actionable_Germline, Actionable_RNAseq, Actionable_Somatic, Actionable_Variants,  makeConfig, QC_Summary_Patient,QC_Summary,UnionSomaticCalls,TOPHAT_LINK, SampleGT,QC_Sum, FormatInput, RNASeqQC2,RNASeqQC3, Cuff_Mat
+localrules: Pipeline, RNASeq, makeConfig, QC_Summary_Patient,QC_Summary,UnionSomaticCalls,TOPHAT_LINK, SampleGT,QC_Sum, RNASeqQC2,RNASeqQC3, Cuff_Mat
 #Circos, CoveragePlot, BoxPlot_Hotspot, makeConfig,Ideogram
 ###########################################################################
 #				Include Rule Book			  #
@@ -294,23 +190,6 @@ include: NGS_PIPELINE +"/ruleBook/RSEM.rules"
 #include: NGS_PIPELINE +"/ruleBook/PyClone.rules"
 ###########################################################################
 # we have to do it this way as some samples may not have rna or tumor     #
-###########################################################################
-for subject in SUBJECT_ANNO.keys():
-	for group in SUBJECT_ANNO[subject].keys():
-		#TARGET +=[subject+"/"+TIME+"/"+subject+"/db/"+subject+"."+group]
-		#TARGET +=[subject+"/"+TIME+ACT_DIR+subject+"."+group+".actionable.txt"]
-		for varFile in SUBJECT_ANNO[subject][group]:
-			TARGET.append(varFile)
-###########################################################################
-
-
-
-for subject in SUBJECT_VCFS.keys():
-	for vcf in SUBJECT_VCFS[subject]:
-		vcf = vcf.replace('snpEff.txt', 'raw.vcf')
-		TARGET +=[vcf]
-		vcf = vcf.replace('raw.vcf', 'raw.snpEff.vcf')
-		TARGET +=[vcf]
 ###########################################################################
 onerror:
 	shell("find .snakemake/ ! -readable -prune \( -type f -user $USER -exec chmod g+rw {{}} \; \) , \( -type d -user $USER -exec chmod g+rwx {{}} \; \)")
@@ -892,148 +771,148 @@ rule Strelka:
 ############
 #	snpEff
 ############
-rule SNPEff:
-	input:
-		vcf="{subject}/{TIME}/{sample}/calls/{base}.raw.vcf",
-		ref=config["reference"],
-	output:
-		eff="{subject}/{TIME}/{sample}/calls/{base}.raw.snpEff.vcf"
-	version: config["snpEff"]
-	params:
-		rulename      ="snpEff",
-		batch	      =config[config['host']]["job_snpeff"],
-		snpEff_genome =config["snpEff_genome"],
-		snpEff_config=NGS_PIPELINE + "/Tools_config/"+config["snpEff_config"],
-		annovar       =config["annovar"]
-	shell: """
-	#######################
-	module load snpEff/{version}
-	java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $SNPEFF_JARPATH/SnpSift.jar dbnsfp -c {params.snpEff_config} -a {input.vcf} | java -Xmx${{MEM}}g -jar $SNPEFF_JARPATH/snpEff.jar -t -canon {params.snpEff_genome} > {output.eff}
-	#######################
-	"""
+#rule SNPEff:
+#	input:
+#		vcf="{subject}/{TIME}/{sample}/calls/{base}.raw.vcf",
+#		ref=config["reference"],
+#	output:
+#		eff="{subject}/{TIME}/{sample}/calls/{base}.raw.snpEff.vcf"
+#	version: config["snpEff"]
+#	params:
+#		rulename      ="snpEff",
+#		batch	      =config[config['host']]["job_snpeff"],
+#		snpEff_genome =config["snpEff_genome"],
+#		snpEff_config=NGS_PIPELINE + "/Tools_config/"+config["snpEff_config"],
+#		annovar       =config["annovar"]
+#	shell: """
+#	#######################
+#	module load snpEff/{version}
+#	java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $SNPEFF_JARPATH/SnpSift.jar dbnsfp -c {params.snpEff_config} -a {input.vcf} | java -Xmx${{MEM}}g -jar $SNPEFF_JARPATH/snpEff.jar -t -canon {params.snpEff_genome} > {output.eff}
+#	#######################
+#	"""
 ############
 #       vcf2txt
 ############
-rule VCF2TXT:
-	input:
-		eff="{subject}/{TIME}/{sample}/calls/{base}.raw.snpEff.vcf",
-		vcf2txt=NGS_PIPELINE + "/scripts/vcf2txt.pl"
-	output:
-		txt="{subject}/{TIME}/{sample}/calls/{base}.snpEff.txt"
-	params:
-		rulename      ="vcf2txt",
-		batch         =config[config['host']]["job_default"],
-		annovar       =config["annovar"]
-	shell: """
-	#######################
-	module load annovar/{params.annovar}
-	perl {input.vcf2txt} {input.eff} ${{LOCAL}} >{output.txt}
-	#######################
-	"""
+#rule VCF2TXT:
+#	input:
+#		eff="{subject}/{TIME}/{sample}/calls/{base}.raw.snpEff.vcf",
+#		vcf2txt=NGS_PIPELINE + "/scripts/vcf2txt.pl"
+#	output:
+#		txt="{subject}/{TIME}/{sample}/calls/{base}.snpEff.txt"
+#	params:
+#		rulename      ="vcf2txt",
+#		batch         =config[config['host']]["job_default"],
+#		annovar       =config["annovar"]
+#	shell: """
+#	#######################
+#	module load annovar/{params.annovar}
+#	perl {input.vcf2txt} {input.eff} ${{LOCAL}} >{output.txt}
+#	#######################
+#	"""
 ############
 #	MakeList
 ############
-rule FormatInput:
-	input:
-		txtFiles=lambda wildcards: SUBJECT_VCFS[wildcards.subject],
-		#hotspot ="{subject}/{TIME}/{subject}/db/{subject}.hotspot",
-		convertor= NGS_PIPELINE + "/scripts/MakeAnnotationInputs.pl"
-	output:
-		temp("{subject}/{TIME}/annotation/AnnotationInput.anno"),
-		temp("{subject}/{TIME}/annotation/AnnotationInput.sift")
-	version: config["annovar"]
-	params:
-		rulename   = "FormatInput",
-		batch      = config[config['host']]["job_default"],
-		fAEV       = NGS_PIPELINE + "/scripts/findAlreadyExistingVariants.pl"
-	shell: """
-	#######################
-	module load annovar/{version}
-	export LC_ALL=C
-	cut -f 1-5 {input.txtFiles} |sort |uniq > {wildcards.subject}/{TIME}/annotation/AnnotationInput
-	perl {input.convertor} {wildcards.subject}/{TIME}/annotation/AnnotationInput
-	rm -rf "{wildcards.subject}/{TIME}/annotation/AnnotationInput.pph"
-	#######################
-	"""
+#rule FormatInput:
+#	input:
+#		txtFiles=lambda wildcards: SUBJECT_VCFS[wildcards.subject],
+#		#hotspot ="{subject}/{TIME}/{subject}/db/{subject}.hotspot",
+#		convertor= NGS_PIPELINE + "/scripts/MakeAnnotationInputs.pl"
+#	output:
+#		temp("{subject}/{TIME}/annotation/AnnotationInput.anno"),
+#		temp("{subject}/{TIME}/annotation/AnnotationInput.sift")
+#	version: config["annovar"]
+#	params:
+#		rulename   = "FormatInput",
+#		batch      = config[config['host']]["job_default"],
+#		fAEV       = NGS_PIPELINE + "/scripts/findAlreadyExistingVariants.pl"
+#	shell: """
+#	#######################
+#	module load annovar/{version}
+#	export LC_ALL=C
+#	cut -f 1-5 {input.txtFiles} |sort |uniq > {wildcards.subject}/{TIME}/annotation/AnnotationInput
+#	perl {input.convertor} {wildcards.subject}/{TIME}/annotation/AnnotationInput
+#	rm -rf "{wildcards.subject}/{TIME}/annotation/AnnotationInput.pph"
+#	#######################
+#	"""
 ############
 #       CopyAnnotationFile
 ############
-rule CopyAnnotationFile:
-	input:
-		"{subject}/{TIME}/annotation/AnnotationInput.coding.rare.txt"
-	output:
-		"{subject}/{TIME}/annotation/{subject}.Annotations.coding.rare.txt"
-	params:
-		rulename   = "caf",
-		batch      = config[config['host']]["job_default"],
-	shell: """
-	#######################
-	cp {input} {output}
-	#######################
-	"""
+#rule CopyAnnotationFile:
+#	input:
+#		"{subject}/{TIME}/annotation/AnnotationInput.coding.rare.txt"
+#	output:
+#		"{subject}/{TIME}/annotation/{subject}.Annotations.coding.rare.txt"
+#	params:
+#		rulename   = "caf",
+#		batch      = config[config['host']]["job_default"],
+#	shell: """
+#	#######################
+#	cp {input} {output}
+#	#######################
+#	"""
 ############
 #	Add Annotation back to sample level file
 ############
-rule AttachAnnotation:
-	input:
-		txt="{subject}/{TIME}/{base1}/calls/{base}.snpEff.txt",
-		ref="{subject}/{TIME}/annotation/{subject}.Annotations.coding.rare.txt",
-		convertor  = NGS_PIPELINE + "/scripts/addAnnotations2vcf.pl"
-	output:
-		txt="{subject}/{TIME}/{base1}/calls/{base}.annotated.txt"
-	version: "1.0"
-	params:
-		rulename   = "add",
-		batch      = config[config['host']]["job_addbackann"],
-	shell: """
-	#######################
-	perl {input.convertor} {input.ref}  {input.txt} >{output.txt}
-	#######################
-	"""
+#rule AttachAnnotation:
+#	input:
+#		txt="{subject}/{TIME}/{base1}/calls/{base}.snpEff.txt",
+#		ref="{subject}/{TIME}/annotation/{subject}.Annotations.coding.rare.txt",
+#		convertor  = NGS_PIPELINE + "/scripts/addAnnotations2vcf.pl"
+#	output:
+#		txt="{subject}/{TIME}/{base1}/calls/{base}.annotated.txt"
+#	version: "1.0"
+#	params:
+#		rulename   = "add",
+#		batch      = config[config['host']]["job_addbackann"],
+#	shell: """
+#	#######################
+#	perl {input.convertor} {input.ref}  {input.txt} >{output.txt}
+#	#######################
+#	"""
 ############
 #       Expressed
 ############
-rule Expressed:
-	input:
-		RNASeq = lambda wildcards: expressedPairs[wildcards.sample],
-		Mutation="{subject}/{TIME}/{sample}/calls/{base}.annotated.txt",
-		convertor = NGS_PIPELINE + "/scripts/mpileup.pl"
-	output: "{subject}/{TIME}/{sample}/calls/{base}.annotated.expressed.txt"
-	version: config["samtools"]
-	params:
-		rulename  = "Expressed",
-		batch     = config[config['host']]["job_expressed"],
-		name      = lambda wildcards: config["matched_rnaseq"][wildcards.sample]
-	shell: """
-	#######################
-	module load samtools/{version}
-	perl {input.convertor} {input.Mutation} {wildcards.subject}/{TIME}/{params.name}/{params.name}.star.final.bam {input.RNASeq} >{output}	
-	#######################
-	"""
-############
-#       Database Input
-############
-rule DBinput:
-	input:
-		txtFiles=lambda wildcards: SUBJECT_ANNO[wildcards.subject][wildcards.group],
-		convertor=NGS_PIPELINE + "/scripts/makeDBVariantFile.pl",
-		tool=NGS_PIPELINE + "/scripts/AddSampleType.pl",
-		tool1=NGS_PIPELINE + "/scripts/addFS.pl",
-		txtFiles1=lambda wildcards: SUBJECT_VCFS[wildcards.subject]
-	output: "{subject}/{TIME}/{subject}/db/{subject}.{group}"
-	params:
-		rulename = "makeDBinput",
-		batch    = config[config['host']]['job_default'],
-		hash 	 = lambda wc: " ".join("{} {}".format(a, b) for a, b in config["sample_type"].items()),
-		hash1	 = lambda wc: " ".join("{} {}".format(a, b) for a, b in config["sample_captures"].items()),
-	shell: """
-	#######################
-	perl {input.convertor} {input.txtFiles} |perl {input.tool} - "{params.hash}" "{params.hash1}" >{output}.tmp
-	if [ {wildcards.group}  == 'germline' ] || [ {wildcards.group} == 'variants' ]; then	
-		perl {input.tool1} {output}.tmp {input.txtFiles1} >{output}
-		rm -rf {output}.tmp
-	else
-		mv {output}.tmp {output}
-	fi
-	#######################
-	"""
+#rule Expressed:
+#	input:
+#		RNASeq = lambda wildcards: expressedPairs[wildcards.sample],
+#		Mutation="{subject}/{TIME}/{sample}/calls/{base}.annotated.txt",
+#		convertor = NGS_PIPELINE + "/scripts/mpileup.pl"
+#	output: "{subject}/{TIME}/{sample}/calls/{base}.annotated.expressed.txt"
+#	version: config["samtools"]
+#	params:
+#		rulename  = "Expressed",
+#		batch     = config[config['host']]["job_expressed"],
+#		name      = lambda wildcards: config["matched_rnaseq"][wildcards.sample]
+#	shell: """
+#	#######################
+#	module load samtools/{version}
+#	perl {input.convertor} {input.Mutation} {wildcards.subject}/{TIME}/{params.name}/{params.name}.star.final.bam {input.RNASeq} >{output}	
+#	#######################
+#	"""
+#############
+##       Database Input
+#############
+#rule DBinput:
+#	input:
+#		txtFiles=lambda wildcards: SUBJECT_ANNO[wildcards.subject][wildcards.group],
+#		convertor=NGS_PIPELINE + "/scripts/makeDBVariantFile.pl",
+#		tool=NGS_PIPELINE + "/scripts/AddSampleType.pl",
+#		tool1=NGS_PIPELINE + "/scripts/addFS.pl",
+#		txtFiles1=lambda wildcards: SUBJECT_VCFS[wildcards.subject]
+#	output: "{subject}/{TIME}/{subject}/db/{subject}.{group}"
+#	params:
+#		rulename = "makeDBinput",
+#		batch    = config[config['host']]['job_default'],
+#		hash 	 = lambda wc: " ".join("{} {}".format(a, b) for a, b in config["sample_type"].items()),
+#		hash1	 = lambda wc: " ".join("{} {}".format(a, b) for a, b in config["sample_captures"].items()),
+#	shell: """
+#	#######################
+#	perl {input.convertor} {input.txtFiles} |perl {input.tool} - "{params.hash}" "{params.hash1}" >{output}.tmp
+#	if [ {wildcards.group}  == 'germline' ] || [ {wildcards.group} == 'variants' ]; then	
+#		perl {input.tool1} {output}.tmp {input.txtFiles1} >{output}
+#		rm -rf {output}.tmp
+#	else
+#		mv {output}.tmp {output}
+#	fi
+#	#######################
+#	"""
