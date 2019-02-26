@@ -24,7 +24,13 @@ PATH="/data/MoCha/processedDATA/MAGGIE/"
 PAT_FILES = {}
 
 PATIENT ={}
-#F=glob.glob(PATH+"*WES*gz")
+F=sorted(glob.glob(PATH+"*germline*WES*gz"))
+for files in F:
+	column = files.split("_")
+	patient=column[0].split("/")
+	PATIENT[patient[5]] =["/data/MoCha/processedDATA/"+patient[5]+"/20170910/qc/"+patient[5]+".maggie.txt"]
+	PAT_FILES[patient[5]] =[files]
+
 F=sorted(glob.glob(PATH+"*WES*gz"))
 for files in F:
 	column = files.split("~")
@@ -61,10 +67,11 @@ rule PatientLevel:
 	shell:"""
 	#################################
 	module load samtools/1.2
-	echo -e "Model\tSample\tScore\tSites" >{output.txt}
+	echo -e "Model\\tSample\\tScore\\tSites" >{output.txt}
 	for file2 in {PATH}/*.codingsynon.sorted.vcf.gz	
 		do
 			name=`basename ${{file2}} .codingsynon.sorted.vcf.gz`
+			name=`echo ${{name}}|sed -e 's/.star//g'|sed -e 's/.bwa//g'`
 			score=`bcftools gtcheck -g {input} -G 1 ${{file2}} |grep ^CN |cut -f2,4 |awk '{{OFS="\\t"}}{{print +$1,$2}}'`
 			echo -e "{wildcards.patient}\\t${{name}}\\t${{score}}"
 		done >>{output.txt}

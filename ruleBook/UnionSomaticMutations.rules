@@ -4,11 +4,9 @@ UNION_SOM_MUT={}
 if 'matched_normal' in config:
 	for sample in config['matched_normal'].keys():
 		subject=SAMPLE_TO_SUBJECT[sample]
-		local =[(subject+"/"+TIME+"/"+sample+"/calls/"+sample+".strelka.snvs.annotated.txt"),
-		        (subject+"/"+TIME+"/"+sample+"/calls/"+sample+".strelka.indels.annotated.txt"),
-	        	(subject+"/"+TIME+"/"+sample+"/calls/"+sample+".MuTect.annotated.txt")]
-		if sample in config['matched_rnaseq'].keys():
-			local = [w.replace('annotated','annotated.expressed') for w in local]
+		local =[(subject+"/"+TIME+"/"+sample+"/calls/"+sample+".strelka.snvs.raw.vcf"),
+		        (subject+"/"+TIME+"/"+sample+"/calls/"+sample+".strelka.indels.raw.vcf"),
+	        	(subject+"/"+TIME+"/"+sample+"/calls/"+sample+".MuTect.raw.vcf")]
 		UNION_SOM_MUT[sample] = local
 		TARGET +=[subject+"/"+TIME+ACT_DIR+sample+".unionSomaticVars.txt"]
 ############

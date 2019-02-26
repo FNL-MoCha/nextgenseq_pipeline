@@ -28,7 +28,8 @@ cormat <- cor(data)
 melted_cormat <- melt(cormat,na.rm=FALSE)
 pdf(opt$output)
 
-ggplot(melted_cormat,aes(Var2,Var1,fill=value)) + labs(title = patient) + theme(plot.title = element_text(hjust = 0.5)) + geom_tile(color="white") + scale_fill_gradient2(low="blue",high="red",mid="white",midpoint=0.8,limit=c(0.5,1), na.value = "black", space="Lab",name="Spearman\nCorrelation") +
+#ggplot(melted_cormat,aes(Var2,Var1,fill=value)) + labs(title = patient) + theme(plot.title = element_text(hjust = 0.5)) + geom_tile(color="white") + scale_fill_gradient2(low="blue",high="red",mid="white",midpoint=0.8,limit=c(0.5,1), na.value = "black", space="Lab",name="Spearman\nCorrelation") +
+ggplot(melted_cormat,aes(Var2,Var1,fill=value)) + labs(title = patient) + theme(plot.title = element_text(hjust = 0.5)) + geom_tile(color="white") + scale_fill_gradient2(low="blue",high="red",mid="white",midpoint=0.6,limit=c(0.2,1), na.value = "black", space="Lab",name="Spearman\nCorrelation") +
   theme_minimal() + theme(axis.text.x=element_text(angle=45,vjust=1,size=6,hjust=1)) + theme(axis.text.y=element_text(hjust=0,size=6)) + 
   coord_fixed()
 dev.off()

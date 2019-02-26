@@ -21,7 +21,7 @@ mut_data <- read.table(input,sep="\t",header=T)
 sigs.input <- mut.to.sigs.input(mut.ref = mut_data,
 		sample.id = "Sample",
 		chr = "Chr",
-		pos = "Start",
+		pos = "Pos",
 		ref = "Ref",
 		alt = "Alt")
 cosmic = whichSignatures(tumor.ref = sigs.input,

@@ -2,12 +2,18 @@ if 'DNASeq' in config:
 	for subject in config['DNASeq']:
 		for sample in config['DNASeq'][subject]:
 			if config['sample_type'][sample] == 'Tumor':
-				#TARGET    += [subject+"/"+TIME+"/"+sample+"/oncoKB/"+sample+".maf"]
-				#TARGET    += [subject+"/"+TIME+"/"+sample+"/oncoKB/"+sample+".cnv"]
-				#TARGET    += [subject+"/"+TIME+"/"+sample+"/oncoKB/"+sample+".oncoKB.clinical.txt"]
-				TARGET    += [subject+"/"+TIME+"/oncoKB/"+subject+".maf"]
-				TARGET    += [subject+"/"+TIME+"/oncoKB/"+subject+".cnv"]
-				TARGET    += [subject+"/"+TIME+"/oncoKB/"+subject+".oncoKB.clinical.txt"]
+				if config['sample_captures'][sample] in config['cnvkit_ref']:
+					if 'PDC' in sample:
+						print()
+					elif 'organoid' in sample:
+						print()
+					else:
+						#TARGET    += [subject+"/"+TIME+"/"+sample+"/oncoKB/"+sample+".maf"]
+						#TARGET    += [subject+"/"+TIME+"/"+sample+"/oncoKB/"+sample+".cnv"]
+						#TARGET    += [subject+"/"+TIME+"/"+sample+"/oncoKB/"+sample+".oncoKB.clinical.txt"]
+						TARGET    += [subject+"/"+TIME+"/oncoKB/"+subject+".maf"]
+						TARGET    += [subject+"/"+TIME+"/oncoKB/"+subject+".cnv"]
+						TARGET    += [subject+"/"+TIME+"/oncoKB/"+subject+".oncoKB.clinical.txt"]
 rule oncoKB_MAF_sub:
 	input:
 		maf="{subject}/{TIME}/{sample}/calls/{sample}.variants.maf",
@@ -23,7 +29,7 @@ rule oncoKB_MAF_sub:
 	#######################
 	echo -e "SAMPLE_ID\\tONCOTREE_CODE" >{output.clinical}
 	echo -e "{wildcards.sample}\\t{params.diagnosis}" >>{output.clinical}
-	ssh -q helix.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/other/oncokb-annotator-1.0.3/MafAnnotator.py -i {input.maf} -o {output.maf} -t {params.diagnosis}'
+	ssh -q biowulf.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/other/oncokb-annotator-1.0.3/MafAnnotator.py -i {input.maf} -o {output.maf} -t {params.diagnosis}'
 	#######################
 	"""
 rule oncoKB_CNV_sub:
@@ -44,7 +50,7 @@ rule oncoKB_CNV_sub:
 	perl {params.script} {input} {params.hugo} {wildcards.sample} >{wildcards.subject}/{TIME}/{wildcards.sample}/oncoKB/{wildcards.sample}.tmp.cnv.txt
 	paste {params.hugo} {wildcards.subject}/{TIME}/{wildcards.sample}/oncoKB/{wildcards.sample}.tmp.cnv.txt |perl {params.script2} - {wildcards.sample} >{wildcards.subject}/{TIME}/{wildcards.sample}/oncoKB/{wildcards.sample}.cnv.txt
 	rm -rf {wildcards.subject}/{TIME}/oncoKB/*.tmp.cnv.txt
-	ssh -q helix.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/other/oncokb-annotator-1.0.3/CnaAnnotator.py -i {wildcards.subject}/{TIME}/{wildcards.sample}/oncoKB/{wildcards.sample}.cnv.txt -o {output.cnv} -t {params.diagnosis}'
+	ssh -q biowulf.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/other/oncokb-annotator-1.0.3/CnaAnnotator.py -i {wildcards.subject}/{TIME}/{wildcards.sample}/oncoKB/{wildcards.sample}.cnv.txt -o {output.cnv} -t {params.diagnosis}'
        rm -rf {wildcards.subject}/{TIME}/{wildcards.sample}/oncoKB/{wildcards.sample}.cnv.txt
 	#######################
 	"""
@@ -61,7 +67,7 @@ rule oncoKB_Sample:
 		work_dir  = WORK_DIR,
 	shell: """
 	#######################
-	ssh -q helix.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/other/oncokb-annotator-1.0.3/ClinicalDataAnnotator.py -i {input.clinical} -o {output.clinical} -a {input.maf},{input.cnv}'
+	ssh -q biowulf.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/other/oncokb-annotator-1.0.3/ClinicalDataAnnotator.py -i {input.clinical} -o {output.clinical} -a {input.maf},{input.cnv}'
 	#######################
 	"""
 
@@ -80,7 +86,7 @@ rule oncoKB_MAF:
 	#######################
 	echo -e "SAMPLE_ID\\tONCOTREE_CODE" >{output.clinical}
 	echo -e "{wildcards.subject}\\t{params.diagnosis}" >>{output.clinical}
-	ssh -q helix.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/other/oncokb-annotator-1.0.3/MafAnnotator.py -i {input.maf} -o {output.maf} -t {params.diagnosis}'
+	ssh -q biowulf.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/other/oncokb-annotator-1.0.3/MafAnnotator.py -i {input.maf} -o {output.maf} -t {params.diagnosis}'
 	#######################
 	"""
 
@@ -106,7 +112,7 @@ rule oncoKB_CNV:
 	done
 	paste {params.hugo} {wildcards.subject}/{TIME}/oncoKB/*.tmp.cnv.txt |perl {params.script2} - {wildcards.subject} >{wildcards.subject}/{TIME}/oncoKB/{wildcards.subject}.cnv.txt
 	rm -rf {wildcards.subject}/{TIME}/oncoKB/*.tmp.cnv.txt
-	ssh -q helix.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/other/oncokb-annotator-1.0.3/CnaAnnotator.py -i {wildcards.subject}/{TIME}/oncoKB/{wildcards.subject}.cnv.txt -o {output.cnv} -t {params.diagnosis}'
+	ssh -q biowulf.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/other/oncokb-annotator-1.0.3/CnaAnnotator.py -i {wildcards.subject}/{TIME}/oncoKB/{wildcards.subject}.cnv.txt -o {output.cnv} -t {params.diagnosis}'
 	rm -rf {wildcards.subject}/{TIME}/oncoKB/{wildcards.subject}.cnv.txt
 	#######################
 	"""
@@ -124,6 +130,6 @@ rule oncoKB_Summary:
 		work_dir  = WORK_DIR,
 	shell: """
 	#######################
-	ssh -q helix.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/other/oncokb-annotator-1.0.3/ClinicalDataAnnotator.py -i {input.clinical} -o {output.clinical} -a {input.maf},{input.cnv}'
+	ssh -q biowulf.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/other/oncokb-annotator-1.0.3/ClinicalDataAnnotator.py -i {input.clinical} -o {output.clinical} -a {input.maf},{input.cnv}'
 	#######################
 	"""

@@ -13,11 +13,18 @@ rule TargetIntervals:
 	params:
 		rulename = "targetIntervals",
 		batch	= config[config['host']]["job_default"],
+		reference = config["reference"].replace('.fasta', '.dict')
 	shell:	"""
 	#######################
 	module load samtools/{version}
-	cat <(samtools view -H {input.bam}) <(gawk '{{print $1 "\t" $2+1 "\t" $3 "\t+\tinterval_" NR}}' {input.probe_intervals}  )> {output.probe_intervals}
-	cat <(samtools view -H {input.bam}) <(gawk '{{print $1 "\t" $2+1 "\t" $3 "\t+\tinterval_" NR}}' {input.target_intervals} )> {output.target_intervals} 
+	cat <(samtools view -H {input.bam}) <(gawk '{{print $1 "\\t" $2+1 "\\t" $3 "\\t+\\tinterval_" NR}}' {input.probe_intervals}  )> {output.probe_intervals}
+	cat <(samtools view -H {input.bam}) <(gawk '{{print $1 "\\t" $2+1 "\\t" $3 "\\t+\\tinterval_" NR}}' {input.target_intervals} )> {output.target_intervals} 
+	# Added follwing lines on 1/11/19 becuase of error message in the HSMetrics rule.
+	#module load picard/1.129
+	#java -Xmx2g -jar $PICARD_JAR BedToIntervalList I={output.probe_intervals} SD={params.reference} O={output.probe_intervals}.tmp
+	#java -Xmx2g -jar $PICARD_JAR BedToIntervalList I={output.target_intervals} SD={params.reference} O={output.target_intervals}.tmp
+	#mv {output.probe_intervals}.tmp {output.probe_intervals}
+	#mv {output.target_intervals}.tmp {output.target_intervals}
 	#######################
 	"""
 

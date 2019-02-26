@@ -16,7 +16,7 @@
 	"bamutil" 		: "1.0.14",
 	"GATK"			: "3.4-0",
 	"MuTect"		: "1.1.7",
-	"version_blast"		: "2.7.1+",
+	"version_blast"		: "2.5.0+",
 	"VEP"			: "92",
 	"strelka"		: "1.0.15",
 	"vcftools"		: "0.1.15",
@@ -48,7 +48,7 @@
 	"failed_exon_params": {
 		"wholegenome"		:{"Normal":"5","Tumor":"5"},
 		"sureselect.v5"		:{"Normal":"20","Tumor":"20"},
-		"sureselect.v6"		:{"Normal":"20","Tumor":"20"},
+		"sureselect.v6"		:{"Normal":"50","Tumor":"50"},
 		"K2A_manifest"		:{"Normal":"100","Tumor":"100"}
 	}
 }

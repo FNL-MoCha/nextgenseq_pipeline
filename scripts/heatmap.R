@@ -25,9 +25,9 @@ mycol <- colorpanel(n=brk,low="blue",high="red")
 
 mat <-t(mat)
 pheatmap(mat,
-	color = mycol,
+	color = c("#FFFFFF","#0000FF", "#4000BF", "#800080", "#BF0040", "#FF0000"),
 	border_color = NA,
-	breaks = pairs.breaks,
+	breaks = c(-1,0.0, 0.2, 0.4, 0.6, 0.8, 1.0),
 	cluster_rows = T,
 	cluster_cols = T,
 	fontsize = 20, 

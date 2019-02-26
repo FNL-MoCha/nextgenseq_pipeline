@@ -10,7 +10,6 @@ import tempfile
 
 from numpy import array
 from sys import argv
-
 def _count_reads(bam):
 
     stats = { 'total_reads' : 0, 'mapped_reads' : 0 }
@@ -50,7 +49,7 @@ def _coverage(bam):
     positions_at_20 = 0
     positions_at_15 = 0
     positions_at_10 = 0
-    positions_at_5 = 0
+    positions_at_uni = 0
 
     targets_fh = open(targets, 'r')
 
@@ -101,10 +100,8 @@ def _coverage(bam):
 
         if (depth >= 10):
 	    positions_at_10 +=1        
-
-	if (depth >= 5):
-            positions_at_5 +=1        
-
+	if (depth >= int(argv[10])):
+            positions_at_uni +=1        
 
     stats['percent_at_1000'] = (float(positions_at_1000) /
                               float(total_positions)) * 100
@@ -142,9 +139,9 @@ def _coverage(bam):
                               float(total_positions)) * 100
     stats['percent_at_10'] = "%2.2F" % stats['percent_at_10']
 
-    stats['percent_at_5'] = (float(positions_at_5) /
+    stats['percent_at_uni'] = (float(positions_at_uni) /
                               float(total_positions)) * 100
-    stats['percent_at_5'] = "%2.2F" % stats['percent_at_5']
+    stats['percent_at_uni'] = "%2.2F" % stats['percent_at_uni']
 
     return stats
 
@@ -191,48 +188,45 @@ def _ontarget(bam):
     return stats 
     
 
-print string.join(['#Patient', 'Sample', 'Diagnosis', 'Gender', 'PF Generated', "% Human",
-                   'total_reads', 'mapped_reads',
-                   'percent_mapped',
-                   'ontarget_reads', 'percent_ontarget', 
-                   'unique_ontarget_reads',
-                   'percent_unique_ontarget',
-                   'hq_unique_ontarget_reads',
-                   'percent_hq_unique_ontarget', 
-                   'percent_hq_unique_positions_at_5x', 
-                   'percent_hq_unique_positions_at_10x',
-		   'percent_hq_unique_positions_at_15x',
-                   'percent_hq_unique_positions_at_20x',
-                   'percent_hq_unique_positions_at_30x',
-                   'percent_hq_unique_positions_at_50x',
-		   'percent_hq_unique_positions_at_100x',
-		   'percent_hq_unique_positions_at_200x',
-		   'percent_hq_unique_positions_at_400x'
+print string.join([
+		 '#Patient', 'Sample', 'Diagnosis', 'Gender', 'PF Generated', "pct_human",
+                  'total_reads', 'mapped_reads',
+                  'pct_mapped',
+                  'ontarget_reads', 'percent_ontarget', 
+                  'unique_ontarget_reads',
+                  'pct_unique_ontarget',
+                  'hq_unique_ontarget_reads',
+                  'pct_hq_unique_ontarget', 
+                  'Uniformity', 
+                  'pct_10x',
+		  'pct_15x',
+                  'pct_20x',
+                  'pct_30x',
+                  'pct_50x',
+		  'pct_100x',
+		  'pct_200x',
+		  'pct_400x'
                   ], "\t") 
 
 for filename in [argv[1]]:
-    m = re.search('(.+)\.final\.bam$', filename)
-
-    if (m is not None):
-
-	sample = m.group(1)
         stats1 = _count_reads(filename)
         stats2 = _ontarget(filename)
         stats3 = _coverage(filename)
  
         stats2['percent_ontarget'] = (float(stats2['ontarget_reads']) / 
-                                     float(stats1['mapped_reads'])) * 100
+                                   float(stats1['mapped_reads'])) * 100
         stats2['percent_ontarget'] = "%2.2F" % stats2['percent_ontarget']
-        
+       
         stats2['percent_unique_ontarget'] = (float(stats2['unique_ontarget_reads']) / 
-                                             float(stats2['ontarget_reads'])) * 100
+                                            float(stats2['ontarget_reads'])) * 100
         stats2['percent_unique_ontarget'] = "%2.2F" % stats2['percent_unique_ontarget']
-
+       
         stats2['percent_hq_unique_ontarget'] = (float(stats2['hq_unique_ontarget_reads']) /
-                                             float(stats2['unique_ontarget_reads'])) * 100
+                                            float(stats2['unique_ontarget_reads'])) * 100
         stats2['percent_hq_unique_ontarget'] = "%2.2F" % stats2['percent_hq_unique_ontarget']
 
-        print string.join([argv[4], argv[5], argv[6], argv[7], argv[8], argv[9],
+        print string.join([
+			   argv[4], argv[5], argv[6], argv[7], argv[8], argv[9],
                            str(stats1['total_reads']),
                            str(stats1['mapped_reads']),
                            str(stats1['percent_mapped']),
@@ -242,7 +236,7 @@ for filename in [argv[1]]:
                            str(stats2['percent_unique_ontarget']),
                            str(stats2['hq_unique_ontarget_reads']),
                            str(stats2['percent_hq_unique_ontarget']),
-                           str(stats3['percent_at_5']),
+                           str(stats3['percent_at_uni']),
                            str(stats3['percent_at_10']),
 			   str(stats3['percent_at_15']),
                            str(stats3['percent_at_20']),

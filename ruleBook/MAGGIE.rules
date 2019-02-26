@@ -33,7 +33,7 @@ rule MAGGIE:
 	tabix  {wildcards.subject}/{wildcards.TIME}/{wildcards.sample}/qc/{wildcards.sample}.{wildcards.aligner}.codingsynon.sorted.vcf.gz
 
 
-	cp -rf {wildcards.subject}/{wildcards.TIME}/{wildcards.sample}/qc/{wildcards.sample}.{wildcards.aligner}.codingsynon.sorted.vcf.gz MAGGIE/{wildcards.sample}.codingsynon.sorted.vcf.gz
-	cp -rf {wildcards.subject}/{wildcards.TIME}/{wildcards.sample}/qc/{wildcards.sample}.{wildcards.aligner}.codingsynon.sorted.vcf.gz.tbi MAGGIE/{wildcards.sample}.codingsynon.sorted.vcf.gz.tbi
+	cp -rf {wildcards.subject}/{wildcards.TIME}/{wildcards.sample}/qc/{wildcards.sample}.{wildcards.aligner}.codingsynon.sorted.vcf.gz /data/MoCha/processedDATA/MAGGIE/{wildcards.sample}.codingsynon.sorted.vcf.gz
+	cp -rf {wildcards.subject}/{wildcards.TIME}/{wildcards.sample}/qc/{wildcards.sample}.{wildcards.aligner}.codingsynon.sorted.vcf.gz.tbi /data/MoCha/processedDATA/MAGGIE/{wildcards.sample}.codingsynon.sorted.vcf.gz.tbi
 	#######################
 	"""

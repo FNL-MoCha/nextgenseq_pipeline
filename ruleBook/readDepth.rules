@@ -8,7 +8,7 @@ rule ReadDepth:
 		bai="{base}/{TIME}/{sample}/{sample}.bwa.final.bam.bai",
 		target_intervals= lambda wildcards: config['target_intervals'][config['sample_captures'][wildcards.sample]],
 	output:
-		temp("{base}/{TIME}/{sample}/qc/{sample}.depth_per_base")
+		"{base}/{TIME}/{sample}/qc/{sample}.depth_per_base"
 	version: config['bedtools']
 	params:
 		rulename	= "readDepth",

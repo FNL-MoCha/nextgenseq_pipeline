@@ -6,10 +6,10 @@ for subject in config['DNASeq']:
 			if config['sample_captures'][sample] in config['cnvkit_ref']:
 				TARGET +=[subject+"/"+TIME+"/variantHeatmap/"+subject+".matrix"]
 				if subject not in varHeat:
-					varHeat[subject] =[subject+"/"+TIME+"/"+sample+"/calls/"+sample+".HC_DNASeq.annotated.txt"] 
+					varHeat[subject] =[subject+"/"+TIME+"/"+sample+"/calls/"+sample+".variants.maf"] 
 					varMat[subject] =[subject+"/"+TIME+"/"+"variantHeatmap/"+sample+".pileup"]
 				else:
-					varHeat[subject] +=[subject+"/"+TIME+"/"+sample+"/calls/"+sample+".HC_DNASeq.annotated.txt"]
+					varHeat[subject] +=[subject+"/"+TIME+"/"+sample+"/calls/"+sample+".variants.maf"]
 					varMat[subject] +=[subject+"/"+TIME+"/"+"variantHeatmap/"+sample+".pileup"]
 ############
 #       Variant Heatmap
@@ -22,9 +22,11 @@ rule variantHeatmap:
 	params:
 		rulename  = "variantHeatmap",
 		batch     = config[config['host']]["job_default"],
+		script	  = NGS_PIPELINE+"/scripts/maf2annovar.v2.pl"
 	shell: """
 	#######################
-	cut -f 1-5,7,85-90 {input} |awk '{{OFS="\\t"}}{{if ($7 >30) print $1,$2,$3,$4,$5,$6}}' |grep -v "," |sort |uniq |grep -v "PCLO\|FLG\|BAGE2\|TPTE\|TTN\|CSMD1\|CSMD3\|RYR2\|RYR3\|MUC7\|MUC16\|MUC4\|MUC17\|MUC5B\|OR10G9\|OR2G6\|OR4C6\|OR4M2\|OR2T4\|OR5L2\|OR2T33\|MUC6\|HLA\|PRSS3\|MUC3A\|OR\|ZNF\|TAS1R" |grep -v "-"|sort |uniq >{output}
+	echo -e "Chr\\tStart\\tEnd\\tRef\\tAlt\\tGene" >{output}
+	cat {input}|perl {params.script}  - |grep -v "-"|sort |uniq |grep -v "PCLO\|FLG\|BAGE2\|TPTE\|TTN\|CSMD1\|CSMD3\|RYR2\|RYR3\|MUC7\|MUC16\|MUC4\|MUC17\|MUC5B\|OR10G9\|OR2G6\|OR4C6\|OR4M2\|OR2T4\|OR5L2\|OR2T33\|MUC6\|HLA\|PRSS3\|MUC3A\|OR\|ZNF\|TAS1R" >>{output}
 	#######################
 	"""
 ############

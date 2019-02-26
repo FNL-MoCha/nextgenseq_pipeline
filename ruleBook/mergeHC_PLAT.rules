@@ -9,12 +9,17 @@ if 'DNASeq' in config:
 				TARGET    += [subject+"/"+TIME+"/"+sample+"/calls/"+sample+".oncology.vcf"]
 				TARGET    += [subject+"/"+TIME+"/"+sample+"/calls/"+sample+".oncology.maf"]
 			if config['sample_type'][sample] == 'Tumor':
-				if subject not in CONSENSUS_VCF:
-					CONSENSUS_VCF[subject] =[subject+"/"+TIME+"/"+sample+"/calls/"+sample+".merged.vcf"]
+				if 'PDC' in sample:
+					print()	
+				elif 'organoid' in sample:
+					print()
 				else:
-					TARGET    += [subject+"/"+TIME+"/"+subject+".consensus.vcf"]
-					TARGET    += [subject+"/"+TIME+"/"+subject+".consensus.maf"]
-					CONSENSUS_VCF[subject] +=[subject+"/"+TIME+"/"+sample+"/calls/"+sample+".merged.vcf"]
+					if subject not in CONSENSUS_VCF:
+						CONSENSUS_VCF[subject] =[subject+"/"+TIME+"/"+sample+"/calls/"+sample+".merged.vcf"]
+					else:
+						TARGET    += [subject+"/"+TIME+"/"+subject+".consensus.vcf"]
+						TARGET    += [subject+"/"+TIME+"/"+subject+".consensus.maf"]
+						CONSENSUS_VCF[subject] +=[subject+"/"+TIME+"/"+sample+"/calls/"+sample+".merged.vcf"]
 
 #######################
 # Merge HC with Platypus results for delivery
@@ -72,7 +77,7 @@ rule vcf2maf:
 		batch    = config[config['host']]["job_vcf2maf"]
 	shell: """
 	#######################
-	module load vcf2maf/{version} VEP/92
+	module load VEP/92 vcf2maf/{version}
 	cp {input.vcf} /${{LOCAL}}/
 	vcf2maf.pl --input-vcf ${{LOCAL}}/{wildcards.sample}.merged.vcf --output-maf ${{LOCAL}}/{wildcards.sample}.variants.maf --tumor-id {wildcards.sample} --ref-fasta {input.ref} --filter-vcf /fdb/VEP/89/cache/ExAC.r0.3.1.sites.vep.vcf.gz --vep-path $VEP_HOME/ --vep-forks ${{THREADS}} --vep-data $VEP_CACHEDIR --custom-enst {params.isoforms}
 	{params.script} ${{LOCAL}}/{wildcards.sample}.variants.maf >${{LOCAL}}/{wildcards.sample}.variants.filtered.maf
@@ -136,7 +141,7 @@ rule vcf2maf_oncology:
                 batch    = config[config['host']]["job_vcf2maf"]
         shell: """
         #######################
-        module load vcf2maf/{version} VEP/92
+        module load VEP/92 vcf2maf/{version}
         cp {input.vcf} /${{LOCAL}}/{wildcards.sample}.vep.vcf
         vcf2maf.pl --input-vcf ${{LOCAL}}/{wildcards.sample}.vep.vcf --output-maf ${{LOCAL}}/{wildcards.sample}.variants.maf --tumor-id {wildcards.sample} --ref-fasta {input.ref} --filter-vcf /fdb/VEP/89/cache/ExAC.r0.3.1.sites.vep.vcf.gz --vep-path $VEP_HOME/ --vep-forks ${{THREADS}} --vep-data $VEP_CACHEDIR --custom-enst {params.isoforms}
         {params.script} ${{LOCAL}}/{wildcards.sample}.variants.maf >${{LOCAL}}/{wildcards.sample}.variants.filtered.maf
@@ -166,7 +171,7 @@ rule consensusVCF:
 		for file in ${{LOCAL}}/*.vcf; do bgzip -c ${{file}} >${{file}}.gz; tabix -p vcf ${{file}}.gz; done
 		bcftools merge  ${{LOCAL}}/*.vcf.gz -O z -o ${{LOCAL}}/merge.vcf.gz
 		tabix -p vcf ${{LOCAL}}/merge.vcf.gz
-		vcf-isec -f -n +${{a}} ${{LOCAL}}/merge.vcf.gz ${{LOCAL}}/{wildcards.subject}*.vcf.gz |{params.fix} - {wildcards.subject} > {output}
+		vcf-isec -f -n +${{a}} ${{LOCAL}}/merge.vcf.gz ${{LOCAL}}/{wildcards.subject}*.vcf.gz |{params.fix} - {wildcards.subject} |cut -f 1-10 > {output}
 	else
 		echo "Only 1 file, no consensus but need to change sample name to model name"
 		{params.fix} {input} {wildcards.subject} > {output} 
@@ -190,7 +195,7 @@ rule vcf2maf_pat:
 		batch    = config[config['host']]["job_vcf2maf"]
 	shell: """
 	#######################
-	module load vcf2maf/{version} VEP/92
+	module load VEP/92 vcf2maf/{version}
 	cp {input.vcf} /${{LOCAL}}/
 	vcf2maf.pl --input-vcf ${{LOCAL}}/{wildcards.subject}.consensus.vcf --output-maf ${{LOCAL}}/{wildcards.subject}.consensus.maf --tumor-id {wildcards.subject} --ref-fasta {input.ref} --filter-vcf /fdb/VEP/89/cache/ExAC.r0.3.1.sites.vep.vcf.gz --vep-path $VEP_HOME/ --vep-forks ${{THREADS}} --vep-data $VEP_CACHEDIR --custom-enst {params.isoforms}
 	{params.script} ${{LOCAL}}/{wildcards.subject}.consensus.maf >${{LOCAL}}/{wildcards.subject}.consensus.filtered.maf
