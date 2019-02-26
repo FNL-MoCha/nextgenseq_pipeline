@@ -1,0 +1,24 @@
+if 'matched_normal' in config:
+	for sample in config['matched_normal'].keys():
+		subject=SAMPLE_TO_SUBJECT[sample]
+		if config['sample_captures'][sample] not in config['Panel_List']:
+			TARGET +=[subject+"/"+TIME+"/"+sample+"/"+sample+".TMB.txt"]
+############
+#	TMB from a MAF file
+############
+rule TMB:
+	input:
+		File ="{base}/{TIME}/{sample}/calls/{sample}.MuTect2.maf",
+	output: 
+		v1="{base}/{TIME}/{sample}/{sample}.TMB.txt"
+	version: config["version_R"]
+	params:
+		rulename = "TMB",
+		batch    = config[config['host']]["job_default"],
+		script   = NGS_PIPELINE + "/scripts/maf2TMB.pl",
+		deno     = lambda wildcards: config['tmb'][config['sample_captures'][wildcards.sample]], 
+	shell: """
+	#######################
+	perl {params.script} {input.File} {params.deno} >{output.v1}
+	#######################
+	"""
