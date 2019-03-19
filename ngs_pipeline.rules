@@ -403,11 +403,11 @@ rule GENOTYPING:
 	shell: """
 	#######################
 	module load samtools/{version}
-	samtools mpileup -u -C50 -f {input.ref} -l {input.interval} {input.bam} | bcftools view -gc - >{output.vcf}
-	perl {input.vcf2genotype} {output.vcf} >{output.gt}
-	
-	perl {input.vcf2loh} {output.vcf} >{output.loh}
-	
+	cp {input.bam} ${{LOCAL}}/
+	samtools mpileup -u -C50 -f {input.ref} -l {input.interval} ${{LOCAL}}/{wildcards.sample}.{wildcards.aligner}.bam | bcftools view -gc - >${{LOCAL}}/{wildcards.sample}.{wildcards.aligner}.samtools.vcf
+	perl {input.vcf2genotype} ${{LOCAL}}/{wildcards.sample}.{wildcards.aligner}.samtools.vcf >{output.gt}
+	perl {input.vcf2loh} ${{LOCAL}}/{wildcards.sample}.{wildcards.aligner}.samtools.vcf >{output.loh}
+	cp ${{LOCAL}}/{wildcards.sample}.{wildcards.aligner}.samtools.vcf {output.vcf}
 	#######################
 	"""
 ############
@@ -609,8 +609,10 @@ rule Picard_MarkDup:
 	module load picard/{version}
 	module load {params.sentieon}
 	echo "Using Sentieon"
-	sentieon driver -t ${{THREADS}} -i {input.bam} --algo LocusCollector --fun score_info ${{LOCAL}}/{wildcards.base}.markdup.txt.tmp
-	sentieon driver -t ${{THREADS}} -i {input.bam} --algo Dedup --score_info ${{LOCAL}}/{wildcards.base}.markdup.txt.tmp --metrics ${{LOCAL}}/{wildcards.base}.markdup.txt ${{LOCAL}}/{wildcards.sample}.{wildcards.base}.dd.bam
+	cp {input.bam} ${{LOCAL}}/
+	cp {input.bai} ${{LOCAL}}/
+	sentieon driver -t ${{THREADS}} -i ${{LOCAL}}/{wildcards.sample}.{wildcards.base}.bam --algo LocusCollector --fun score_info ${{LOCAL}}/{wildcards.base}.markdup.txt.tmp
+	sentieon driver -t ${{THREADS}} -i ${{LOCAL}}/{wildcards.sample}.{wildcards.base}.bam --algo Dedup --score_info ${{LOCAL}}/{wildcards.base}.markdup.txt.tmp --metrics ${{LOCAL}}/{wildcards.base}.markdup.txt ${{LOCAL}}/{wildcards.sample}.{wildcards.base}.dd.bam
 	cp ${{LOCAL}}/{wildcards.base}.markdup.txt {output.metrics}
 	cp ${{LOCAL}}/{wildcards.sample}.{wildcards.base}.dd.bam {output.bam}
 	cp ${{LOCAL}}/{wildcards.sample}.{wildcards.base}.dd.bam.bai {output.index}
@@ -698,12 +700,11 @@ rule MuTect2:
 		vcf="{subject}/{TIME}/{Tumor}/calls/{Tumor}.MuTect2.raw.vcf",
 	params:
 		rulename = "MuTect2",
-		batch    = config[config['host']]["job_mutect"],
+		batch    = config[config['host']]["job_mutect2"],
 		normal   = lambda wildcards: config['matched_normal'][wildcards.Tumor][0],
 		vcforder = NGS_PIPELINE + "/scripts/vcfOrderCol.R",
 		sentieon =config["sentieon"],
 		script2=NGS_PIPELINE+"/scripts/joinAdjacentSNPs.py",
-		mt_sen   ="--max_normal_alt_frac 0.05 --max_normal_alt_cnt 4 --min_base_qual 20 ",
 	shell: """
 	#######################
 	module load sentieon-genomics/201808 R
@@ -711,14 +712,16 @@ rule MuTect2:
 		--read_filter MapQualFilter,min_map_qual=30 -t ${{THREADS}} -r {input.ref} \
 		-i {input[2]} -i {input[0]} \
 		--interval {input.interval} \
-		--algo TNhaplotyper2 --dbsnp {input.dbsnp} \
+		--algo TNhaplotyper2 \
 		--tumor_sample {wildcards.Tumor} --normal_sample {params.normal} ${{LOCAL}}/{wildcards.Tumor}.vcf
 	sentieon tnhapfilter --tumor_sample {wildcards.Tumor}\
 		--normal_sample {params.normal} -v ${{LOCAL}}/{wildcards.Tumor}.vcf\
 		${{LOCAL}}/{wildcards.Tumor}.final.vcf
 	{params.vcforder} -i ${{LOCAL}}/{wildcards.Tumor}.final.vcf -o ${{LOCAL}}/{wildcards.Tumor}.1.vcf
 	module load samtools
-	python {params.script2} -v ${{LOCAL}}/{wildcards.Tumor}.1.vcf -o {output.vcf} 1 {input[2]} {input.Twobit}	
+	python {params.script2} -v ${{LOCAL}}/{wildcards.Tumor}.1.vcf -o ${{LOCAL}}/{wildcards.Tumor}.gold.vcf 1 {input[0]} {input.Twobit}
+	cp ${{LOCAL}}/{wildcards.Tumor}.gold.vcf {output.vcf}
+	cp ${{LOCAL}}/{wildcards.Tumor}.vcf {wildcards.subject}/{wildcards.TIME}/{wildcards.Tumor}/calls/{wildcards.Tumor}.MuTect2.vcf
 	#######################
 	"""
 ############
@@ -744,6 +747,7 @@ rule muTect2maf:
 	grep -P "#" {input.vcf} >${{LOCAL}}/input.vcf
 	grep -P "\\tPASS\\t" {input.vcf} >>${{LOCAL}}/input.vcf
         vcf2maf.pl --input-vcf ${{LOCAL}}/input.vcf --output-maf ${{LOCAL}}/{wildcards.sample}.{wildcards.caller}.maf --tumor-id {wildcards.sample} --normal-id {params.normal} --ref-fasta {input.ref} --filter-vcf /fdb/VEP/89/cache/ExAC.r0.3.1.sites.vep.vcf.gz --vep-path  $VEPHOME --vep-forks ${{THREADS}} --vep-data $VEP_CACHEDIR --custom-enst {params.isoforms}
+	cp ${{LOCAL}}/{wildcards.sample}.{wildcards.caller}.maf {wildcards.subject}/{TIME}/{wildcards.sample}/calls/{wildcards.sample}.{wildcards.caller}.raw.maf
         {params.script} ${{LOCAL}}/{wildcards.sample}.{wildcards.caller}.maf > {wildcards.subject}/{TIME}/{wildcards.sample}/calls/{wildcards.sample}.{wildcards.caller}.maf
 	#######################
 	"""

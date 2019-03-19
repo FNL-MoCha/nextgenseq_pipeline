@@ -1,0 +1,123 @@
+TARGET_TCR = []
+
+if 'RNASeq' in config:
+	for subject in config['RNASeq'].keys():
+		for sample in config['RNASeq'][subject]:
+			if config['sample_captures'][sample] == 'access' :
+			TARGET_R   += [subject+"/"+TIME+"/"+sample+"/mixcr/"+sample+".clones.RNA.txt"]
+			TARGET_R   += [subject+"/"+TIME+"/"+sample+"/mixcr/"+"convert."+sample+".clones.RNA.txt"]
+			TARGET_R   += [subject+"/"+TIME+"/"+sample+"/mixcr/"+sample+".summarystats.RNA.txt"]
+		else:
+			TARGET_TCR += [subject+"/"+TIME+"/"+sample+"/mixcr/"+sample+".clones.TCR.txt"]
+			TARGET_TCR += [subject+"/"+TIME+"/"+sample+"/mixcr/"+"convert."+sample+".clones.TCR.txt"]
+			TARGET_TCR += [subject+"/"+TIME+"/"+sample+"/mixcr/"+sample+".summarystats.TCR.txt"]
+rule mixcr_RNASeq:
+	input:
+		R=lambda wildcards: FQ[wildcards.sample]
+	output:
+		mixcr="{base}/{TIME}/{sample}/mixcr/{sample}.clones.RNA.txt",
+		vdjtools="{base}/{TIME}/{sample}/mixcr/convert.{sample}.clones.RNA.txt",
+		summary="{base}/{TIME}/{sample}/mixcr/{sample}.summarystats.RNA.txt"
+	params:
+		rulename = "mixcr_RNASeq",
+		batch    = config[config['host']]['job_mixcr'],
+	shell: """
+	#######################
+	module load java/1.8.0_11
+	module load mixcr/2.1.12
+	if [ -d "{wildcards.base}/{wildcards.TIME}/{wildcards.sample}/mixcr" ]; then rm -f {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/mixcr/*; fi
+	cd {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/mixcr/
+
+	mixcr align -t ${{THREADS}} -p rna-seq -s hsa -OallowPartialAlignments=true --report {wildcards.sample}.alignment.log {input.R[0]} {input.R[1]} {wildcards.sample}.aln.vdjca
+	mixcr assemblePartial {wildcards.sample}.aln.vdjca alignments_rescued_1.vdjca
+	mixcr assemblePartial alignments_rescued_1.vdjca alignments_rescued_2.vdjca
+
+	mixcr extendAlignments alignments_rescued_2.vdjca alignments_rescued_2_extended.vdjca
+	mixcr assemble -t ${{THREADS}} alignments_rescued_2_extended.vdjca {wildcards.sample}.clones.clns
+
+	mixcr exportClones {wildcards.sample}.clones.clns {wildcards.sample}.clones.RNA.txt
+	mixcr exportClones -c TRA {wildcards.sample}.clones.clns {wildcards.sample}.clones.TRA.txt
+	mixcr exportClones -c TRB {wildcards.sample}.clones.clns {wildcards.sample}.clones.TRB.txt
+	mixcr exportClones -c IGH {wildcards.sample}.clones.clns {wildcards.sample}.clones.IGH.txt
+	mixcr exportClones -c IGK {wildcards.sample}.clones.clns {wildcards.sample}.clones.IGK.txt
+	mixcr exportClones -c IGL {wildcards.sample}.clones.clns {wildcards.sample}.clones.IGL.txt
+	
+	module load vdjtools/1.1.10
+	module load R/3.3.2
+	
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR Convert -S mixcr {wildcards.sample}.clones.RNA.txt convert
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR Convert -S mixcr {wildcards.sample}.clones.TRA.txt convert
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR Convert -S mixcr {wildcards.sample}.clones.TRB.txt convert
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR Convert -S mixcr {wildcards.sample}.clones.IGH.txt convert
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR Convert -S mixcr {wildcards.sample}.clones.IGK.txt convert
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR Convert -S mixcr {wildcards.sample}.clones.IGL.txt convert
+	
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR CalcBasicStats convert.{wildcards.sample}.clones.RNA.txt {wildcards.sample}.RNA
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR CalcBasicStats convert.{wildcards.sample}.clones.TRA.txt {wildcards.sample}.TRA
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR CalcBasicStats convert.{wildcards.sample}.clones.TRB.txt {wildcards.sample}.TRB
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR CalcBasicStats convert.{wildcards.sample}.clones.IGH.txt {wildcards.sample}.IGH
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR CalcBasicStats convert.{wildcards.sample}.clones.IGK.txt {wildcards.sample}.IGK
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR CalcBasicStats convert.{wildcards.sample}.clones.IGL.txt {wildcards.sample}.IGL
+	
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR PlotFancyVJUsage convert.{wildcards.sample}.clones.RNA.txt {wildcards.sample}.RNA
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR PlotFancyVJUsage convert.{wildcards.sample}.clones.TRA.txt {wildcards.sample}.TRA
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR PlotFancyVJUsage convert.{wildcards.sample}.clones.TRB.txt {wildcards.sample}.TRB
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR PlotFancyVJUsage convert.{wildcards.sample}.clones.IGH.txt {wildcards.sample}.IGH
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR PlotFancyVJUsage convert.{wildcards.sample}.clones.IGK.txt {wildcards.sample}.IGK
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR PlotFancyVJUsage convert.{wildcards.sample}.clones.IGL.txt {wildcards.sample}.IGL
+	
+	head -n1 {wildcards.sample}.RNA.basicstats.txt > {wildcards.sample}.summarystats.RNA.txt
+	cat {wildcards.sample}.TRA.basicstats.txt {wildcards.sample}.TRB.basicstats.txt {wildcards.sample}.IGH.basicstats.txt {wildcards.sample}.IGK.basicstats.txt {wildcards.sample}.IGL.basicstats.txt | grep -v sample_id >> {wildcards.sample}.summarystats.RNA.txt
+	
+
+	#######################
+	"""
+
+rule mixcr_TCRSeq:
+	input:
+		R=lambda wildcards: FQ[wildcards.sample]
+	output:
+		mixcr="{base}/{TIME}/{sample}/mixcr/{sample}.clones.TCR.txt",
+		vdjtools="{base}/{TIME}/{sample}/mixcr/convert.{sample}.clones.TCR.txt",
+		summary="{base}/{TIME}/{sample}/mixcr/{sample}.summarystats.TCR.txt"
+	params:
+		rulename = "mixcr_TCRSeq",
+		batch    = config[config['host']]['job_mixcr']
+	shell: """
+	#######################
+	 module load java/1.8.0_11
+	module load mixcr/2.1.12
+
+	
+	if [ -d "{wildcards.base}/{wildcards.TIME}/{wildcards.sample}/mixcr" ]; then rm -f {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/mixcr/*; fi
+	cd {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/mixcr/
+	
+	mixcr align -t ${{THREADS}} -s hs -OvParameters.geneFeatureToAlign=VTranscript --report {wildcards.sample}.alignment.log {input.R[0]} {input.R[1]} {wildcards.sample}.aln.vdjca
+	
+	mixcr assemble -t ${{THREADS}} {wildcards.sample}.aln.vdjca {wildcards.sample}.clones.clns
+	
+	mixcr exportClones {wildcards.sample}.clones.clns {wildcards.sample}.clones.TCR.txt
+	
+	mixcr exportClones -c TRA {wildcards.sample}.clones.clns {wildcards.sample}.clones.TRA.txt
+	
+	mixcr exportClones -c TRB {wildcards.sample}.clones.clns {wildcards.sample}.clones.TRB.txt
+	
+	module load vdjtools/1.1.10
+	module load R/3.3.2
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR Convert -S mixcr {wildcards.sample}.clones.TCR.txt convert
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR Convert -S mixcr {wildcards.sample}.clones.TRA.txt convert
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR Convert -S mixcr {wildcards.sample}.clones.TRB.txt convert
+	
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR CalcBasicStats convert.{wildcards.sample}.clones.TCR.txt {wildcards.sample}.TCR
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR CalcBasicStats convert.{wildcards.sample}.clones.TRA.txt {wildcards.sample}.TRA
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR CalcBasicStats convert.{wildcards.sample}.clones.TRB.txt {wildcards.sample}.TRB
+	
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR PlotFancyVJUsage convert.{wildcards.sample}.clones.TCR.txt {wildcards.sample}.TCR
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR PlotFancyVJUsage convert.{wildcards.sample}.clones.TRA.txt {wildcards.sample}.TRA
+	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR PlotFancyVJUsage convert.{wildcards.sample}.clones.TRB.txt {wildcards.sample}.TRB
+	
+	head -n1 {wildcards.sample}.TCR.basicstats.txt > {wildcards.sample}.summarystats.TCR.txt
+	cat {wildcards.sample}.TRA.basicstats.txt {wildcards.sample}.TRB.basicstats.txt | grep -v sample_id >> {wildcards.sample}.summarystats.TCR.txt
+	
+	#######################
+	"""

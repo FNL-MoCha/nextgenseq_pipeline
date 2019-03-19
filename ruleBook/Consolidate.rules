@@ -34,7 +34,7 @@ rule QC:
 	module load bedtools/{params.bedtools}
 	human="NA"
 	if [[ {params.source} = 'PDX' ]]; then
-		human=`grep hg19 {wildcards.base}/{TIME}/FQ/{wildcards.sample}_stat.txt|cut -f2`
+		human=`grep hg19 {wildcards.base}/{TIME}/FQ/{wildcards.sample}_stat.txt|cut -f2|awk '{{print int($1*0.2)}}'`
 	fi
 	uniformity=`cut -f 22 {input.hsMatrix}| grep -A1 MEAN_TARGET_COVERAGE|tail -1| awk '{{print int($1*0.2)}}'`
 	which python
