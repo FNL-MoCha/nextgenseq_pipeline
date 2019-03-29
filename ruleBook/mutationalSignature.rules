@@ -6,7 +6,7 @@ if 'matched_normal' in config:
 ############
 #	Mutational Signature
 ############
-rule MutationalSignature:
+rule mutational_signature:
 	input:
 		File ="{base}/{TIME}/{sample}/calls/{sample}.MuTect2.maf",
 		tool   =NGS_PIPELINE + "/scripts/mutationSignature.R"
@@ -14,7 +14,7 @@ rule MutationalSignature:
 		v1="{base}/{TIME}/{ACT_DIR}/{sample}.mutationalSignature.pdf"
 	version: config["version_R"]
 	params:
-		rulename = "MutationalSignature",
+		rulename = "mutational_signature",
 		batch    = config[config['host']]["job_default"],
 		script   = NGS_PIPELINE + "/scripts/maf2annovar.pl"
 	shell: """

@@ -14,14 +14,14 @@ if 'DNASeq' in config:
 						TARGET    += [subject+"/"+TIME+"/oncoKB/"+subject+".maf"]
 						TARGET    += [subject+"/"+TIME+"/oncoKB/"+subject+".cnv"]
 						TARGET    += [subject+"/"+TIME+"/oncoKB/"+subject+".oncoKB.clinical.txt"]
-rule oncoKB_MAF_sub:
+rule oncokb_maf:
 	input:
 		maf="{subject}/{TIME}/{sample}/calls/{sample}.variants.maf",
 	output:
 		maf="{subject}/{TIME}/{sample}/oncoKB/{sample}.maf",
 		clinical="{subject}/{TIME}/{sample}/oncoKB/{sample}.clinical.txt"
 	params:
-		rulename  = "oncoKB",
+		rulename  = "oncokb_maf",
 		batch     = config[config['host']]["job_default"],
 		work_dir  =  WORK_DIR,
 		diagnosis = lambda wildcards: config['diagnosis'][wildcards.subject]
@@ -32,13 +32,13 @@ rule oncoKB_MAF_sub:
 	ssh -q biowulf.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/other/oncokb-annotator-1.0.3/MafAnnotator.py -i {input.maf} -o {output.maf} -t {params.diagnosis}'
 	#######################
 	"""
-rule oncoKB_CNV_sub:
+rule oncokb_cnv:
 	input:
 		"{subject}/{TIME}/{sample}/cnvkit/{sample}.cns"
 	output:
 		cnv="{subject}/{TIME}/{sample}/oncoKB/{sample}.cnv",
 	params:
-		rulename  = "oncoKB",
+		rulename  = "oncokb_cnv",
 		batch     = config[config['host']]["job_default"],
 		work_dir  = WORK_DIR,
 		hugo      = config["hugo_list"],
@@ -54,7 +54,7 @@ rule oncoKB_CNV_sub:
        rm -rf {wildcards.subject}/{TIME}/{wildcards.sample}/oncoKB/{wildcards.sample}.cnv.txt
 	#######################
 	"""
-rule oncoKB_Sample:
+rule oncokb_summary:
 	input:
 		maf="{subject}/{TIME}/{sample}/oncoKB/{sample}.maf",
 		clinical="{subject}/{TIME}/{sample}/oncoKB/{sample}.clinical.txt",
@@ -62,7 +62,7 @@ rule oncoKB_Sample:
 	output:
 		clinical="{subject}/{TIME}/{sample}/oncoKB/{sample}.oncoKB.clinical.txt",
 	params:
-		rulename  = "oncoKB",
+		rulename  = "oncokb_summary",
 		batch     = config[config['host']]["job_default"],
 		work_dir  = WORK_DIR,
 	shell: """
@@ -71,14 +71,14 @@ rule oncoKB_Sample:
 	#######################
 	"""
 
-rule oncoKB_MAF:
+rule oncokb_maf_patient:
 	input:
 		maf="{subject}/{TIME}/{subject}.consensus.maf",
 	output:
 		maf="{subject}/{TIME}/oncoKB/{subject}.maf",
 		clinical="{subject}/{TIME}/oncoKB/{subject}.clinical.txt"
 	params:
-		rulename  = "oncoKB",
+		rulename  = "oncokb_maf_patient",
 		batch     = config[config['host']]["job_default"],
 		work_dir  =  WORK_DIR,
 		diagnosis = lambda wildcards: config['diagnosis'][wildcards.subject]
@@ -90,13 +90,13 @@ rule oncoKB_MAF:
 	#######################
 	"""
 
-rule oncoKB_CNV:
+rule oncokb_cnv_patient:
 	input:
 		lambda wildcards: subCNV[wildcards.subject]
 	output:
 		cnv="{subject}/{TIME}/oncoKB/{subject}.cnv",
 	params:
-		rulename  = "oncoKB",
+		rulename  = "oncokb_cnv_patient",
 		batch     = config[config['host']]["job_default"],
 		work_dir  = WORK_DIR,
 		hugo      = config["hugo_list"],
@@ -117,7 +117,7 @@ rule oncoKB_CNV:
 	#######################
 	"""
 
-rule oncoKB_Summary:
+rule oncokb_summary_patient:
 	input:
 		maf="{subject}/{TIME}/oncoKB/{subject}.maf",
 		clinical="{subject}/{TIME}/oncoKB/{subject}.clinical.txt",
@@ -125,7 +125,7 @@ rule oncoKB_Summary:
 	output:
 		clinical="{subject}/{TIME}/oncoKB/{subject}.oncoKB.clinical.txt",
 	params:
-		rulename  = "oncoKB",
+		rulename  = "oncokb_summary_patient",
 		batch     = config[config['host']]["job_default"],
 		work_dir  = WORK_DIR,
 	shell: """

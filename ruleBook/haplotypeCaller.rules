@@ -1,4 +1,4 @@
-rule HAPCALLER:
+rule haplotyper:
 	input: 	
 		bam="{subject}/{TIME}/{sample}/{sample}.bwa.final.bam",
 		ref=config["reference"],
@@ -8,7 +8,7 @@ rule HAPCALLER:
 		vcf="{subject}/{TIME}/{sample}/calls/{sample}.HC_DNASeq.raw.vcf"
 	version: config["GATK"]
 	params:
-		rulename = "HC",
+		rulename = "haplotyper",
 		batch    = config[config['host']]["job_HC"],
 		sentieon  = config["sentieon"]
 	shell: """

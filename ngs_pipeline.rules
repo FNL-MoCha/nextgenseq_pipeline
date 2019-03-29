@@ -161,7 +161,7 @@ include: NGS_PIPELINE +"/ruleBook/ROH.rules"
 include: NGS_PIPELINE +"/ruleBook/TMB.rules"
 include: NGS_PIPELINE +"/ruleBook/variantsHeatmap.rules"
 include: NGS_PIPELINE +"/ruleBook/MSI.rules"
-#include: NGS_PIPELINE +"/ruleBook/MANTIS.rules"
+include: NGS_PIPELINE +"/ruleBook/mixcr.rules"
 include: NGS_PIPELINE +"/ruleBook/Ancestry.rules"
 include: NGS_PIPELINE +"/ruleBook/mergeHC_PLAT.rules"
 include: NGS_PIPELINE +"/ruleBook/verifyBamID.rules"
@@ -213,7 +213,7 @@ onsuccess:
 	shell("find .snakemake/ ! -readable -prune -group $USER -exec chgrp -f {GROUP} {{}} \;")
 	print("Workflow finished, no error")
 ###########################################################################
-rule Pipeline:
+rule pipeline:
 	input:
 		TARGET,
 		expand ("ngs_pipeline_{NOW}.rnaseq.done", NOW=NOW)
@@ -221,7 +221,7 @@ rule Pipeline:
 	wildcard_constraints:
 		NOW="\w+"
 	params:
-		rulename = "Final",
+		rulename = "pipeline",
 		batch    = config[config['host']]["job_default"],
 		group    = config["group"],
 		mail 	 = NGS_PIPELINE + "/scripts/tsv2html.final.sh",
@@ -243,20 +243,6 @@ rule Pipeline:
         done
 	ssh -q {params.host} "{params.mail} --location {WORK_DIR} --host {params.host} --head --version {version} {WORK_DIR}/ngs_pipeline_{NOW}.csv |mutt -e \\\"my_hdr Content-Type: text/html\\\" -s ' ngs-pipeline Status' `whoami`@mail.nih.gov -c patidarr@mail.nih.gov"
 	rm -rf {WORK_DIR}/ngs_pipeline_{NOW}.csv
-	#######################
-	"""
-############
-# Print Config to a file
-############
-rule makeConfig:
-	output:	"{subject}/{TIME}/qc/{subject}.config.txt" 
-	params:
-		rulename = "configPrint",
-		batch    = config[config['host']]["job_default"],
-		hash     = json.dumps(config, sort_keys=True)
-	shell: """
-	#######################
-	echo '{params.hash}'  >{output}
 	#######################
 	"""
 ############
@@ -324,7 +310,7 @@ rule bbsplit:
 ############
 #	FASTQC
 ############
-rule FASTQC:
+rule fastqc:
 	input:
 		R1 = "{base}/{TIME}/FQ/{sample}_R1.fastq.gz",
 		R2 = "{base}/{TIME}/FQ/{sample}_R2.fastq.gz",
@@ -354,7 +340,7 @@ rule FASTQC:
 ############
 #       BWA
 ############
-rule BWA:
+rule bwa:
 	input:
 		R1 = "{base}/{TIME}/FQ/{sample}_R1.fastq.gz",
 		R2 = "{base}/{TIME}/FQ/{sample}_R2.fastq.gz",
@@ -383,7 +369,7 @@ rule BWA:
 #       GenotypeFile
 ############
 # Using Older version of samtools for this purpose
-rule GENOTYPING:
+rule genotype:
 	input:
 		bam="{base}/{TIME}/{sample}/{sample}.{aligner}.bam",
 		interval=config["genotypeBed"],
@@ -414,7 +400,7 @@ rule GENOTYPING:
 # Gender Estimation
 # loh2gender=NGS_PIPELINE + "/scripts/guessGender.pl",
 ############
-rule Gender:
+rule gender:
 	input:
 		loh="{base}/{TIME}/{sample}/qc/{sample}.bwa.loh",
 		loh2gender=NGS_PIPELINE + "/scripts/guessGender.pl",
@@ -431,14 +417,14 @@ rule Gender:
 ############
 # Genotyping On Sample
 ############
-rule SampleGT:
+rule patient_genotyping:
 	input:
 		gtFiles=lambda wildcards: SUB_GT[wildcards.subject],
 		score=NGS_PIPELINE + "/scripts/scoreGenotyes.pl"
 	output:
 		"{subject}/{TIME}/qc/{subject}.genotyping.txt",
 	params:
-		rulename 	= "SampleGT",
+		rulename 	= "patient_genotyping",
 		batch    	= config[config['host']]["job_default"],
 		mail     	= config["mail"],
 		mail_tool 	= NGS_PIPELINE + "/scripts/tsv2html.sh",
@@ -475,7 +461,7 @@ rule SampleGT:
 ############
 #       QC_Sum
 ############
-rule QC_Sum:
+rule qc_sum:
 	input:
 		TARGET,
 		convertor = NGS_PIPELINE + "/scripts/makeQC.pl"
@@ -493,7 +479,7 @@ rule QC_Sum:
 ############
 #       Samtools flagstat
 ############
-rule FLAGSTAT:
+rule flagsta:
 	input:	"{base}/{TIME}/{sample}/{sample}.{aligner}.final.bam"
 	output: "{base}/{TIME}/{sample}/qc/{sample}.{aligner}.flagstat.txt"
 	version: config["samtools"]
@@ -509,7 +495,7 @@ rule FLAGSTAT:
 ############
 #       Hotspot Coverage
 ############
-rule HotSpotCoverage:
+rule hotspotcoverage:
 	input:
 		bam="{base}/{TIME}/{sample}/{sample}.{aligner}.final.bam",
 		interval=lambda wildcards: config['hotspot_bed'][config['sample_captures'][wildcards.sample]],
@@ -517,7 +503,7 @@ rule HotSpotCoverage:
 	output: "{base}/{TIME}/{sample}/qc/{sample}.{aligner}.hotspot.depth"
 	version: config["bedtools"]
 	params:
-		rulename  = "HotSpotCov",
+		rulename  = "hotspotcoverage",
 		samtools  = config['samtools'],
 		batch     = config[config['host']]["job_hotspot"],
 	shell: """
@@ -531,7 +517,7 @@ rule HotSpotCoverage:
 ############
 # Coverage
 ############
-rule Coverage:
+rule coverage:
 	input:
 		bam="{subject}/{TIME}/{sample}/{sample}.bwa.final.bam",
 		bai="{subject}/{TIME}/{sample}/{sample}.bwa.final.bam.bai",
@@ -551,7 +537,7 @@ rule Coverage:
 ############
 # IGV Session file
 ############
-rule IGV_Session:
+rule igv_session:
 	input: bams=lambda wildcards: SUB_IGV[wildcards.subject]
 	output: "{subject}/{TIME}/igv/session_{subject}.xml"
 	message: "Making IGV session xml file for {wildcards.subject}"
@@ -589,7 +575,7 @@ rule IGV_Session:
 ############
 #       Picard Mark Duplicates
 ############
-rule Picard_MarkDup:
+rule mark_dup:
 	input:
 		bam="{subject}/{TIME}/{sample}/{sample}.{base}.bam",
 		bai="{subject}/{TIME}/{sample}/{sample}.{base}.bam.bai"
@@ -621,7 +607,7 @@ rule Picard_MarkDup:
 ############
 #       GATK Best Practices
 ############
-rule GATK:
+rule gatk:
 	input: 	bam="{base}/{TIME}/{sample}/{sample}.bwa.dd.bam",
 		bai="{base}/{TIME}/{sample}/{sample}.bwa.dd.bam.bai",
 		ref=config["reference"],
@@ -651,7 +637,7 @@ rule GATK:
 ############
 #       MuTect
 ############
-rule MuTect:
+rule mutect:
 	input:
 		lambda wildcards: somaticPairs[wildcards.Tumor],
 		ref=config["reference"],
@@ -664,7 +650,7 @@ rule MuTect:
 		coverage="{subject}/{TIME}/{Tumor}/qc/{Tumor}.mutect.coverage.wig.txt"
 	version: config["MuTect"]
 	params:
-		rulename = "MuTect",
+		rulename = "mutect",
 		R	 = config['version_R'],
 		batch    = config[config['host']]["job_mutect"],
 		normal   = lambda wildcards: config['matched_normal'][wildcards.Tumor][0],
@@ -688,7 +674,7 @@ rule MuTect:
 ############
 #       MuTect2
 ############
-rule MuTect2:
+rule mutect2:
 	input:
 		lambda wildcards: somaticPairs[wildcards.Tumor],
 		ref=config["reference"],
@@ -699,7 +685,7 @@ rule MuTect2:
 	output:
 		vcf="{subject}/{TIME}/{Tumor}/calls/{Tumor}.MuTect2.raw.vcf",
 	params:
-		rulename = "MuTect2",
+		rulename = "mutect2",
 		batch    = config[config['host']]["job_mutect2"],
 		normal   = lambda wildcards: config['matched_normal'][wildcards.Tumor][0],
 		vcforder = NGS_PIPELINE + "/scripts/vcfOrderCol.R",
@@ -727,7 +713,7 @@ rule MuTect2:
 ############
 #	vcf2MAF on MuTect output
 ############
-rule muTect2maf:
+rule mutect2maf:
 	input:
 		vcf="{subject}/{TIME}/{sample}/calls/{sample}.{caller}.raw.vcf",
 		ref=config["reference"]
@@ -735,7 +721,7 @@ rule muTect2maf:
 		"{subject}/{TIME}/{sample}/calls/{sample}.{caller}.maf",
 	version: config["vcf2maf"]
 	params:
-		rulename = "vcf2maf",
+		rulename = "mutect2maf",
 		isoforms = config['mskcc_isoforms'],
 		batch    = config[config['host']]["job_vcf2maf"],
 		VEP      = config['VEP'],
@@ -754,7 +740,7 @@ rule muTect2maf:
 ############
 #       Strelka
 ############
-rule Strelka:
+rule strelka:
 	input:
 		lambda wildcards: somaticPairs[wildcards.Tumor],
 		ref=config["reference"],
@@ -764,7 +750,7 @@ rule Strelka:
 		indels="{subject}/{TIME}/{Tumor}/calls/{Tumor}.strelka.indels.raw.vcf"
 	version: config["strelka"]
 	params:
-		rulename = "Strelka",
+		rulename = "strelka",
 		batch    = config[config['host']]["job_strelka"],
 		config=NGS_PIPELINE + "/Tools_config/"+config["strelka_config"],
 		vcftools = config["vcftools"]

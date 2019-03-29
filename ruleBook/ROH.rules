@@ -10,14 +10,14 @@ if 'DNASeq' in config:
 				TARGET    += [subject+"/"+TIME+"/"+sample+"/qc/"+sample+".roh"]
 				TARGET    += [subject+"/"+TIME+"/"+subject+".loh.seg"]
 
-rule ROH:
+rule roh:
 	input:
 		vcf="{subject}/{TIME}/{sample}/calls/{sample}.HC_DNASeq.raw.vcf",
 	output:
         	"{subject}/{TIME}/{sample}/qc/{sample}.roh"
 	version: config["samtools_new"]
 	params:
-		rulename = "ROH",
+		rulename = "roh",
 		batch    = config[config['host']]["job_default"],
 		ref=config["ROH"]
 	shell: """
@@ -34,11 +34,11 @@ rule ROH:
 	grep ^RG {output} |awk '{{if ($6>150000) print $6}}' | awk '{{n += $1}}; END{{print (n/2881033286)*100}}' >{output}.txt
 	#######################
 	"""
-rule SampleLOH:
+rule roh_summary:
 	input: lambda wildcards: sampleLOH[wildcards.subject]
 	output: "{subject}/{TIME}/{subject}.loh.seg"
 	params:
-		rulename = "ROH",
+		rulename = "roh_summary",
 		batch    = config[config['host']]["job_default"]
 	shell: """
 	#######################

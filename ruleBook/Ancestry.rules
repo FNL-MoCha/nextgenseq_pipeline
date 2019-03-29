@@ -9,7 +9,7 @@ if 'DNASeq' in config:
 					ANCESTRY[subject] = [subject+"/"+TIME+"/"+sample+"/ancestry/"+sample+".ancestry"]
 				else:
 					ANCESTRY[subject] += [subject+"/"+TIME+"/"+sample+"/ancestry/"+sample+".ancestry"]
-rule Ancestry:
+rule ancestry:
 	input:
 		bam="{subject}/{TIME}/{sample}/{sample}.bwa.final.bam",
 		ref=config["reference"],
@@ -22,7 +22,7 @@ rule Ancestry:
 		ancestry="{subject}/{TIME}/{sample}/ancestry/{sample}.ancestry"
 	version: config["samtools_new"]
 	params:
-		rulename = "Ancestry",
+		rulename = "ancestry",
 		batch    = config[config['host']]["job_default"],
 	shell: """
 	#######################
@@ -46,11 +46,11 @@ rule Ancestry:
 	rm -rf {output.ancestry}.tmp {output.ancestry}.geno {output.ancestry}.snp {output.ancestry}.ind
 	#######################
 	"""
-rule PatientAncestry:
+rule patient_ancestry:
 	input: lambda wildcards: ANCESTRY[wildcards.subject]
 	output: "{subject}/{TIME}/qc/{subject}.ancestry.txt"
 	params:
-		rulename = "Ancestry_1",
+		rulename = "patient_ancestry",
 		batch    = config[config['host']]["job_default"],
 		script   =NGS_PIPELINE+"/scripts/patientAncestry.pl"
 	shell: """

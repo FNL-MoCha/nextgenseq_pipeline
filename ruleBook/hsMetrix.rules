@@ -1,5 +1,5 @@
 TARGET     += ["{subject}/{TIME}/{sample}/qc/{sample}.hsmetrics".format(TIME=TIME, subject=SAMPLE_TO_SUBJECT[s], sample=s) for s in SAMPLES]
-rule TargetIntervals:
+rule targetintervals:
 	input:
 		bam="{base}/{TIME}/{sample}/{sample}.bwa.final.bam",
 		bai="{base}/{TIME}/{sample}/{sample}.bwa.final.bam.bai",
@@ -11,7 +11,7 @@ rule TargetIntervals:
 	version:
 		config['samtools']
 	params:
-		rulename = "targetIntervals",
+		rulename = "targetintervals",
 		batch	= config[config['host']]["job_default"],
 		reference = config["reference"].replace('.fasta', '.dict')
 	shell:	"""
@@ -28,7 +28,7 @@ rule TargetIntervals:
 	#######################
 	"""
 
-rule HSMetrics:
+rule hsmetrics:
 	input:
 		bam="{base}/{TIME}/{sample}/{sample}.bwa.final.bam",
 		probe_intervals  = "{base}/{TIME}/{sample}/qc/{sample}.probe.intervals",
@@ -37,7 +37,7 @@ rule HSMetrics:
 		"{base}/{TIME}/{sample}/qc/{sample}.hsmetrics"
 	version: config['picard']
 	params:
-		rulename = "hsMetrics",
+		rulename = "hsmetrics",
 		reference = config["reference"],
 		batch	= config[config['host']]["job_hsMetrics"],
 	shell: """

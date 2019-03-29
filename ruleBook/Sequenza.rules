@@ -10,10 +10,10 @@ if 'matched_normal' in config:
 		TARGET +=[subject+"/"+TIME+"/"+sample+"/sequenza/"+sample+".txt"]
 
 ############
-#       GenotypeFile
+#       run pileup to create input for sequenza
 ############
 # Using Older version of samtools for this purpose
-rule PILE4SEQ:
+rule pileup4sequenza:
 	input:
 		bam="{base}/{TIME}/{sample}/{sample}.bwa.final.bam",
 		ref=config["reference"],
@@ -23,7 +23,7 @@ rule PILE4SEQ:
 	output: temp("{base}/{TIME}/{sample}/{sample}.mpileup.gz")
 	version: config["samtools"]
 	params:
-		rulename  = "pile4seq",
+		rulename  = "pileup4sequenza",
 		batch     = config[config['host']]["job_Sequenza"],
 	shell: """
 	#######################
@@ -35,7 +35,11 @@ rule PILE4SEQ:
 	cp ${{LOCAL}}/{wildcards.sample}.mpileup.gz {output}
 	#######################
 	"""
-rule Sequenza:
+############
+# seuqnza
+############
+
+rule sequenza:
 	input:
 		files=lambda wildcards: SequenzaPairs[wildcards.Tumor],
 		seq=NGS_PIPELINE+ "/scripts/sequenza-utils.py",
@@ -73,7 +77,7 @@ rule Sequenza:
 	#######################
 	"""
 
-rule Sequenza_geneAnnot:
+rule annotate_sequenza:
 	input:
 		file="{subject}/{TIME}/{Tumor}/sequenza/{Tumor}/{Tumor}_segments.txt",
 		interval=lambda wildcards: config['target_intervals'][config['sample_captures'][wildcards.Tumor]],
@@ -83,7 +87,7 @@ rule Sequenza_geneAnnot:
 		"{subject}/{TIME}/{Tumor}/sequenza/{Tumor}.txt"
 	version: config["bedtools"]
 	params:
-		rulename = "sequenza_1",
+		rulename = "annotate_sequenza",
 		batch    = config[config['host']]['job_Sequenza']
 	shell: """
 	#######################

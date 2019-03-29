@@ -6,14 +6,14 @@ if 'matched_normal' in config:
 ############
 #	TMB from a MAF file
 ############
-rule TMB:
+rule tmb:
 	input:
 		File ="{base}/{TIME}/{sample}/calls/{sample}.MuTect2.maf",
 	output: 
 		v1="{base}/{TIME}/{sample}/{sample}.TMB.txt"
 	version: config["version_R"]
 	params:
-		rulename = "TMB",
+		rulename = "tmb",
 		batch    = config[config['host']]["job_default"],
 		script   = NGS_PIPELINE + "/scripts/maf2TMB.pl",
 		deno     = lambda wildcards: config['tmb'][config['sample_captures'][wildcards.sample]], 

@@ -1,7 +1,7 @@
 ############
 # featureCounts
 #############
-rule FeatureCounts:
+rule feature_counts:
 	input:
 		bam="{base}/{TIME}/{sample}/{sample}.star.bam",
 		ref=lambda wildcards: config['GTF'][wildcards.gtf],
@@ -15,7 +15,7 @@ rule FeatureCounts:
 		"{base}/{TIME}/{sample}/TPM_{gtf}/{sample}.exon.TPM.txt",
 	version: config['version_R']
 	params:
-		rulename   = "featureCounts",
+		rulename   = "feature_counts",
 		batch      =config[config['host']]['job_featCount'],
 		work_dir =  WORK_DIR
 	shell: """

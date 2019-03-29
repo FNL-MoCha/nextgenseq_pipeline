@@ -14,7 +14,7 @@ if 'DNASeq' in config:
 #######################
 # input tsv file for PyClone
 #######################
-rule makePyCloneInput:
+rule pyclone_input:
 	input:
 		vars="{subject}/{TIME}/Actionable/{sample}.unionSomaticVars.txt",
 		copynumber="{subject}/{TIME}/{sample}/sequenza/{sample}.txt",
@@ -23,7 +23,7 @@ rule makePyCloneInput:
 	output:
 		"{subject}/{TIME}/PyClone/{sample}.tsv"
 	params:
-		rulename = "makePyCloneInput",
+		rulename = "pyclone_input",
 		batch    = config[config['host']]["job_default"]
 	shell: """
 	#######################
@@ -33,13 +33,13 @@ rule makePyCloneInput:
 #######################
 # Run PyClone
 #######################
-rule PyClone:
+rule pyclone:
 	input:
 		lambda wildcards: PYCLONE[wildcards.subject]
 	output:
 		"{subject}/{TIME}/PyClone/trace/alpha.tsv.bz2"
 	params:
-		rulename = "PyClone",
+		rulename = "pyclone",
 		batch    = config[config['host']]["job_pyclone"]
 	shell: """
 	#######################

@@ -24,7 +24,7 @@ if 'DNASeq' in config:
 #######################
 # Merge HC with Platypus results for delivery
 #######################
-rule Merge:
+rule hapcaller_platypus:
 	input:
 		hc="{subject}/{TIME}/{sample}/calls/{sample}.HC_DNASeq.raw.vcf",
 		plat="{subject}/{TIME}/{sample}/calls/{sample}.Platypus.raw.vcf",
@@ -36,7 +36,7 @@ rule Merge:
 		vcf="{subject}/{TIME}/{sample}/calls/{sample}.merged.vcf"
 	version: config["GATK"]
 	params:
-		rulename = "mergeHC_PLAT",
+		rulename = "hapcaller_platypus",
 		batch    = config[config['host']]["job_HC_PLAT"]
 	shell: """
 	#######################
@@ -88,14 +88,14 @@ rule vcf2maf:
 #######################
 # VCF file with variants overlapping MPACT v2.0 bed file
 #######################
-rule GeneMed:
+rule genemed:
 	input:
 		vcf="{subject}/{TIME}/{sample}/calls/{sample}.merged.vep.vcf",
 		bed=config['MPACT_BED']
 	output:
 		"{subject}/{TIME}/{sample}/calls/{sample}.genemed.vcf"
 	params:
-		rulename ="GeneMed",
+		rulename ="genemed",
 		batch    = config[config['host']]["job_default"],
 		script   = NGS_PIPELINE+"/scripts/filter_vep.pl"
 	shell: """
@@ -108,14 +108,14 @@ rule GeneMed:
 # VCF file with variants 33 genes, list provided by Anand Dutta
 # This is to be loaded on PDMR Germline Mutations Associated with Cancer (*.vcf)
 #######################
-rule GermlineMutationAssWithCancer:
+rule germline_predis_vars:
 	input:
 		vcf="{subject}/{TIME}/{sample}/calls/{sample}.merged.vep.vcf",
 		bed=config["annovar_data"]+config["gl_cancerAss"]
 	output:
 		"{subject}/{TIME}/{sample}/calls/{sample}.oncology.vcf"
 	params:
-		rulename ="GermlineMutationAssWithCancer",
+		rulename ="germline_predis_vars",
 		batch    = config[config['host']]["job_default"],
 		script   = NGS_PIPELINE+"/scripts/filter_vep.pl"
 	shell: """
@@ -135,7 +135,7 @@ rule vcf2maf_oncology:
                 "{subject}/{TIME}/{sample}/calls/{sample}.oncology.maf",
         version: config["vcf2maf"]
         params:
-                rulename = "vcf2maf",
+                rulename = "vcf2maf_oncology",
                 isoforms = config['mskcc_isoforms'],
                 script   = NGS_PIPELINE+"/scripts/filterMAF.pl",
                 batch    = config[config['host']]["job_vcf2maf"]
@@ -151,13 +151,13 @@ rule vcf2maf_oncology:
 #######################
 # VCF Consensus file for delivery
 #######################
-rule consensusVCF:
+rule consensus_vcf:
 	input: 
 		lambda wildcards: CONSENSUS_VCF[wildcards.subject]
 	output:
 		"{subject}/{TIME}/{subject}.consensus.vcf"	
 	params:
-		rulename = "consensusVCF",
+		rulename = "consensus_vcf",
 		fix      = NGS_PIPELINE+"/scripts/fixconsensesVCF.pl",
 		batch    = config[config['host']]["job_vcf2maf"]
 	shell: """
@@ -182,14 +182,14 @@ rule consensusVCF:
 #######################
 # Convert to MAF to be loaded to cbioportal
 #######################
-rule vcf2maf_pat:
+rule vcf2maf_patient:
 	input:
 		vcf="{subject}/{TIME}/{subject}.consensus.vcf",
 		ref=config["reference"]
 	output: "{subject}/{TIME}/{subject}.consensus.maf"
 	version: config['vcf2maf']
 	params:
-		rulename = "vcf2maf",
+		rulename = "vcf2maf_patient",
 		isoforms = config['mskcc_isoforms'],
 		script   = NGS_PIPELINE+"/scripts/filterMAF.pl",
 		batch    = config[config['host']]["job_vcf2maf"]

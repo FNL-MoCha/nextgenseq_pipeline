@@ -5,7 +5,7 @@ for subject in config['DNASeq']:
 ############
 #       cnvkit
 ############
-rule MSI:
+rule msings:
 	input:
 		bam="{base}/{TIME}/{sample}/{sample}.bwa.final.bam",
 		interval= config["msi_interval"],
@@ -15,7 +15,7 @@ rule MSI:
 	output:
 		"{base}/{TIME}/{sample}/MSI/{sample}.MSI_Analysis.txt"
 	params:
-		rulename  = "MSI",
+		rulename  = "msings",
 		batch     = config[config['host']]["job_msi"],
 	shell: """
 	#######################

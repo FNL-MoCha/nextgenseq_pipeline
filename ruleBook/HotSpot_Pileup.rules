@@ -23,7 +23,7 @@ if 'DNASeq' in config:
 ############
 #       HotSpotPileup
 ############
-rule HotSpotPileup:
+rule hotspot_pileup:
 	input:
 		bam="{subject}/{TIME}/{sample}/{sample}.{caller}.final.bam",
 		bai="{subject}/{TIME}/{sample}/{sample}.{caller}.final.bam.bai",
@@ -34,7 +34,7 @@ rule HotSpotPileup:
 	version:
 		config["samtools"]
 	params:
-		rulename  = "HotspotPileup",
+		rulename  = "hotspot_pileup",
 		batch     = config[config['host']]["job_bamUtil"],
 		type      = lambda wildcards: config['sample_type'][wildcards.sample],
 		capture	  = lambda wildcards: config['sample_captures'][wildcards.sample],
@@ -45,22 +45,3 @@ rule HotSpotPileup:
 	{params.script} {input.hotspot} {input.ref} {input.bam} {wildcards.sample} {params.type} {params.capture} >{output.out}
 	#######################
 	"""
-############
-#       makeHotSpotDB
-############
-rule makeHotSpotDB:
-	input:
-		lambda wildcards: HOT_SPOT[wildcards.subject]	
-	output:
-		"{subject}/{TIME}/{subject}/db/{subject}.hotspot"
-	params:
-		rulename  = "hotspotDB",
-		batch     = config[config['host']]["job_default"]
-	shell: """
-	#######################
-	cat {input} |sort >{output}
-	#######################
-	"""
-
-	
-

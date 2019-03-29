@@ -9,7 +9,7 @@ if 'DNASeq' in config:
 ############
 #       QC
 ############
-rule QC:
+rule dnaseq_qc:
         input:
                 bam="{base}/{TIME}/{sample}/{sample}.bwa.final.bam",
                 hsMatrix="{base}/{TIME}/{sample}/qc/{sample}.hsmetrics",
@@ -20,7 +20,7 @@ rule QC:
         version:
                 config['samtools']
         params:
-                rulename        = "consolidated_QC",
+                rulename        = "dnaseq_qc",
                 bedtools        = config['bedtools'],
 		python		= config["version_python"],
 		tool_perl       = NGS_PIPELINE+ "/scripts/addAttributes.pl",
@@ -46,11 +46,11 @@ rule QC:
 ############
 #       QC Summary for Patient
 ############
-rule QC_Summary_Patient:
+rule patient_qc_summary:
 	input : lambda wildcards: SUB_CON_QC[wildcards.subject]
 	output: "{subject}/{TIME}/qc/{subject}.consolidated_QC.txt"
 	params:
-		rulename  = "QC_Sum",
+		rulename  = "patient_qc_summary",
 		batch     = config[config['host']]["job_default"]
 	shell: """
 	#######################
@@ -61,11 +61,11 @@ rule QC_Summary_Patient:
 ############
 #	QC Summary for Cohort
 ############
-rule QC_Summary:
+rule cohort_qc_summry:
 	input : CON_QC
 	output: "Consolidated_QC.txt"
 	params:
-		rulename  = "QC_Sum",
+		rulename  = "cohort_qc_summry",
 		batch	  = config[config['host']]["job_default"]
 	shell: """
 	#######################

@@ -1,4 +1,4 @@
-rule RNASeqQC:
+rule collect_rnaseq_metrics:
 	input:
 		bam="{subject}/{TIME}/{sample}/{sample}.tophat.final.bam",
 		bai="{subject}/{TIME}/{sample}/{sample}.tophat.final.bam.bai",
@@ -9,7 +9,7 @@ rule RNASeqQC:
 		pdf="{subject}/{TIME}/{sample}/qc/{sample}.RnaSeqMetrics.pdf",
 	version: config["picard"]
 	params:
-		rulename  = "RnaSeqMetrics",
+		rulename  = "collect_rnaseq_metrics",
 		R	  = config['version_R'],
 		batch     = config[config['host']]["job_markdup"],
 	shell: """
@@ -19,7 +19,7 @@ rule RNASeqQC:
 	java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $PICARD_JAR CollectRnaSeqMetrics STRAND_SPECIFICITY=NONE VALIDATION_STRINGENCY=SILENT REF_FLAT={input.ref_flat} RIBOSOMAL_INTERVALS={input.rna_interval} INPUT={input.bam} OUTPUT={output.table} CHART_OUTPUT={output.pdf}
 	#######################
 	"""
-rule RNASeqQC1:
+rule collect_alignment_summary_metrics:
 	input:
 		bam="{subject}/{TIME}/{sample}/{sample}.tophat.final.bam",
 		bai="{subject}/{TIME}/{sample}/{sample}.tophat.final.bam.bai",
@@ -27,7 +27,7 @@ rule RNASeqQC1:
 		table="{subject}/{TIME}/{sample}/qc/{sample}.AlignmentSummaryMetrics.txt",
 	version: config["picard"]
 	params:
-		rulename  ="RnaSeqMetrics",
+		rulename  ="collect_alignment_summary_metrics",
 		batch     =config[config['host']]["job_markdup"],
 		ref       =config['Bowtie2Index'].replace('genome', 'genome.fa')
 	shell: """
@@ -36,7 +36,7 @@ rule RNASeqQC1:
 	java -Xmx${{MEM}}g -Djava.io.tmpdir=${{LOCAL}} -jar $PICARD_JAR CollectAlignmentSummaryMetrics VALIDATION_STRINGENCY=SILENT REFERENCE_SEQUENCE={params.ref} INPUT={input.bam} OUTPUT={output.table} ADAPTER_SEQUENCE=null
 	#######################
 	"""
-rule RNASeqQC2:
+rule rnaseq_qc_summary:
 	input:
 		"{subject}/{TIME}/{sample}/qc/fastqc/{sample}_R1_fastqc.html",
 		file1="{subject}/{TIME}/{sample}/qc/{sample}.RnaSeqMetrics.txt",
@@ -45,7 +45,7 @@ rule RNASeqQC2:
 	output:
 		"{subject}/{TIME}/{sample}/qc/{sample}.RnaSeqQC.txt"
 	params:
-		rulename  = "RnaSeqMetrics",
+		rulename  = "rnaseq_qc_summary",
 		batch     = config[config['host']]["job_default"],
 		source    = lambda wildcards: config['source'][wildcards.sample],
 		diagnosis = lambda wildcards: config['diagnosis'][subject]
@@ -58,14 +58,14 @@ rule RNASeqQC2:
 	perl {input.convertor} {wildcards.subject}/{TIME}/{wildcards.sample}/qc/fastqc/{wildcards.sample}_R1_fastqc/fastqc_data.txt {input.file2} {input.file1} {wildcards.subject} {wildcards.sample} "{params.diagnosis}" ${{human}} >{output}
 	#######################
 	"""
-rule RNASeqQC3:
+rule rnaseq_qc_summary_patient:
 	input : files=lambda wildcards: SUB_QC[wildcards.subject],
 		convertor=NGS_PIPELINE+"/scripts/transcript_coverage.R"
 	output: 
 		txt="{subject}/{TIME}/qc/{subject}.RnaSeqQC.txt",
 		#plot="{subject}/{TIME}/qc/{subject}.transcriptCoverage.png"
 	params:
-		rulename  = "QC_Sum",
+		rulename  = "rnaseq_qc_summary_patient",
 		batch     = config[config['host']]["job_covplot"]
 	shell: """
 	#######################
@@ -73,11 +73,11 @@ rule RNASeqQC3:
 	cat {input.files} |sort |uniq |sed -e '/^$/d'>{output.txt}
 	#######################
 	"""
-rule RNASeqQC4:
+rule rnaseq_qc_summary_cohort:
 	input : RNA_QC_ALL
 	output: "RnaSeqQC.txt"
 	params:
-		rulename  = "QC_Sum",
+		rulename  = "rnaseq_qc_summary_cohort",
 		batch     = config[config['host']]["job_default"]
 	shell: """
 	#######################

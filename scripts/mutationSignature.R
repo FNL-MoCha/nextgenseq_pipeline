@@ -28,13 +28,15 @@ cosmic = whichSignatures(tumor.ref = sigs.input,
 		signatures.ref = signatures.cosmic,
 		sample.id = sample,
 		contexts.needed = TRUE,
-		tri.counts.method = 'default')
+		signature.cutoff =0.05,
+		tri.counts.method='exome')
 
 nature = whichSignatures(tumor.ref = sigs.input,
                 signatures.ref = signatures.nature2013,
                 sample.id = sample,
                 contexts.needed = TRUE,
-                tri.counts.method = 'default')
+		signature.cutoff =0.05,
+		tri.counts.method='exome')
 a <-cosmic$weights
 a$Sample <-sample
 a<-a[ , order(names(a))]

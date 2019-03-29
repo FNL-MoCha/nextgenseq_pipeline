@@ -10,7 +10,7 @@ if 'RNASeq' in config:
 ############
 # RSEM 
 #############
-rule RSEM:
+rule rsem:
 	input:
 		R1 = "{base}/{TIME}/FQ/{sample}_R1.fastq.gz",
 		R2 = "{base}/{TIME}/FQ/{sample}_R2.fastq.gz",
@@ -19,7 +19,7 @@ rule RSEM:
 		"{base}/{TIME}/{sample}/RSEM/{sample}.genes.results",
 	version: config['rsem']
 	params:
-		rulename   ="RSEM",
+		rulename   ="rsem",
 		batch      =config[config['host']]['job_RSEM'],
 		script	   =NGS_PIPELINE+"/scripts/RSEM_renorm.R",
 		index      =config["rsemIndex"],
@@ -38,13 +38,13 @@ rule RSEM:
 ############
 # RSEM Coorelation Plot
 ############
-rule RNA_COOR:
+rule rna_corr_plot:
 	input:
 		lambda wildcards: SUBJ_RSEM[wildcards.subject]
 	output:
 		"{subject}/{TIME}/qc/{subject}.RNASEQ_CoorelationHeatmap.pdf"
 	params:
-		rulename  ="coorlelationPlot",
+		rulename  ="rna_corr_plot",
 		batch     =config[config['host']]['job_default'],
 		script1	  =NGS_PIPELINE+"/scripts/assemble_RNASEQ_gene.py",
 		script2   =NGS_PIPELINE+"/scripts/correlation_heatmap.R"

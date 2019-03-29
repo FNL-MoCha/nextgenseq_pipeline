@@ -14,13 +14,13 @@ for subject in config['DNASeq']:
 ############
 #       Variant Heatmap
 ############
-rule variantHeatmap:
+rule variant_list:
 	input:
 		lambda wildcards: varHeat[wildcards.subject]
 	output:
 		"{subject}/{TIME}/variantHeatmap/{subject}.positions"
 	params:
-		rulename  = "variantHeatmap",
+		rulename  = "variant_list",
 		batch     = config[config['host']]["job_default"],
 		script	  = NGS_PIPELINE+"/scripts/maf2annovar.v2.pl"
 	shell: """
@@ -32,14 +32,14 @@ rule variantHeatmap:
 ############
 #       Variant Heatmap Step 2
 ############
-rule variantHeatmap_pileup:
+rule variant_pileup:
 	input:
 		pos="{subject}/{TIME}/variantHeatmap/{subject}.positions",
 		bam="{subject}/{TIME}/{sample}/{sample}.bwa.final.bam"
 	output:
 		"{subject}/{TIME}/variantHeatmap/{sample}.pileup"
 	params:
-		rulename  = "variantHeatmap",
+		rulename  = "variant_pileup",
 		script    = NGS_PIPELINE+"/scripts/mpileup.v1.pl",
 		batch     = config[config['host']]["job_default"]
 	shell: """
@@ -51,13 +51,13 @@ rule variantHeatmap_pileup:
 ############
 #       Variant Heatmap Step 3
 ############	
-rule variantHeatmap_Matrix:
+rule variantheatmap:
 	input:
 		lambda wildcards: varMat[wildcards.subject]
 	output:
 		"{subject}/{TIME}/variantHeatmap/{subject}.matrix"
 	params:
-		rulename  = "variantHeatmap",
+		rulename  = "variantheatmap",
 		script    = NGS_PIPELINE+"/scripts/heatmap.R",
 		batch     = config[config['host']]["job_default"]
 	shell: """

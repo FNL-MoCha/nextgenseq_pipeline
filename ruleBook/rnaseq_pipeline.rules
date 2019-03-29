@@ -34,24 +34,24 @@ if 'RNASeq' in config:
 				TARGET_R += [subject+"/"+TIME+"/"+sample+"/TPM_"+gtf+"/"+sample+".exon.TPM.txt"]
 		TARGET_R  += ["{subject}/{TIME}/{sample}/calls/{sample}.HC_RNASeq.raw.vcf".format(TIME=TIME, subject=SUB2RNA[s], sample=s) for s in config['RNASeq'][subject]]
 		SUB_QC[subject]     = ["{subject}/{TIME}/{sample}/qc/{sample}.RnaSeqQC.txt".format(TIME=TIME, subject=SUB2RNA[s], sample=s) for s in config['RNASeq'][subject]]
-		if subject in SUB_HOT:
-			SUB_HOT[subject] += ["{subject}/{TIME}/{sample}/qc/{sample}.star.hotspot.depth".format(TIME=TIME, subject=SUB2RNA[s], sample=s) for s in config['RNASeq'][subject]]
+		if subject in SUB_COV:
+			#SUB_HOT[subject] += ["{subject}/{TIME}/{sample}/qc/{sample}.star.hotspot.depth".format(TIME=TIME, subject=SUB2RNA[s], sample=s) for s in config['RNASeq'][subject]]
 			#SUB_LOH[subject] += ["{subject}/{TIME}/{sample}/qc/{sample}.star.loh".format(TIME=TIME, subject=SUB2RNA[s], sample=s) for s in config['RNASeq'][subject]]
 			SUB_COV[subject] += ["{subject}/{TIME}/{sample}/qc/{sample}.star.coverage.txt".format(TIME=TIME, subject=SUB2RNA[s], sample=s) for s in config['RNASeq'][subject]]
 			SUB_GT[subject]  += ["{subject}/{TIME}/{sample}/qc/{sample}.star.gt".format(TIME=TIME,subject=SUB2RNA[s], sample=s) for s in config['RNASeq'][subject]]
 		else:
-			SUB_HOT[subject] = []
+			#SUB_HOT[subject] = []
 			#SUB_LOH[subject] = []
 			SUB_COV[subject] = []
 			SUB_GT[subject]  = []
-			SUB_HOT[subject] += ["{subject}/{TIME}/{sample}/qc/{sample}.star.hotspot.depth".format(TIME=TIME, subject=SUB2RNA[s], sample=s) for s in config['RNASeq'][subject]]
+			#SUB_HOT[subject] += ["{subject}/{TIME}/{sample}/qc/{sample}.star.hotspot.depth".format(TIME=TIME, subject=SUB2RNA[s], sample=s) for s in config['RNASeq'][subject]]
 			#SUB_LOH[subject] += ["{subject}/{TIME}/{sample}/qc/{sample}.star.loh".format(TIME=TIME, subject=SUB2RNA[s], sample=s) for s in config['RNASeq'][subject]]
 			SUB_COV[subject] += ["{subject}/{TIME}/{sample}/qc/{sample}.star.coverage.txt".format(TIME=TIME,subject=SUB2RNA[s], sample=s) for s in config['RNASeq'][subject]]
 			SUB_GT[subject]  += ["{subject}/{TIME}/{sample}/qc/{sample}.star.gt".format(TIME=TIME, subject=SUB2RNA[s], sample=s) for s in config['RNASeq'][subject]]
 ############
 #       RNASeq All
 ############
-rule RNASeq:
+rule rnaseq_final:
 	input:
 		TARGET_R,
 	output:
@@ -59,7 +59,7 @@ rule RNASeq:
 	wildcard_constraints:
                 NOW="\w+"	
 	params:
-		rulename  = "RNASeq_final",
+		rulename  = "rnaseq_final",
 		batch     = config[config['host']]["job_default"]
 
 	shell: """
@@ -70,7 +70,7 @@ rule RNASeq:
 ############
 #	Tophat
 ############
-rule TOPHAT:
+rule tophat:
 	input:
 		R1="{base}/{TIME}/FQ/{sample}_R1.fastq.gz",
 		R2="{base}/{TIME}/FQ/{sample}_R2.fastq.gz", 
@@ -94,7 +94,7 @@ rule TOPHAT:
 ############
 #       Link Tophat bam file
 ############
-rule TOPHAT_LINK:
+rule tophat_link:
 	input:
 		bam="{base}/{TIME}/{sample}/tophat_{sample}/accepted_hits.bam",
 		bai="{base}/{TIME}/{sample}/tophat_{sample}/accepted_hits.bam.bai",
@@ -115,7 +115,7 @@ rule TOPHAT_LINK:
 ############
 #       Tophat-fusion
 ############
-rule TOPHAT_FUSION:
+rule tophat_fusion:
 	input:
 		"{base}/{TIME}/{sample}/tophat_{sample}/accepted_hits.bam",
 		"{base}/{TIME}/{sample}/tophat_{sample}/accepted_hits.bam.bai"
@@ -124,7 +124,7 @@ rule TOPHAT_FUSION:
 		"{base}/{TIME}/{sample}/fusion/tophat-fusion.txt"
 	version: config["tophat"]
 	params:
-		rulename = "tp",
+		rulename = "tophat_fusion",
 		blast	 =config['version_blast'],
 		batch    =config[config['host']]['job_tophatPost'],
 		ref      =config['BowtieIndex'],
@@ -149,7 +149,7 @@ rule TOPHAT_FUSION:
 ############
 #       Cufflinks
 ############
-rule CUFFLINKS:
+rule cufflinks:
 	input:
 		bam="{base}/{TIME}/{sample}/tophat_{sample}/accepted_hits.bam",
 		bai="{base}/{TIME}/{sample}/tophat_{sample}/accepted_hits.bam.bai",
@@ -162,7 +162,7 @@ rule CUFFLINKS:
 		isoform_log="{base}/{TIME}/{sample}/cufflinks_{gtf}/isoforms.fpkm_tracking_log2"
 	version: config['cufflinks']
 	params:
-		rulename   = "cuff",
+		rulename   = "cufflinks",
 		batch      =config[config['host']]['job_cufflinks']
 	shell: """
 	#######################
@@ -173,28 +173,9 @@ rule CUFFLINKS:
 	#######################
 	"""
 ############
-#	This is to make input file for Sivasish's metrix generation tool.
-############
-rule Cuff_Mat:
-	input: 
-		gene="{base}/{TIME}/{sample}/cufflinks_{gtf}/genes.fpkm_tracking"
-	output:
-		"{base}/{TIME}/{base}/db/matrixInput_{sample}_{gtf}"
-	params:
-		rulename  ="cuff_1",
-		batch     =config[config['host']]['job_default'],
-		diagnosis =lambda wildcards: config['diagnosis'][wildcards.sample],
-		library   =lambda wildcards: config['sample_captures'][wildcards.sample]
-	shell: """
-	#######################
-	echo -e "{wildcards.sample}\\t{params.diagnosis}\\t{params.library}" >{output}
-	echo "{WORK_DIR}/{input.gene}" >>{output}
-	#######################
-	"""
-############
 #       Exon Expression
 ############
-rule EXON_EXP_UCSC:
+rule exon_exp_ucsc:
 	input:
 		bam="{base}/{TIME}/{sample}/tophat_{sample}/accepted_hits.bam",
 		bai="{base}/{TIME}/{sample}/tophat_{sample}/accepted_hits.bam.bai",
@@ -204,7 +185,7 @@ rule EXON_EXP_UCSC:
 		ucsc="{base}/{TIME}/{sample}/exonExp_UCSC/{sample}.exonExpression.UCSC.txt"
 	version: config['samtools']
 	params:
-		rulename   = "exonExp.1",
+		rulename   = "exon_exp_ucsc",
 		batch      =config[config['host']]['job_exonExp']
 	shell: """
 	#######################
@@ -224,7 +205,7 @@ rule EXON_EXP_UCSC:
 ############
 #       Exon Expression
 ############
-rule EXON_EXP_ENS:
+rule exon_exp_ens:
 	input:
 		bam="{base}/{TIME}/{sample}/tophat_{sample}/accepted_hits.bam",
 		bai="{base}/{TIME}/{sample}/tophat_{sample}/accepted_hits.bam.bai",
@@ -234,7 +215,7 @@ rule EXON_EXP_ENS:
 		ens="{base}/{TIME}/{sample}/exonExp_ENS/{sample}.exonExpression.ENS.txt"
 	version: config['samtools']
 	params:
-		rulename   = "exonExp.2",
+		rulename   = "exon_exp_ens",
 		batch      =config[config['host']]['job_exonExp']
 	shell: """
 	#######################
@@ -253,7 +234,7 @@ rule EXON_EXP_ENS:
 ############
 #       Fusioncatcher
 ############
-rule FUSION_CATCHER:
+rule fusion_catcher:
 	input:
 		R1="{base}/{TIME}/FQ/{sample}_R1.fastq.gz",
 		R2="{base}/{TIME}/FQ/{sample}_R2.fastq.gz"
@@ -261,7 +242,7 @@ rule FUSION_CATCHER:
 		"{base}/{TIME}/{sample}/fusion/fusion-catcher.txt"
 	version: config['fusioncatcher']
 	params:
-		rulename = "fc",
+		rulename = "fusion_catcher",
 		batch    = config[config['host']]['job_fusioncatch']
 	shell: """
 	#######################
@@ -275,7 +256,7 @@ rule FUSION_CATCHER:
 ############
 #       deFuse
 ############
-rule DeFuse:
+rule defuse:
 	input:
 		R1="{base}/{TIME}/FQ/{sample}_R1.fastq.gz",
 		R2="{base}/{TIME}/FQ/{sample}_R2.fastq.gz",
@@ -286,7 +267,7 @@ rule DeFuse:
 	version: config["defuse"]
 	resources: DeFuse=1
 	params:
-		rulename = "deFuse",
+		rulename = "defuse",
 		batch    = config[config['host']]["job_deFuse"],
 		defuse_config=NGS_PIPELINE + "/Tools_config/"+config["defuse_config"],
 		parallel = NGS_PIPELINE + "/scripts/parallel"
@@ -322,7 +303,7 @@ rule DeFuse:
 ############
 #       STAR
 ############
-rule STAR:
+rule star:
 	input:
 		R1="{base}/{TIME}/FQ/{sample}_R1.fastq.gz",
 		R2="{base}/{TIME}/FQ/{sample}_R2.fastq.gz",
@@ -332,7 +313,7 @@ rule STAR:
 		temp("{base}/{TIME}/{sample}/{sample}.star.bam.bai")
 	version: config["STAR"]
 	params:
-		rulename  = "STAR",
+		rulename  = "star",
 		samtools  = config['samtools'],
 		batch     = config[config['host']]['job_STAR'],
 		star_ref  = config['STAR_ref'],
@@ -395,7 +376,7 @@ rule STAR:
 ############
 # RNASeq Hapcaller
 ############
-rule HapCall_RNASeq:
+rule rnaseq_variantcalling:
 	input:
 		bam="{base}/{TIME}/{sample}/{sample}.star.final.bam",
 		bai="{base}/{TIME}/{sample}/{sample}.star.final.bam.bai",
@@ -405,7 +386,7 @@ rule HapCall_RNASeq:
 		vcf="{base}/{TIME}/{sample}/calls/{sample}.HC_RNASeq.raw.vcf"
 	version: config["GATK"]
 	params:
-		rulename = "HC_RNA",
+		rulename = "rnaseq_variantcalling",
 		sentieon  = config["sentieon"],
 		batch    = config[config['host']]["job_HC_R"]
 	shell: """
@@ -418,7 +399,7 @@ rule HapCall_RNASeq:
 ############
 # Coverage
 ############
-rule CoveragE:
+rule coverage_rnaseq:
 	input:
 		bam="{subject}/{TIME}/{sample}/{sample}.star.final.bam",
 		bai="{subject}/{TIME}/{sample}/{sample}.star.final.bam.bai",
@@ -427,7 +408,7 @@ rule CoveragE:
 		"{subject}/{TIME}/{sample}/qc/{sample}.star.coverage.txt"
 	version: config["bedtools"]
 	params:
-		rulename = "coverage",
+		rulename = "coverage_rnaseq",
 		batch    = config[config['host']]["job_bedtools"]
 	shell: """
 	#######################
@@ -438,7 +419,7 @@ rule CoveragE:
 ############
 # Filter fusion for every library
 ############
-rule Sub_Fusion:
+rule filter_fusion:
 	input:
 		tophat="{subject}/{TIME}/{sample}/fusion/tophat-fusion.txt",
 		fc="{subject}/{TIME}/{sample}/fusion/fusion-catcher.txt",
@@ -447,7 +428,7 @@ rule Sub_Fusion:
 	output:
 		"{subject}/{TIME}/{sample}/fusion/{sample}.actionable.fusion.txt"
 	params:
-		rulename = "Sub_F",
+		rulename = "filter_fusion",
 		batch    = config[config['host']]["job_default"]
 	shell: """
 	#######################
@@ -458,13 +439,13 @@ rule Sub_Fusion:
 ############
 # Combine filtered fusions to actionable.
 ############
-rule Actionable_fusion:
+rule actionable_fusion:
 	input:
 		fusion=lambda wildcards: SUB_FUSION[wildcards.subject]
 	output:
 		"{subject}/{TIME}/{ACT_DIR}{subject}.fusion.actionable.txt"
 	params:
-		rulename = "Actionable_F",
+		rulename = "actionable_fusion",
 		batch    = config[config['host']]["job_default"]
 	shell: """
 	#######################

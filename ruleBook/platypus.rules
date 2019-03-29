@@ -1,4 +1,4 @@
-rule PLATYPUS:
+rule platypus:
 	input:
 		bam="{subject}/{TIME}/{sample}/{sample}.bwa.final.bam",
 		ref=config["reference"],
@@ -10,7 +10,7 @@ rule PLATYPUS:
 	version: config["platypus"]
 	log: "log/platypus.{subject}.{TIME}.{sample}"
 	params:
-		rulename = "PLAT",
+		rulename = "platypus",
 		batch    = config[config['host']]["job_platypus"]
 	shell: """
 	#######################

@@ -1,22 +1,23 @@
 TARGET     += expand("{subject}/{TIME}/qc/{subject}.coveragePlot.png",TIME=TIME, subject=PATIENTS)
-TARGET     += expand("{subject}/{TIME}/qc/{subject}.hotspot_coverage.png", TIME=TIME, subject=PATIENTS)
+#TARGET     += expand("{subject}/{TIME}/qc/{subject}.hotspot_coverage.png", TIME=TIME, subject=PATIENTS)
 if 'DNASeq' in config:
 	for subject in config['DNASeq']:
 		for library in config['DNASeq'][subject]:
+			TARGET    += [subject+"/"+TIME+"/qc/"+subject+".hotspot_coverage.png"]
 			if config['sample_captures'][library] not in config['Panel_List']:
 				# any output which is desired on all libraries but Panel goes here, the list of panel captures should be maintained in the Panel_List in config file
 				TARGET    += [subject+"/"+TIME+"/qc/"+subject+".circos.png"]
 ############
 # CoveragePlot
 ############
-rule CoveragePlot:
+rule coverageplot:
 	input:
 		covFiles=lambda wildcards: SUB_COV[wildcards.subject],
 		coverage =NGS_PIPELINE + "/scripts/coverage.R"
 	output: "{subject}/{TIME}/qc/{subject}.coveragePlot.png",
 	version: config["version_R"]
 	params:
-		rulename = "covplot",
+		rulename = "coverageplot",
 		batch    = config[config['host']]["job_covplot"]
 	shell: """
 	#######################
@@ -30,7 +31,7 @@ rule CoveragePlot:
 ############
 # Circos Plot
 ############
-rule Circos:
+rule circos:
 	input:
 		lohFiles=lambda wildcards: SUB_LOH[wildcards.subject],
 		circos =NGS_PIPELINE + "/scripts/circos.R"
@@ -38,7 +39,7 @@ rule Circos:
 		"{subject}/{TIME}/qc/{subject}.circos.png",
 	version: config["version_R"]
 	params:
-		rulename = "Circos",
+		rulename = "circos",
 		batch    = config[config['host']]["job_covplot"]
 	shell: """
 	#######################
@@ -50,7 +51,7 @@ rule Circos:
 ############
 # Box Plot Hotspot
 ############
-rule BoxPlot_Hotspot:
+rule boxplot_hotspot:
 	input:
 		covFiles=lambda wildcards: SUB_HOT[wildcards.subject],
 		boxplot =NGS_PIPELINE + "/scripts/boxplot.R"
@@ -58,7 +59,7 @@ rule BoxPlot_Hotspot:
 		"{subject}/{TIME}/qc/{subject}.hotspot_coverage.png",
 	version: config["version_R"]
 	params:
-		rulename = "Boxplot",
+		rulename = "boxplot_hotspot",
 		batch    = config[config['host']]["job_covplot"]
 	shell: """
 	#######################

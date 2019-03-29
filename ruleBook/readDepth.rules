@@ -2,7 +2,7 @@
 ############
 ##      Depth Per Base for entire target intervals
 ############
-rule ReadDepth:
+rule read_depth:
 	input:
 		bam="{base}/{TIME}/{sample}/{sample}.bwa.final.bam",
 		bai="{base}/{TIME}/{sample}/{sample}.bwa.final.bam.bai",
@@ -11,7 +11,7 @@ rule ReadDepth:
 		"{base}/{TIME}/{sample}/qc/{sample}.depth_per_base"
 	version: config['bedtools']
 	params:
-		rulename	= "readDepth",
+		rulename	= "read_depth",
 		R 		= config['version_R'],
 		samtools	= config['samtools'],
 		batch		= config[config['host']]["job_bedtools"]

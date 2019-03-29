@@ -9,7 +9,7 @@ if 'RNASeq' in config:
 ############
 # MAGGIE
 #############
-rule MAGGIE:
+rule maggie:
 	input:
 		bam="{subject}/{TIME}/{sample}/{sample}.{aligner}.final.bam",
 		interval=config["MAGGIE_BED"].replace(".bed",".padded.bed"),
@@ -18,7 +18,7 @@ rule MAGGIE:
 	output:
 		"{subject}/{TIME}/{sample}/qc/{sample}.{aligner}.codingsynon.sorted.vcf.gz"
 	params:
-		rulename   ="MAGGIE",
+		rulename   ="maggie",
 		batch      =config[config['host']]['job_MAGGIE'],
 	shell: """
 	#######################

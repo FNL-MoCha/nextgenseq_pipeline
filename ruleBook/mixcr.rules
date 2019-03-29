@@ -4,22 +4,23 @@ if 'RNASeq' in config:
 	for subject in config['RNASeq'].keys():
 		for sample in config['RNASeq'][subject]:
 			if config['sample_captures'][sample] == 'access' :
-			TARGET_R   += [subject+"/"+TIME+"/"+sample+"/mixcr/"+sample+".clones.RNA.txt"]
-			TARGET_R   += [subject+"/"+TIME+"/"+sample+"/mixcr/"+"convert."+sample+".clones.RNA.txt"]
-			TARGET_R   += [subject+"/"+TIME+"/"+sample+"/mixcr/"+sample+".summarystats.RNA.txt"]
-		else:
-			TARGET_TCR += [subject+"/"+TIME+"/"+sample+"/mixcr/"+sample+".clones.TCR.txt"]
-			TARGET_TCR += [subject+"/"+TIME+"/"+sample+"/mixcr/"+"convert."+sample+".clones.TCR.txt"]
-			TARGET_TCR += [subject+"/"+TIME+"/"+sample+"/mixcr/"+sample+".summarystats.TCR.txt"]
-rule mixcr_RNASeq:
+				TARGET   += [subject+"/"+TIME+"/"+sample+"/mixcr/"+sample+".clones.RNA.txt"]
+				TARGET   += [subject+"/"+TIME+"/"+sample+"/mixcr/"+"convert."+sample+".clones.RNA.txt"]
+				TARGET   += [subject+"/"+TIME+"/"+sample+"/mixcr/"+sample+".summarystats.RNA.txt"]
+			else:
+				TARGET_TCR += [subject+"/"+TIME+"/"+sample+"/mixcr/"+sample+".clones.TCR.txt"]
+				TARGET_TCR += [subject+"/"+TIME+"/"+sample+"/mixcr/"+"convert."+sample+".clones.TCR.txt"]
+				TARGET_TCR += [subject+"/"+TIME+"/"+sample+"/mixcr/"+sample+".summarystats.TCR.txt"]
+rule mixcr_rnaseq:
 	input:
-		R=lambda wildcards: FQ[wildcards.sample]
+		R1 = "{base}/{TIME}/FQ/{sample}_R1.fastq.gz",
+		R2 = "{base}/{TIME}/FQ/{sample}_R2.fastq.gz",
 	output:
 		mixcr="{base}/{TIME}/{sample}/mixcr/{sample}.clones.RNA.txt",
 		vdjtools="{base}/{TIME}/{sample}/mixcr/convert.{sample}.clones.RNA.txt",
 		summary="{base}/{TIME}/{sample}/mixcr/{sample}.summarystats.RNA.txt"
 	params:
-		rulename = "mixcr_RNASeq",
+		rulename = "mixcr_rnaseq",
 		batch    = config[config['host']]['job_mixcr'],
 	shell: """
 	#######################
@@ -28,7 +29,7 @@ rule mixcr_RNASeq:
 	if [ -d "{wildcards.base}/{wildcards.TIME}/{wildcards.sample}/mixcr" ]; then rm -f {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/mixcr/*; fi
 	cd {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/mixcr/
 
-	mixcr align -t ${{THREADS}} -p rna-seq -s hsa -OallowPartialAlignments=true --report {wildcards.sample}.alignment.log {input.R[0]} {input.R[1]} {wildcards.sample}.aln.vdjca
+	mixcr align -t ${{THREADS}} -p rna-seq -s hsa -OallowPartialAlignments=true --report {wildcards.sample}.alignment.log {WORK_DIR}/{input.R1} {WORK_DIR}/{input.R2} {wildcards.sample}.aln.vdjca
 	mixcr assemblePartial {wildcards.sample}.aln.vdjca alignments_rescued_1.vdjca
 	mixcr assemblePartial alignments_rescued_1.vdjca alignments_rescued_2.vdjca
 
@@ -43,7 +44,7 @@ rule mixcr_RNASeq:
 	mixcr exportClones -c IGL {wildcards.sample}.clones.clns {wildcards.sample}.clones.IGL.txt
 	
 	module load vdjtools/1.1.10
-	module load R/3.3.2
+	module load R/3.5.0
 	
 	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR Convert -S mixcr {wildcards.sample}.clones.RNA.txt convert
 	java -Djava.io.tmpdir=${{LOCAL}} -jar $VDJ_JAR Convert -S mixcr {wildcards.sample}.clones.TRA.txt convert
@@ -73,7 +74,7 @@ rule mixcr_RNASeq:
 	#######################
 	"""
 
-rule mixcr_TCRSeq:
+rule mixcr_tcrseq:
 	input:
 		R=lambda wildcards: FQ[wildcards.sample]
 	output:
@@ -81,7 +82,7 @@ rule mixcr_TCRSeq:
 		vdjtools="{base}/{TIME}/{sample}/mixcr/convert.{sample}.clones.TCR.txt",
 		summary="{base}/{TIME}/{sample}/mixcr/{sample}.summarystats.TCR.txt"
 	params:
-		rulename = "mixcr_TCRSeq",
+		rulename = "mixcr_tcrseq",
 		batch    = config[config['host']]['job_mixcr']
 	shell: """
 	#######################

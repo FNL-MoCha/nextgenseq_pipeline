@@ -14,7 +14,7 @@ if len(config['matched_normal']) > 0:
 ########################
 #	verifyBamID 1.1.3 
 ########################
-rule verifyBamID:
+rule verify_bam_id:
 	input:
 		bam="{subject}/{TIME}/{sample}/{sample}.bwa.final.bam",
 		vcf=lambda wildcards: config['verifyBamID_vcf'][config['sample_captures'][wildcards.sample]],
@@ -22,7 +22,7 @@ rule verifyBamID:
 		"{subject}/{TIME}/{sample}/verifyBamID/{sample}.selfSM"
 	version: config["verifybamid"]
 	params:
-		rulename  = "verifyBamID",
+		rulename  = "verify_bam_id",
 		batch	  = config[config['host']]["job_bamUtil"]
 	shell: """
 	#######################
@@ -33,7 +33,7 @@ rule verifyBamID:
 ########################
 #   conpair
 ########################
-rule conpair_pile:
+rule conpair_pileup:
 	input:
 		bam="{subject}/{TIME}/{sample}/{sample}.bwa.final.bam",
 		ref=config["reference"],
@@ -42,7 +42,7 @@ rule conpair_pile:
 		temp("{subject}/{TIME}/{sample}/qc/{sample}.conpair.mpileup")
 	version: config['conpair']
 	params:
-		rulename = "conpair_1",
+		rulename = "conpair_pileup",
 		batch    = config[config['host']]["job_gatk"]
 	shell: """
 	#######################
@@ -62,7 +62,7 @@ rule conpair_concod:
 		"{subject}/{TIME}/{Tumor}/qc/{Tumor}.concod.txt"
 	version: config['conpair']
 	params:
-		rulename = "conpair_2",
+		rulename = "conpair_concod",
 		batch    = config[config['host']]["job_default"]
 	shell: """
 	#######################
@@ -81,7 +81,7 @@ rule conpair_conta:
 		"{subject}/{TIME}/{Tumor}/qc/{Tumor}.conta.txt"
 	version: config['conpair']
 	params: 
-		rulename = "conpair_3",
+		rulename = "conpair_conta",
 		batch    = config[config['host']]["job_default"],
 		normal   = lambda wildcards: config['matched_normal'][wildcards.Tumor]
 	shell: """

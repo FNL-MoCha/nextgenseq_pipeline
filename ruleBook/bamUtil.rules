@@ -5,7 +5,7 @@ for subject  in config['RNASeq'].keys():
 ############
 #       bamUtil
 ############
-rule bamUtil:
+rule bamutil:
 	input:
 		bam="{base}/{TIME}/{sample}/{sample}.{aligner}.final.bam",
 		ref=config["reference"],

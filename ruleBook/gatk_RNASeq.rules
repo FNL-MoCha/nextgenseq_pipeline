@@ -4,7 +4,7 @@
 ############
 #       GATK Best Practices
 ############
-rule GATK_R1:
+rule gatk_rnaseq_step1:
         input:  bam="{base}/{TIME}/{sample}/{sample}.star.dd.bam",
                 bai="{base}/{TIME}/{sample}/{sample}.star.dd.bam.bai",
                 ref=config["reference"],
@@ -15,7 +15,7 @@ rule GATK_R1:
                 index=temp("{base}/{TIME}/{sample}/{sample}.star.trim.bam.bai"),
         version: config["GATK"]
         params:
-                rulename  = "gatk_R1",
+                rulename  = "gatk_rnaseq_step1",
                 sentieon  = config["sentieon"],
                 batch     = config[config['host']]["job_gatk_R1"]
         shell: """
@@ -30,7 +30,7 @@ rule GATK_R1:
 ############
 #       GATK Best Practices
 ############
-rule GATK_R2:
+rule gatk_rnaseq_step2:
         input:  bam="{base}/{TIME}/{sample}/{sample}.star.trim.bam",
                 bai="{base}/{TIME}/{sample}/{sample}.star.trim.bam.bai",
                 ref=config["reference"],
@@ -41,7 +41,7 @@ rule GATK_R2:
                 index=temp("{base}/{TIME}/{sample}/{sample}.star.lr.bam.bai"),
         version: config["GATK"]
         params:
-                rulename  = "gatk_R2",
+                rulename  = "gatk_rnaseq_step2",
                 sentieon  = config["sentieon"],
                 batch     = config[config['host']]["job_gatk_R2"]
         shell: """
@@ -53,7 +53,7 @@ rule GATK_R2:
 ############
 #       GATK Best Practices
 ############
-rule GATK_R3:
+rule gatk_rnaseq_step3:
         input:  bam="{base}/{TIME}/{sample}/{sample}.star.lr.bam",
                 bai="{base}/{TIME}/{sample}/{sample}.star.lr.bam.bai",
                 ref=config["reference"],
@@ -63,7 +63,7 @@ rule GATK_R3:
                 mat=temp("{base}/{TIME}/{sample}/{sample}.star.recalibration.matrix.txt"),
         version: config["GATK"]
         params:
-                rulename  = "gatk_R3",
+                rulename  = "gatk_rnaseq_step3",
                 sentieon  = config["sentieon"],
                 batch     = config[config['host']]["job_gatk_R3"]
         shell: """
@@ -75,7 +75,7 @@ rule GATK_R3:
 ############
 #       GATK Best Practices
 ############
-rule GATK_R4:
+rule gatk_rnaseq_step4:
         input:  bam="{base}/{TIME}/{sample}/{sample}.star.lr.bam",
                 bai="{base}/{TIME}/{sample}/{sample}.star.lr.bam.bai",
 		mat="{base}/{TIME}/{sample}/{sample}.star.recalibration.matrix.txt",
@@ -87,7 +87,7 @@ rule GATK_R4:
                 index="{base}/{TIME}/{sample}/{sample}.star.final.bam.bai",
         version: config["GATK"]
         params:
-                rulename  = "gatk_R4",
+                rulename  = "gatk_rnaseq_step4",
                 sentieon  = config["sentieon"],
                 batch     = config[config['host']]["job_gatk_R4"]
         shell: """
