@@ -88,7 +88,7 @@ if (`hostname` =~ /cn/ or `hostname` =~ /biowulf.nih.gov/){
 		export HOST=\"biowulf.nih.gov\"
 		SNAKEFILE=$NGS_PIPELINE/ngs_pipeline.rules
 		SAM_CONFIG=$sheet
-		snakemake --directory \$WORK_DIR --snakefile \$SNAKEFILE --configfile \$SAM_CONFIG --dryrun -p -r --ri -R RNASeq
+		snakemake --directory \$WORK_DIR --snakefile \$SNAKEFILE --configfile \$SAM_CONFIG --dryrun -p -r --ri -R rnaseq_final
 		rm -rf $workDir/ngs_pipeline_$NOW.csv
 		)";
 		print "$cmd\n";
@@ -96,7 +96,7 @@ if (`hostname` =~ /cn/ or `hostname` =~ /biowulf.nih.gov/){
 	}
 	else{
 		`mkdir -p "$workDir/log/"`;
-		`sbatch -e $workDir/log/ngs-pipeline.e -o $workDir/log/ngs-pipeline.o --export=time=$mode,ngs=$NGS_PIPELINE,dataDir=$dataDir,workDir=$workDir,sheet=$sheet --cpus-per-task=1 --partition=norm --time=03-00:00:00 $NGS_PIPELINE/submit_snakemake.sh`;
+		`sbatch -e $workDir/log/ngs-pipeline.e -o $workDir/log/ngs-pipeline.o --export=time=$mode,ngs=$NGS_PIPELINE,dataDir=$dataDir,workDir=$workDir,sheet=$sheet --cpus-per-task=1 --partition=norm --time=02-00:00:00 $NGS_PIPELINE/submit_snakemake.sh`;
 		#`sbatch -e $workDir/log/ngs-pipeline.e -o $workDir/log/ngs-pipeline.o --export=time=$mode,ngs=$NGS_PIPELINE,dataDir=$dataDir,workDir=$workDir,sheet=$sheet --cpus-per-task=1 --partition=norm --time=10:00:00 $NGS_PIPELINE/submit_snakemake.sh`;
 	}
 }

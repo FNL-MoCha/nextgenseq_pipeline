@@ -150,7 +150,7 @@ for sample in config['matched_normal'].keys():
 	TARGET += [subject+"/"+TIME+"/"+sample+"/calls/"+sample+".MuTect.maf"],
 	TARGET += [subject+"/"+TIME+"/"+sample+"/calls/"+sample+".MuTect2.maf"],
 ###########################################################################
-localrules: Pipeline, RNASeq, makeConfig, QC_Summary_Patient,QC_Summary,TOPHAT_LINK, SampleGT,QC_Sum, RNASeqQC2,RNASeqQC3, Cuff_Mat
+localrules: pipeline, rnaseq_final, patient_qc_summary, tophat_link, patient_genotyping
 #Circos, CoveragePlot, BoxPlot_Hotspot, makeConfig,Ideogram
 ###########################################################################
 #				Include Rule Book			  #
@@ -324,7 +324,7 @@ rule fastqc:
 	shell: """
 	#######################
 	module load fastqc/{version}
-	
+	rm -rf {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/*	
 	echo "Working on {input.R1}"
 	zcat {input.R1} |fastqc --extract -t ${{THREADS}} -o {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/ -d ${{LOCAL}} /dev/stdin
 	mv -f {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/stdin_fastqc.html {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/{wildcards.sample}_R1_fastqc.html
@@ -479,7 +479,7 @@ rule qc_sum:
 ############
 #       Samtools flagstat
 ############
-rule flagsta:
+rule flagstat:
 	input:	"{base}/{TIME}/{sample}/{sample}.{aligner}.final.bam"
 	output: "{base}/{TIME}/{sample}/qc/{sample}.{aligner}.flagstat.txt"
 	version: config["samtools"]
