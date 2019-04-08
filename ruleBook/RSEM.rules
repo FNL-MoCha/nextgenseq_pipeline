@@ -12,8 +12,7 @@ if 'RNASeq' in config:
 #############
 rule rsem:
 	input:
-		R1 = "{base}/{TIME}/FQ/{sample}_R1.fastq.gz",
-		R2 = "{base}/{TIME}/FQ/{sample}_R2.fastq.gz",
+		"{base}/{TIME}/FQ/{sample}_stat.txt"
 	output:
 		"{base}/{TIME}/{sample}/RSEM/{sample}.isoforms.results",
 		"{base}/{TIME}/{sample}/RSEM/{sample}.genes.results",
@@ -28,7 +27,9 @@ rule rsem:
 	#######################
 	module load rsem/{version}
 	module load bowtie/{params.bowtie}
-	rsem-calculate-expression -p ${{THREADS}} --output-genome-bam --bowtie2 --forward-prob 0 --paired-end {input.R1} {input.R2} {params.index} ${{LOCAL}}/{wildcards.sample}
+	obj_get -v MoCha {wildcards.sample}_hg19_R1.fastq.gz --directory ${{LOCAL}}/
+	obj_get -v MoCha {wildcards.sample}_hg19_R2.fastq.gz --directory ${{LOCAL}}/
+	rsem-calculate-expression -p ${{THREADS}} --output-genome-bam --bowtie2 --forward-prob 0 --paired-end ${{LOCAL}}/{wildcards.sample}_hg19_R1.fastq.gz ${{LOCAL}}/{wildcards.sample}_hg19_R2.fastq.gz {params.index} ${{LOCAL}}/{wildcards.sample}
 	module load R
 	{params.script} ${{LOCAL}}/{wildcards.sample}.isoforms.results ${{LOCAL}}/{wildcards.sample}.genes.results {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/RSEM/{wildcards.sample}.isoforms.results {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/RSEM/{wildcards.sample}.genes.results
 	#cp ${{LOCAL}}/{wildcards.sample}.genes.results {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/RSEM/{wildcards.sample}.genes.results

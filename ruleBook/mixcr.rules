@@ -13,8 +13,7 @@ if 'RNASeq' in config:
 				TARGET_TCR += [subject+"/"+TIME+"/"+sample+"/mixcr/"+sample+".summarystats.TCR.txt"]
 rule mixcr_rnaseq:
 	input:
-		R1 = "{base}/{TIME}/FQ/{sample}_R1.fastq.gz",
-		R2 = "{base}/{TIME}/FQ/{sample}_R2.fastq.gz",
+		"{base}/{TIME}/FQ/{sample}_stat.txt"
 	output:
 		mixcr="{base}/{TIME}/{sample}/mixcr/{sample}.clones.RNA.txt",
 		vdjtools="{base}/{TIME}/{sample}/mixcr/convert.{sample}.clones.RNA.txt",
@@ -26,10 +25,12 @@ rule mixcr_rnaseq:
 	#######################
 	module load java/1.8.0_11
 	module load mixcr/2.1.12
+	obj_get -v MoCha {wildcards.sample}_hg19_R1.fastq.gz --directory ${{LOCAL}}/
+	obj_get -v MoCha {wildcards.sample}_hg19_R2.fastq.gz --directory ${{LOCAL}}/
 	if [ -d "{wildcards.base}/{wildcards.TIME}/{wildcards.sample}/mixcr" ]; then rm -f {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/mixcr/*; fi
 	cd {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/mixcr/
 
-	mixcr align -t ${{THREADS}} -p rna-seq -s hsa -OallowPartialAlignments=true --report {wildcards.sample}.alignment.log {WORK_DIR}/{input.R1} {WORK_DIR}/{input.R2} {wildcards.sample}.aln.vdjca
+	mixcr align -t ${{THREADS}} -p rna-seq -s hsa -OallowPartialAlignments=true --report {wildcards.sample}.alignment.log ${{LOCAL}}/{wildcards.sample}_hg19_R1.fastq.gz ${{LOCAL}}/{wildcards.sample}_hg19_R2.fastq.gz {wildcards.sample}.aln.vdjca
 	mixcr assemblePartial {wildcards.sample}.aln.vdjca alignments_rescued_1.vdjca
 	mixcr assemblePartial alignments_rescued_1.vdjca alignments_rescued_2.vdjca
 

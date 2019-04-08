@@ -178,16 +178,11 @@ include: NGS_PIPELINE +"/ruleBook/haplotypeCaller.rules"
 include: NGS_PIPELINE +"/ruleBook/platypus.rules"
 include: NGS_PIPELINE +"/ruleBook/gatk_RNASeq.rules"
 include: NGS_PIPELINE +"/ruleBook/ideogram.rules"
-#include: NGS_PIPELINE +"/ruleBook/Actionable.rules"
-#include: NGS_PIPELINE +"/ruleBook/UnionSomaticMutations.rules" # This one activates Strelka 
 include: NGS_PIPELINE +"/ruleBook/plots.rules"
-#include: NGS_PIPELINE +"/ruleBook/annot.rules"
 include: NGS_PIPELINE +"/ruleBook/featureCount.rules"
 include: NGS_PIPELINE +"/ruleBook/Sequenza.rules"
 include: NGS_PIPELINE +"/ruleBook/cnvkit.rules"
-#include: NGS_PIPELINE +"/ruleBook/MethlySeq.rules"
 include: NGS_PIPELINE +"/ruleBook/RSEM.rules"
-#include: NGS_PIPELINE +"/ruleBook/HotSpot_Pileup.rules"
 #include: NGS_PIPELINE +"/ruleBook/PyClone.rules"
 ###########################################################################
 # we have to do it this way as some samples may not have rna or tumor     #
@@ -253,8 +248,7 @@ rule bbsplit:
 		R=lambda wildcards: FQ[wildcards.sample],
 		ref=config['bbsplitIndex']
 	output:
-		R1 = "{base}/{TIME}/FQ/{sample}_R1.fastq.gz",
-		R2 = "{base}/{TIME}/FQ/{sample}_R2.fastq.gz"
+		"{base}/{TIME}/FQ/{sample}_stat.txt"
 	version: config["bbtools"]
 	params:
 		rulename = "bbsplit",
@@ -276,12 +270,18 @@ rule bbsplit:
 		if [ {params.source} == 'PDX' ]; then
 			module load bbtools/{version}
 			bbtools bbsplit build=1 -Xmx${{MEM}}g path={input.ref} in1=${{LOCAL}}/${{name}}_R1.fastq.gz in2=${{LOCAL}}/${{name}}_R2.fastq.gz basename={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_%_#.fastq.gz refstats={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_stat.txt
-			mv -f {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_1.fastq.gz {output.R1} 
-			mv -f {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_2.fastq.gz {output.R2}
+			# make file ready to ship to obj_storage
+			mv -f {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_1.fastq.gz {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R1.fastq.gz
+			mv -f {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_2.fastq.gz {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R2.fastq.gz 
+			obj_put -v MoCha --force --progressbar {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R1.fastq.gz {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R2.fastq.gz
 			rm -rf {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_mm10_?.fastq.gz
+			rm -rf {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R1.fastq.gz {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R2.fastq.gz
 		else
-			cp ${{LOCAL}}/${{name}}_R1.fastq.gz {params.work_dir}/{output.R1}
-			cp ${{LOCAL}}/${{name}}_R2.fastq.gz {params.work_dir}/{output.R2}
+			mv ${{LOCAL}}/${{name}}_R1.fastq.gz {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R1.fastq.gz 
+			mv ${{LOCAL}}/${{name}}_R2.fastq.gz {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R2.fastq.gz
+			obj_put -v MoCha --force --progressbar {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R1.fastq.gz {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R2.fastq.gz
+			rm -rf {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R1.fastq.gz {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R2.fastq.gz
+			touch {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_stat.txt
 		fi
 	else
 		echo "Files are still here"
@@ -295,15 +295,20 @@ rule bbsplit:
 		if [ {params.source} == 'PDX' ]; then
 			module load bbtools/{version}
 			bbtools bbsplit build=1 -Xmx${{MEM}}g path={input.ref} in1={input[0]} in2=${{R2}} basename={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_%_#.fastq.gz refstats={wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_stat.txt
-			mv -f {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_1.fastq.gz {output.R1}
-			mv -f {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_2.fastq.gz {output.R2}
+			mv -f {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_1.fastq.gz {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R1.fastq.gz 
+			mv -f {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_2.fastq.gz {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R2.fastq.gz
+			obj_put -v MoCha --force --progressbar {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R1.fastq.gz {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R2.fastq.gz
+			rm -rf {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R1.fastq.gz {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R2.fastq.gz
 			rm -rf {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_mm10_?.fastq.gz
 		else
-			cp {input[0]} {params.work_dir}/{output.R1}
-			cp ${{R2}}    {params.work_dir}/{output.R2}
+			cp {input[0]} {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R1.fastq.gz
+			cp ${{R2}}    {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R2.fastq.gz
+			obj_put -v MoCha --force --progressbar {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R1.fastq.gz {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R2.fastq.gz
+			rm -rf {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R1.fastq.gz {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R2.fastq.gz
+			touch {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_stat.txt
 		fi	
 		rm -rf {input[0]} ${{R2}}
-		touch {params.work_dir}/{output.R1} {params.work_dir}/{output.R2}
+		touch {output}
 	fi		
 	#######################
 	"""
@@ -312,8 +317,7 @@ rule bbsplit:
 ############
 rule fastqc:
 	input:
-		R1 = "{base}/{TIME}/FQ/{sample}_R1.fastq.gz",
-		R2 = "{base}/{TIME}/FQ/{sample}_R2.fastq.gz",
+		"{base}/{TIME}/FQ/{sample}_stat.txt"
 	output:
 		"{base}/{TIME}/{sample}/qc/fastqc/{sample}_R1_fastqc.html",
 		"{base}/{TIME}/{sample}/qc/fastqc/{sample}_R2_fastqc.html"
@@ -324,14 +328,17 @@ rule fastqc:
 	shell: """
 	#######################
 	module load fastqc/{version}
+	obj_get -v MoCha {wildcards.sample}_hg19_R1.fastq.gz --directory ${{LOCAL}}/	
+	obj_get -v MoCha {wildcards.sample}_hg19_R2.fastq.gz --directory ${{LOCAL}}/	
+	
 	rm -rf {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/*	
-	echo "Working on {input.R1}"
-	zcat {input.R1} |fastqc --extract -t ${{THREADS}} -o {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/ -d ${{LOCAL}} /dev/stdin
+	echo "Working on R1"
+	zcat ${{LOCAL}}/{wildcards.sample}_hg19_R1.fastq.gz |fastqc --extract -t ${{THREADS}} -o {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/ -d ${{LOCAL}} /dev/stdin
 	mv -f {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/stdin_fastqc.html {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/{wildcards.sample}_R1_fastqc.html
 	mv -f {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/stdin_fastqc      {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/{wildcards.sample}_R1_fastqc
 	mv -f {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/stdin_fastqc.zip  {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/{wildcards.sample}_R1_fastqc.zip
-	echo "Working on {input.R2}"
-	zcat {input.R2} |fastqc --extract -t ${{THREADS}} -o {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/ -d ${{LOCAL}} /dev/stdin
+	echo "Working on R2"
+	zcat ${{LOCAL}}/{wildcards.sample}_hg19_R2.fastq.gz |fastqc --extract -t ${{THREADS}} -o {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/ -d ${{LOCAL}} /dev/stdin
 	mv -f {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/stdin_fastqc.html {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/{wildcards.sample}_R2_fastqc.html
 	mv -f {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/stdin_fastqc      {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/{wildcards.sample}_R2_fastqc
 	mv -f {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/stdin_fastqc.zip  {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/{wildcards.sample}_R2_fastqc.zip
@@ -342,8 +349,7 @@ rule fastqc:
 ############
 rule bwa:
 	input:
-		R1 = "{base}/{TIME}/FQ/{sample}_R1.fastq.gz",
-		R2 = "{base}/{TIME}/FQ/{sample}_R2.fastq.gz",
+		"{base}/{TIME}/FQ/{sample}_stat.txt",
 		ref=config["bwaIndex"]
 	output:
 		temp("{base}/{TIME}/{sample}/{sample}.bwa.bam"),
@@ -361,7 +367,9 @@ rule bwa:
 	module load samtools/{params.samtools}
 	module load {params.sentieon}
 	echo "Using Sentieon"
-	bwa mem -M -t ${{THREADS}} -R '@RG\\tID:{wildcards.sample}\\tSM:{wildcards.sample}\\tLB:{wildcards.sample}\\tPL:{params.platform}' {input.ref} {input.R1} {input.R2} | sentieon util sort -o ${{LOCAL}}/{wildcards.sample}.bwa.bam -t ${{THREADS}} --sam2bam -i -
+	obj_get -v MoCha {wildcards.sample}_hg19_R1.fastq.gz --directory ${{LOCAL}}/
+	obj_get -v MoCha {wildcards.sample}_hg19_R2.fastq.gz --directory ${{LOCAL}}/
+	bwa mem -M -t ${{THREADS}} -R '@RG\\tID:{wildcards.sample}\\tSM:{wildcards.sample}\\tLB:{wildcards.sample}\\tPL:{params.platform}' {input.ref} ${{LOCAL}}/{wildcards.sample}_hg19_R1.fastq.gz ${{LOCAL}}/{wildcards.sample}_hg19_R2.fastq.gz | sentieon util sort -o ${{LOCAL}}/{wildcards.sample}.bwa.bam -t ${{THREADS}} --sam2bam -i -
 	cp ${{LOCAL}}/{wildcards.sample}.bwa.bam* {wildcards.base}/{TIME}/{wildcards.sample}/	
 	#######################
 	"""

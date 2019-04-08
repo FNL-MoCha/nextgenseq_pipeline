@@ -88,7 +88,7 @@ rule annotate_sequenza:
 	version: config["bedtools"]
 	params:
 		rulename = "annotate_sequenza",
-		batch    = config[config['host']]['job_Sequenza']
+		batch    = config[config['host']]['job_default']
 	shell: """
 	#######################
 	set +eo pipefail

@@ -34,9 +34,8 @@ if 'matched_normal' in config:
 ############
 rule seq2hla:
 	input:
-		R1="{base}/{TIME}/FQ/{sample}_R1.fastq.gz",
-		R2="{base}/{TIME}/FQ/{sample}_R2.fastq.gz",
-		    script=NGS_PIPELINE + "/seq2HLA/seq2HLA.py"
+		"{base}/{TIME}/FQ/{sample}_stat.txt",
+		script=NGS_PIPELINE + "/seq2HLA/seq2HLA.py"
 	output:
 		"{base}/{TIME}/{sample}/HLA/seq2HLA/{sample}-ClassI.HLAgenotype4digits"
 	params:
@@ -49,7 +48,10 @@ rule seq2hla:
 	shell: """
 	#######################
 	module load bowtie/{params.bowtie} python/{params.python} R/{params.R}
-	python {input.script} {params.HLA}/seq2HLA/ -1 {input.R1} -2 {input.R2}  -p ${{THREADS}} -r {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/HLA/seq2HLA/{wildcards.sample}
+	obj_get -v MoCha {wildcards.sample}_hg19_R1.fastq.gz --directory ${{LOCAL}}/
+	obj_get -v MoCha {wildcards.sample}_hg19_R2.fastq.gz --directory ${{LOCAL}}/
+
+	python {input.script} {params.HLA}/seq2HLA/ -1 ${{LOCAL}}/{wildcards.sample}_hg19_R1.fastq.gz -2 ${{LOCAL}}/{wildcards.sample}_hg19_R2.fastq.gz  -p ${{THREADS}} -r {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/HLA/seq2HLA/{wildcards.sample}
 	#######################
 	"""
 ############
@@ -57,8 +59,7 @@ rule seq2hla:
 ############
 rule hla_miner:
 	input:
-		R1="{base}/{TIME}/FQ/{sample}_R1.fastq.gz",
-		R2="{base}/{TIME}/FQ/{sample}_R2.fastq.gz",
+		"{base}/{TIME}/FQ/{sample}_stat.txt",
 		script=NGS_PIPELINE+"/HLAminer_v1.3.1/bin/HPTASRwgs_classI.sh"
 	output: "{base}/{TIME}/{sample}/HLA/HLAminer/HLAminer_HPTASR.csv"
 	params:
@@ -69,8 +70,10 @@ rule hla_miner:
 		location=NGS_PIPELINE
 	shell: """
 	#######################
-	echo {params.workdir}/{input.R1} >{wildcards.base}/{wildcards.TIME}/{wildcards.sample}/HLA/HLAminer/patient.fof
-	echo {params.workdir}/{input.R2} >>{wildcards.base}/{wildcards.TIME}/{wildcards.sample}/HLA/HLAminer/patient.fof
+	obj_get -v MoCha {wildcards.sample}_hg19_R1.fastq.gz --directory ${{LOCAL}}/
+	obj_get -v MoCha {wildcards.sample}_hg19_R2.fastq.gz --directory ${{LOCAL}}/
+	echo ${{LOCAL}}/{wildcards.sample}_hg19_R1.fastq.gz >{wildcards.base}/{wildcards.TIME}/{wildcards.sample}/HLA/HLAminer/patient.fof
+	echo ${{LOCAL}}/{wildcards.sample}_hg19_R2.fastq.gz >>{wildcards.base}/{wildcards.TIME}/{wildcards.sample}/HLA/HLAminer/patient.fof
 
 	sh {input.script} {params.location}/HLAminer_v1.3.1/bin/ {wildcards.base}/{wildcards.TIME}/{wildcards.sample}/HLA/HLAminer/
 	#######################

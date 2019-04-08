@@ -72,8 +72,7 @@ rule rnaseq_final:
 ############
 rule tophat:
 	input:
-		R1="{base}/{TIME}/FQ/{sample}_R1.fastq.gz",
-		R2="{base}/{TIME}/FQ/{sample}_R2.fastq.gz", 
+		"{base}/{TIME}/FQ/{sample}_stat.txt"
 	output:
 		"{base}/{TIME}/{sample}/tophat_{sample}/accepted_hits.bam",
 		"{base}/{TIME}/{sample}/tophat_{sample}/accepted_hits.bam.bai"
@@ -86,7 +85,9 @@ rule tophat:
 	shell: """
 	#######################
 	module load tophat/{version} bowtie samtools/{params.samtools}
-	tophat -p ${{THREADS}} -o ${{LOCAL}} --keep-fasta-order --rg-id {wildcards.sample} --no-coverage-search --rg-sample {wildcards.sample} --rg-library {wildcards.sample} --rg-platform ILLUMINA --fusion-search --fusion-min-dist 100000 --mate-inner-dist 84 --mate-std-dev 74 {params.ref} {input.R1} {input.R2}
+	obj_get -v MoCha {wildcards.sample}_hg19_R1.fastq.gz --directory ${{LOCAL}}/
+	obj_get -v MoCha {wildcards.sample}_hg19_R2.fastq.gz --directory ${{LOCAL}}/
+	tophat -p ${{THREADS}} -o ${{LOCAL}} --keep-fasta-order --rg-id {wildcards.sample} --no-coverage-search --rg-sample {wildcards.sample} --rg-library {wildcards.sample} --rg-platform ILLUMINA --fusion-search --fusion-min-dist 100000 --mate-inner-dist 84 --mate-std-dev 74 {params.ref} ${{LOCAL}}/{wildcards.sample}_hg19_R1.fastq.gz ${{LOCAL}}/{wildcards.sample}_hg19_R2.fastq.gz
 	cp -rf ${{LOCAL}}/* {wildcards.base}/{TIME}/{wildcards.sample}/tophat_{wildcards.sample}/
 	samtools index {wildcards.base}/{TIME}/{wildcards.sample}/tophat_{wildcards.sample}/accepted_hits.bam
 	#######################
@@ -236,8 +237,7 @@ rule exon_exp_ens:
 ############
 rule fusion_catcher:
 	input:
-		R1="{base}/{TIME}/FQ/{sample}_R1.fastq.gz",
-		R2="{base}/{TIME}/FQ/{sample}_R2.fastq.gz"
+		"{base}/{TIME}/FQ/{sample}_stat.txt"
 	output:
 		"{base}/{TIME}/{sample}/fusion/fusion-catcher.txt"
 	version: config['fusioncatcher']
@@ -247,57 +247,13 @@ rule fusion_catcher:
 	shell: """
 	#######################
 	module load fusioncatcher/{version}
-	fusioncatcher -p ${{THREADS}} -i {input.R1},{input.R2} -o ${{LOCAL}}/
+	obj_get -v MoCha {wildcards.sample}_hg19_R1.fastq.gz --directory ${{LOCAL}}/
+	obj_get -v MoCha {wildcards.sample}_hg19_R2.fastq.gz --directory ${{LOCAL}}/
+	
+	fusioncatcher -p ${{THREADS}} -i ${{LOCAL}}/{wildcards.sample}_hg19_R1.fastq.gz,${{LOCAL}}/{wildcards.sample}_hg19_R2.fastq.gz -o ${{LOCAL}}/
 	cp ${{LOCAL}}/final-list_candidate-fusion-genes.txt {wildcards.base}/{TIME}/{wildcards.sample}/fusion/fusion-catcher.txt
 	cp ${{LOCAL}}/final-list_candidate-fusion-genes.hg19.txt {wildcards.base}/{TIME}/{wildcards.sample}/fusion/fusion-catcher.hg19.txt
 	cp ${{LOCAL}}/summary_candidate_fusions.txt {wildcards.base}/{TIME}/{wildcards.sample}/fusion/fusion-catcher-summary.txt
-	#######################
-	"""
-############
-#       deFuse
-############
-rule defuse:
-	input:
-		R1="{base}/{TIME}/FQ/{sample}_R1.fastq.gz",
-		R2="{base}/{TIME}/FQ/{sample}_R2.fastq.gz",
-	output:
-		"{base}/{TIME}/{sample}/fusion/defuse.raw.txt",
-		"{base}/{TIME}/{sample}/fusion/defuse.filtered.txt",
-		"{base}/{TIME}/{sample}/fusion/defuse.Reads/defuse.done"
-	version: config["defuse"]
-	resources: DeFuse=1
-	params:
-		rulename = "defuse",
-		batch    = config[config['host']]["job_deFuse"],
-		defuse_config=NGS_PIPELINE + "/Tools_config/"+config["defuse_config"],
-		parallel = NGS_PIPELINE + "/scripts/parallel"
-	shell: """
-	#######################
-	module load defuse/{version} bowtie/1.2.2
-	export TMPDIR="${{LOCAL}}/temp/R"
-	export TMP="${{LOCAL}}/temp/R"
-	export TEMP="${{LOCAL}}/temp/R"
-
-	gunzip -c {input.R1} >${{LOCAL}}/{wildcards.sample}_R1.fastq &
-	gunzip -c {input.R2} >${{LOCAL}}/{wildcards.sample}_R2.fastq &
-	wait
-	defuse.pl --dataset /fdb/defuse/hg19_ens69_newgmap/\
-		-1 ${{LOCAL}}/{wildcards.sample}_R1.fastq\
-		-2 ${{LOCAL}}/{wildcards.sample}_R2.fastq\
-		-p ${{THREADS}} \
-		-n {wildcards.sample}\
-		-o ${{LOCAL}}/defuse\
-		-s direct
-	cp ${{LOCAL}}/defuse/results.filtered.tsv  {wildcards.base}/{TIME}/{wildcards.sample}/fusion/defuse.filtered.txt
-	cp ${{LOCAL}}/defuse/results.tsv           {wildcards.base}/{TIME}/{wildcards.sample}/fusion/defuse.raw.txt
-	
-	for ID in `cut -f1 {wildcards.base}/{TIME}/{wildcards.sample}/fusion/defuse.filtered.txt|grep -v cluster_id`;
-	do
-		echo "get_reads.pl -c {params.defuse_config} -o ${{LOCAL}}/defuse/ -i ${{ID}} >{wildcards.base}/{TIME}/{wildcards.sample}/fusion/defuse.Reads/${{ID}}.txt"
-	done >{wildcards.base}/{TIME}/{wildcards.sample}/fusion/cmd.swarm
-	cat {wildcards.base}/{TIME}/{wildcards.sample}/fusion/cmd.swarm | {params.parallel} -j ${{THREADS}} --no-notice
-	touch {wildcards.base}/{TIME}/{wildcards.sample}/fusion/defuse.Reads/defuse.done
-	rm -rf ${{LOCAL}}/defuse {wildcards.base}/{TIME}/{wildcards.sample}/fusion/cmd.swarm
 	#######################
 	"""
 ############
@@ -305,8 +261,7 @@ rule defuse:
 ############
 rule star:
 	input:
-		R1="{base}/{TIME}/FQ/{sample}_R1.fastq.gz",
-		R2="{base}/{TIME}/FQ/{sample}_R2.fastq.gz",
+		"{base}/{TIME}/FQ/{sample}_stat.txt",
 		ref=config["reference"],
 	output:
 		temp("{base}/{TIME}/{sample}/{sample}.star.bam"),
@@ -324,10 +279,12 @@ rule star:
 	#######################
 	module load STAR/{version}
 	cd ${{LOCAL}}/
+	obj_get -v MoCha {wildcards.sample}_hg19_R1.fastq.gz --directory ${{LOCAL}}/
+	obj_get -v MoCha {wildcards.sample}_hg19_R2.fastq.gz --directory ${{LOCAL}}/
 	# run 1st pass
 	STAR --outTmpDir STEP1 \
 		--genomeDir {params.star_ref} \
-		--readFilesIn {params.home}/{input.R1} {params.home}/{input.R2} \
+		--readFilesIn ${{LOCAL}}/{wildcards.sample}_hg19_R1.fastq.gz ${{LOCAL}}/{wildcards.sample}_hg19_R2.fastq.gz \
 		--readFilesCommand zcat\
 		--outFileNamePrefix {wildcards.sample} \
 		--runThreadN ${{THREADS}} \
@@ -355,7 +312,7 @@ rule star:
 		--genomeDir GenomeForPass2\
 		--runThreadN ${{THREADS}}\
 		--outSAMattributes All\
-		--readFilesIn {params.home}/{input.R1} {params.home}/{input.R2}\
+		--readFilesIn ${{LOCAL}}/{wildcards.sample}_hg19_R1.fastq.gz ${{LOCAL}}/{wildcards.sample}_hg19_R2.fastq.gz\
 		--readFilesCommand zcat\
 		--genomeLoad NoSharedMemory\
 		--outFileNamePrefix {wildcards.sample}_pass2
