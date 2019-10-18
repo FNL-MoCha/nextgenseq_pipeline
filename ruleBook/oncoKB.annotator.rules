@@ -1,6 +1,9 @@
 if 'DNASeq' in config:
 	for subject in config['DNASeq']:
 		for sample in config['DNASeq'][subject]:
+			TARGET    += [subject+"/"+TIME+"/"+sample+"/oncoKB/"+sample+".maf"]
+			#TARGET    += [subject+"/"+TIME+"/"+sample+"/oncoKB/"+sample+".cnv"]
+			#TARGET    += [subject+"/"+TIME+"/"+sample+"/oncoKB/"+sample+".oncoKB.clinical.txt"]
 			if config['sample_type'][sample] == 'Tumor':
 				if config['sample_captures'][sample] in config['cnvkit_ref']:
 					if 'PDC' in sample:
@@ -23,13 +26,16 @@ rule oncokb_maf:
 	params:
 		rulename  = "oncokb_maf",
 		batch     = config[config['host']]["job_default"],
-		work_dir  =  WORK_DIR,
+		script    = NGS_PIPELINE+"/scripts/filterMAF_oncoKB.pl",
+		work_dir  = WORK_DIR,
 		diagnosis = lambda wildcards: config['diagnosis'][wildcards.subject]
 	shell: """
 	#######################
 	echo -e "SAMPLE_ID\\tONCOTREE_CODE" >{output.clinical}
 	echo -e "{wildcards.sample}\\t{params.diagnosis}" >>{output.clinical}
-	ssh -q biowulf.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/other/oncokb-annotator-1.0.3/MafAnnotator.py -i {input.maf} -o {output.maf} -t {params.diagnosis}'
+	ssh -q biowulf.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/oncokb-annotator-1.1.0/MafAnnotator.py -i {input.maf} -o {output.maf} -t {params.diagnosis} -u http://ec2-34-234-234-196.compute-1.amazonaws.com:8080/oncokb/'
+	perl {params.script} {output.maf} >{output.maf}.tmp
+	mv -f {output.maf}.tmp {output.maf}
 	#######################
 	"""
 rule oncokb_cnv:
@@ -50,7 +56,7 @@ rule oncokb_cnv:
 	perl {params.script} {input} {params.hugo} {wildcards.sample} >{wildcards.subject}/{TIME}/{wildcards.sample}/oncoKB/{wildcards.sample}.tmp.cnv.txt
 	paste {params.hugo} {wildcards.subject}/{TIME}/{wildcards.sample}/oncoKB/{wildcards.sample}.tmp.cnv.txt |perl {params.script2} - {wildcards.sample} >{wildcards.subject}/{TIME}/{wildcards.sample}/oncoKB/{wildcards.sample}.cnv.txt
 	rm -rf {wildcards.subject}/{TIME}/oncoKB/*.tmp.cnv.txt
-	ssh -q biowulf.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/other/oncokb-annotator-1.0.3/CnaAnnotator.py -i {wildcards.subject}/{TIME}/{wildcards.sample}/oncoKB/{wildcards.sample}.cnv.txt -o {output.cnv} -t {params.diagnosis}'
+	ssh -q biowulf.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/oncokb-annotator-1.1.0/CnaAnnotator.py -i {wildcards.subject}/{TIME}/{wildcards.sample}/oncoKB/{wildcards.sample}.cnv.txt -o {output.cnv} -t {params.diagnosis} -u http://ec2-34-234-234-196.compute-1.amazonaws.com:8080/oncokb/'
        rm -rf {wildcards.subject}/{TIME}/{wildcards.sample}/oncoKB/{wildcards.sample}.cnv.txt
 	#######################
 	"""
@@ -67,7 +73,7 @@ rule oncokb_summary:
 		work_dir  = WORK_DIR,
 	shell: """
 	#######################
-	ssh -q biowulf.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/other/oncokb-annotator-1.0.3/ClinicalDataAnnotator.py -i {input.clinical} -o {output.clinical} -a {input.maf},{input.cnv}'
+	ssh -q biowulf.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/oncokb-annotator-1.1.0/ClinicalDataAnnotator.py -i {input.clinical} -o {output.clinical} -a {input.maf},{input.cnv} -u http://ec2-34-234-234-196.compute-1.amazonaws.com:8080/oncokb/'
 	#######################
 	"""
 
@@ -80,13 +86,16 @@ rule oncokb_maf_patient:
 	params:
 		rulename  = "oncokb_maf_patient",
 		batch     = config[config['host']]["job_default"],
-		work_dir  =  WORK_DIR,
+		script    = NGS_PIPELINE+"/scripts/filterMAF_oncoKB.pl",
+		work_dir  = WORK_DIR,
 		diagnosis = lambda wildcards: config['diagnosis'][wildcards.subject]
 	shell: """
 	#######################
 	echo -e "SAMPLE_ID\\tONCOTREE_CODE" >{output.clinical}
 	echo -e "{wildcards.subject}\\t{params.diagnosis}" >>{output.clinical}
-	ssh -q biowulf.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/other/oncokb-annotator-1.0.3/MafAnnotator.py -i {input.maf} -o {output.maf} -t {params.diagnosis}'
+	ssh -q biowulf.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/oncokb-annotator-1.1.0/MafAnnotator.py -i {input.maf} -o {output.maf} -t {params.diagnosis} -u http://ec2-34-234-234-196.compute-1.amazonaws.com:8080/oncokb/'
+	perl {params.script} {output.maf} >{output.maf}.tmp
+	mv -f {output.maf}.tmp {output.maf}
 	#######################
 	"""
 
@@ -112,7 +121,7 @@ rule oncokb_cnv_patient:
 	done
 	paste {params.hugo} {wildcards.subject}/{TIME}/oncoKB/*.tmp.cnv.txt |perl {params.script2} - {wildcards.subject} >{wildcards.subject}/{TIME}/oncoKB/{wildcards.subject}.cnv.txt
 	rm -rf {wildcards.subject}/{TIME}/oncoKB/*.tmp.cnv.txt
-	ssh -q biowulf.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/other/oncokb-annotator-1.0.3/CnaAnnotator.py -i {wildcards.subject}/{TIME}/oncoKB/{wildcards.subject}.cnv.txt -o {output.cnv} -t {params.diagnosis}'
+	ssh -q biowulf.nih.gov 'cd {params.work_dir}; python /data/MoCha/patidarr/oncokb-annotator-1.1.0/CnaAnnotator.py -i {wildcards.subject}/{TIME}/oncoKB/{wildcards.subject}.cnv.txt -o {output.cnv} -t {params.diagnosis} -u http://ec2-34-234-234-196.compute-1.amazonaws.com:8080/oncokb/'
 	rm -rf {wildcards.subject}/{TIME}/oncoKB/{wildcards.subject}.cnv.txt
 	#######################
 	"""

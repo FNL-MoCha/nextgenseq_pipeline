@@ -1,9 +1,11 @@
 for subject in config['DNASeq']:
 	for sample in config['DNASeq'][subject]:
-		if config["sample_type"][sample] =='Tumor':
-				TARGET +=[subject+"/"+TIME+"/"+sample+"/MSI/"+sample+".MSI_Analysis.txt"]	
+		#if config["sample_type"][sample] =='Tumor':
+			TARGET +=[subject+"/"+TIME+"/"+sample+"/MSI/"+sample+".MSI_Analysis.txt"]	
+			TARGET +=[subject+"/"+TIME+"/"+sample+"/msisensor/"+sample]	
+			TARGET +=[subject+"/"+TIME+"/"+sample+"/msisensor2/"+sample]	
 ############
-#       cnvkit
+#       MSIngs
 ############
 rule msings:
 	input:
@@ -31,8 +33,49 @@ rule msings:
 	msi analyzer {wildcards.base}/{TIME}/{wildcards.sample}/MSI/{wildcards.sample}.output /data/MoCha/patidarr/msings/doc/mSINGS_TCGA.bed -o {wildcards.base}/{TIME}/{wildcards.sample}/MSI/{wildcards.sample}.msi.txt
 
 	echo "MSI calls start"
-	msi count_msi_samples /data/MoCha/patidarr/msings/MSI_BASELINE.v33.txt {wildcards.base}/{TIME}/{wildcards.sample}/MSI/ -m 2.0 -t 0.2 0.2 -o {wildcards.base}/{TIME}/{wildcards.sample}/MSI/{wildcards.sample}.MSI_Analysis.txt
+	msi count_msi_samples /data/MoCha/patidarr/msings/baseline_novaseq/MSI_BASELINE.txt {wildcards.base}/{TIME}/{wildcards.sample}/MSI/ -m 2.0 -t 0.2 0.2 -o {wildcards.base}/{TIME}/{wildcards.sample}/MSI/{wildcards.sample}.MSI_Analysis.txt
 	rm -rf {wildcards.base}/{TIME}/{wildcards.sample}/MSI/{wildcards.sample}.pileup {wildcards.base}/{TIME}/{wildcards.sample}/MSI/{wildcards.sample}.output
 	dos2unix {wildcards.base}/{TIME}/{wildcards.sample}/MSI/{wildcards.sample}.MSI_Analysis.txt
+	#######################
+	"""
+############
+#	msisensor
+############
+
+rule msisensor:
+	input:
+		bam="{base}/{TIME}/{sample}/{sample}.bwa.final.bam"
+	output:
+		"{base}/{TIME}/{sample}/msisensor/{sample}"
+	params:
+		rulename ="msisensor",
+		batch    =config[config['host']]["job_msisensor"]
+	shell: """
+	#######################
+	/data/MoCha/patidarr/msisensor-0.6/msisensor msi\
+		-d /data/MoCha/patidarr/msisensor-0.6/microsatellites.list\
+		-t {input.bam}\
+		-e {wildcards.base}/{TIME}/{wildcards.sample}/msisensor/{wildcards.sample}.bed\
+		-o {output}
+	#######################
+	"""
+
+############
+# 	msisensor2
+############
+rule msisensor2:
+	input:
+		bam="{base}/{TIME}/{sample}/{sample}.bwa.final.bam"
+	output:
+		"{base}/{TIME}/{sample}/msisensor2/{sample}"
+	params:
+		rulename ="msisensor",
+		batch    =config[config['host']]["job_msisensor"]
+	shell: """
+	#######################
+	/data/MoCha/patidarr/msisensor2/msisensor2 msi\
+		-M /data/MoCha/patidarr/msisensor2/models_hg19\
+		-t {input.bam}\
+		-o {output}
 	#######################
 	"""

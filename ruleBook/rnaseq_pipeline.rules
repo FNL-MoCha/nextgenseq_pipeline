@@ -16,8 +16,8 @@ if 'RNASeq' in config:
 		for sample in config['RNASeq'][subject]:
 			TARGET_R += [subject+"/"+TIME+"/"+sample+"/"+sample+".star.final.bam"]
 			TARGET_R += [subject+"/"+TIME+"/"+sample+"/"+sample+".tophat.final.bam"]
-			TARGET_R += [subject+"/"+TIME+"/"+sample+"/fusion/tophat-fusion.txt"]
-			TARGET_R += [subject+"/"+TIME+"/"+sample+"/fusion/fusion-catcher.txt"]
+			#TARGET_R += [subject+"/"+TIME+"/"+sample+"/fusion/tophat-fusion.txt"]
+			#TARGET_R += [subject+"/"+TIME+"/"+sample+"/fusion/fusion-catcher.txt"]
 			#TARGET_R += [subject+"/"+TIME+"/"+sample+"/fusion/defuse.filtered.txt"]
 			TARGET_R += [subject+"/"+TIME+"/"+sample+"/qc/fastqc/"+sample+"_R2_fastqc.html"]
 			#TARGET_R += [subject+"/"+TIME+"/qc/"+subject+".circos.png"]
@@ -88,6 +88,7 @@ rule tophat:
 	obj_get -v MoCha {wildcards.sample}_hg19_R1.fastq.gz --directory ${{LOCAL}}/
 	obj_get -v MoCha {wildcards.sample}_hg19_R2.fastq.gz --directory ${{LOCAL}}/
 	tophat -p ${{THREADS}} -o ${{LOCAL}} --keep-fasta-order --rg-id {wildcards.sample} --no-coverage-search --rg-sample {wildcards.sample} --rg-library {wildcards.sample} --rg-platform ILLUMINA --fusion-search --fusion-min-dist 100000 --mate-inner-dist 84 --mate-std-dev 74 {params.ref} ${{LOCAL}}/{wildcards.sample}_hg19_R1.fastq.gz ${{LOCAL}}/{wildcards.sample}_hg19_R2.fastq.gz
+	rm -rf ${{LOCAL}}/unmapped.bam
 	cp -rf ${{LOCAL}}/* {wildcards.base}/{TIME}/{wildcards.sample}/tophat_{wildcards.sample}/
 	samtools index {wildcards.base}/{TIME}/{wildcards.sample}/tophat_{wildcards.sample}/accepted_hits.bam
 	#######################
@@ -369,7 +370,7 @@ rule coverage_rnaseq:
 		batch    = config[config['host']]["job_bedtools"]
 	shell: """
 	#######################
-	module load bedtools/{version}
+	module load bedtools/2.22.0 # Only this version can generate the output we want!!
 	bedtools coverage -abam {input.bam} -b {input.interval} -hist |grep "^all" > {output}
 	#######################
 	"""

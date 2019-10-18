@@ -23,7 +23,7 @@ rule verify_bam_id:
 	version: config["verifybamid"]
 	params:
 		rulename  = "verify_bam_id",
-		batch	  = config[config['host']]["job_bamUtil"]
+		batch	  = config[config['host']]["job_default"]
 	shell: """
 	#######################
 	module load verifybamid/{version}

@@ -38,9 +38,10 @@ rule collect_alignment_summary_metrics:
 	"""
 rule rnaseq_qc_summary:
 	input:
-		"{subject}/{TIME}/{sample}/qc/fastqc/{sample}_R1_fastqc.html",
-		file1="{subject}/{TIME}/{sample}/qc/{sample}.RnaSeqMetrics.txt",
-		file2="{subject}/{TIME}/{sample}/qc/{sample}.AlignmentSummaryMetrics.txt",
+		file0="{subject}/{TIME}/{sample}/qc/fastqc/{sample}_R1_fastqc.html",
+		file1="{subject}/{TIME}/{sample}/qc/{sample}.AlignmentSummaryMetrics.txt",
+		file2="{subject}/{TIME}/{sample}/qc/{sample}.RnaSeqMetrics.txt",
+		file3="{subject}/{TIME}/{sample}/RSEM/{sample}.genes.results",
 		convertor=NGS_PIPELINE+ "/scripts/rnaseqQC.pl"	
 	output:
 		"{subject}/{TIME}/{sample}/qc/{sample}.RnaSeqQC.txt"
@@ -54,8 +55,9 @@ rule rnaseq_qc_summary:
 	human="NA"
 	if [[ {params.source} = 'PDX' ]]; then
 		human=`grep hg19 {wildcards.subject}/{TIME}/FQ/{wildcards.sample}_stat.txt|cut -f2`
-	fi	
-	perl {input.convertor} {wildcards.subject}/{TIME}/{wildcards.sample}/qc/fastqc/{wildcards.sample}_R1_fastqc/fastqc_data.txt {input.file2} {input.file1} {wildcards.subject} {wildcards.sample} "{params.diagnosis}" ${{human}} >{output}
+	fi
+	no_genes=`cut -f6 {input.file3} |awk '{{if($1>0) print $1}}'|wc -l `
+	perl {input.convertor} {wildcards.subject} {wildcards.sample} "{params.diagnosis}" ${{human}} {wildcards.subject}/{TIME}/{wildcards.sample}/qc/fastqc/{wildcards.sample}_R1_fastqc/fastqc_data.txt {input.file1} {input.file2} ${{no_genes}} > {output}
 	#######################
 	"""
 rule rnaseq_qc_summary_patient:

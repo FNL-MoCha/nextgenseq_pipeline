@@ -1,7 +1,7 @@
 {
 	"pipeline_version"	: "v3.0dev",
 	"mails"			: "-c patidarr@mail.nih.gov",
-	"mail"			: "-c patidarr@mail.nih.gov -c li.chen2@nih.gov -c dasbiswa@mail.nih.gov -c amanda.peach@nih.gov -c brandie.fullmer@nih.gov -c justine.mccutcheon@nih.gov -c tomas.vilimas@nih.gov -c robin.harrington@nih.gov -c thomas.forbes@nih.gov -c nikitha.nair@nih.gov",
+	"mail"			: "-c x0j3t1e6s2g6k1z8@mocha-workspace.slack.com ",
 	"platform"		: "Illumina",
 	"samtools"		: "0.1.19",
 	"samtools_new"		: "1.8",
@@ -49,6 +49,7 @@
 		"wholegenome"		:{"Normal":"5","Tumor":"5"},
 		"sureselect.v5"		:{"Normal":"20","Tumor":"20"},
 		"sureselect.v6"		:{"Normal":"50","Tumor":"50"},
+		"twist_exome"		:{"Normal":"100","Tumor":"100"},
 		"K2A_manifest"		:{"Normal":"100","Tumor":"100"}
 	}
 }

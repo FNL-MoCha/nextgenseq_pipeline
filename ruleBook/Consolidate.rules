@@ -34,13 +34,16 @@ rule dnaseq_qc:
 	module load bedtools/{params.bedtools}
 	human="NA"
 	if [[ {params.source} = 'PDX' ]]; then
-		human=`grep hg19 {wildcards.base}/{TIME}/FQ/{wildcards.sample}_stat.txt|cut -f2|awk '{{print int($1*0.2)}}'`
+		human=`grep hg19 {wildcards.base}/{TIME}/FQ/{wildcards.sample}_stat.txt|cut -f2|awk '{{print int($1)}}'`
 	fi
 	uniformity=`cut -f 22 {input.hsMatrix}| grep -A1 MEAN_TARGET_COVERAGE|tail -1| awk '{{print int($1*0.2)}}'`
+	gender=`cat {input.gender}|cut -f1 -d" "`
+	total_reads=`grep ^Total {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/{wildcards.sample}_R1_fastqc/fastqc_data.txt|cut -f2`
 	which python
-	python {input.tool} {input.bam} {input.target_intervals} ${{LOCAL}} {wildcards.base} {wildcards.sample}  "{params.diagnosis}" `cat {input.gender}` `grep ^Total {wildcards.base}/{TIME}/{wildcards.sample}/qc/fastqc/{wildcards.sample}_R1_fastqc/fastqc_data.txt|cut -f2` ${{human}} ${{uniformity}} > {output}.tmp
+	echo "python {input.tool} {input.bam} {input.target_intervals} ${{LOCAL}} {wildcards.base} {wildcards.sample}  {params.diagnosis} ${{gender}} ${{total_reads}} ${{human}} ${{uniformity}}"
+	python {input.tool} {input.bam} {input.target_intervals} ${{LOCAL}} {wildcards.base} {wildcards.sample}  {params.diagnosis} ${{gender}} ${{total_reads}} ${{human}} ${{uniformity}} > {output}.tmp
 	perl   {params.tool_perl} {wildcards.sample} {input.hsMatrix} {output}.tmp  >{output}
-	#rm -rf {output}.tmp
+	rm -rf {output}.tmp
         #######################
         """
 ############

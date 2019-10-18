@@ -2,10 +2,10 @@
 # This script is calculate various stats on a given list (Only 1 list)
 # This is written in mind for calculaing stats on a list coming from pipe "|" and stdout to file or pipe
 ## example: 
-# ListStatistics.R -f SD -l file.input
-# ListStatistics.R -f SD -l <(cat test)
-#cat file.input| ListStatistics.R -f SD -l -
-#cat file.input| ListStatistics.R -f SD -l /dev/stdin
+# ListStatistics.R --stat median -f file.input
+# ListStatistics.R --stat median -f <(cat test)
+#cat file.input| ListStatistics.R --stat median -f -
+#cat file.input| ListStatistics.R --stat median -f /dev/stdin
 
 #library("pracma")
 suppressPackageStartupMessages(library("pracma"))
@@ -38,7 +38,7 @@ if(strcmp(toupper(opt$stat), 'SD') ) {
 	cat(out, "\n")
 }
 if(strcmp(toupper(opt$stat), 'MAD')){
-	out <-mad(inData$V1)
+	out <-mad(inData$V1, constant = 1, na.rm=T)
 	cat(out, "\n")
 }
 if(strcmp(toupper(opt$stat), 'MEAN')){

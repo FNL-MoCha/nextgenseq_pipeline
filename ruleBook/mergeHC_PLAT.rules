@@ -73,16 +73,17 @@ rule vcf2maf:
 	params:
 		rulename = "vcf2maf",
 		isoforms = config['mskcc_isoforms'],
-		script   = NGS_PIPELINE+"/scripts/filterMAF.pl",
+		script1  = NGS_PIPELINE+"/scripts/filterMAF.pl",
+		script2  = NGS_PIPELINE+"/scripts/slimMAF.pl",
+
 		batch    = config[config['host']]["job_vcf2maf"]
 	shell: """
 	#######################
 	module load VEP/92 vcf2maf/{version}
 	cp {input.vcf} /${{LOCAL}}/
 	vcf2maf.pl --input-vcf ${{LOCAL}}/{wildcards.sample}.merged.vcf --output-maf ${{LOCAL}}/{wildcards.sample}.variants.maf --tumor-id {wildcards.sample} --ref-fasta {input.ref} --filter-vcf /fdb/VEP/89/cache/ExAC.r0.3.1.sites.vep.vcf.gz --vep-path $VEP_HOME/ --vep-forks ${{THREADS}} --vep-data $VEP_CACHEDIR --custom-enst {params.isoforms}
-	{params.script} ${{LOCAL}}/{wildcards.sample}.variants.maf >${{LOCAL}}/{wildcards.sample}.variants.filtered.maf
+	{params.script1} ${{LOCAL}}/{wildcards.sample}.variants.maf |{params.script2} - |sed -e 's/\\t$//g' >{wildcards.subject}/{TIME}/{wildcards.sample}/calls/{wildcards.sample}.variants.maf
 	cp ${{LOCAL}}/{wildcards.sample}.merged.vep.vcf {wildcards.subject}/{TIME}/{wildcards.sample}/calls/
-	cp ${{LOCAL}}/{wildcards.sample}.variants.filtered.maf {wildcards.subject}/{TIME}/{wildcards.sample}/calls/{wildcards.sample}.variants.maf
 	#######################
 	"""
 #######################
@@ -137,14 +138,15 @@ rule vcf2maf_oncology:
         params:
                 rulename = "vcf2maf_oncology",
                 isoforms = config['mskcc_isoforms'],
-                script   = NGS_PIPELINE+"/scripts/filterMAF.pl",
+                script1  = NGS_PIPELINE+"/scripts/filterMAF.pl",
+		script2  = NGS_PIPELINE+"/scripts/slimMAF.pl",	
                 batch    = config[config['host']]["job_vcf2maf"]
         shell: """
         #######################
         module load VEP/92 vcf2maf/{version}
         cp {input.vcf} /${{LOCAL}}/{wildcards.sample}.vep.vcf
         vcf2maf.pl --input-vcf ${{LOCAL}}/{wildcards.sample}.vep.vcf --output-maf ${{LOCAL}}/{wildcards.sample}.variants.maf --tumor-id {wildcards.sample} --ref-fasta {input.ref} --filter-vcf /fdb/VEP/89/cache/ExAC.r0.3.1.sites.vep.vcf.gz --vep-path $VEP_HOME/ --vep-forks ${{THREADS}} --vep-data $VEP_CACHEDIR --custom-enst {params.isoforms}
-        {params.script} ${{LOCAL}}/{wildcards.sample}.variants.maf >${{LOCAL}}/{wildcards.sample}.variants.filtered.maf
+        {params.script1} ${{LOCAL}}/{wildcards.sample}.variants.maf|{params.script2} - |sed -e 's/\\t$//g' >${{LOCAL}}/{wildcards.sample}.variants.filtered.maf
         cp ${{LOCAL}}/{wildcards.sample}.variants.filtered.maf {output}
         #######################
         """
@@ -191,14 +193,15 @@ rule vcf2maf_patient:
 	params:
 		rulename = "vcf2maf_patient",
 		isoforms = config['mskcc_isoforms'],
-		script   = NGS_PIPELINE+"/scripts/filterMAF.pl",
+		script1  = NGS_PIPELINE+"/scripts/filterMAF.pl",
+		script2  = NGS_PIPELINE+"/scripts/slimMAF.pl",
 		batch    = config[config['host']]["job_vcf2maf"]
 	shell: """
 	#######################
 	module load VEP/92 vcf2maf/{version}
 	cp {input.vcf} /${{LOCAL}}/
 	vcf2maf.pl --input-vcf ${{LOCAL}}/{wildcards.subject}.consensus.vcf --output-maf ${{LOCAL}}/{wildcards.subject}.consensus.maf --tumor-id {wildcards.subject} --ref-fasta {input.ref} --filter-vcf /fdb/VEP/89/cache/ExAC.r0.3.1.sites.vep.vcf.gz --vep-path $VEP_HOME/ --vep-forks ${{THREADS}} --vep-data $VEP_CACHEDIR --custom-enst {params.isoforms}
-	{params.script} ${{LOCAL}}/{wildcards.subject}.consensus.maf >${{LOCAL}}/{wildcards.subject}.consensus.filtered.maf
+	{params.script1} ${{LOCAL}}/{wildcards.subject}.consensus.maf |{params.script2} - |sed -e 's/\\t$//g' >${{LOCAL}}/{wildcards.subject}.consensus.filtered.maf
 	cp ${{LOCAL}}/{wildcards.subject}.consensus.vep.vcf {wildcards.subject}/{TIME}/
 	cp ${{LOCAL}}/{wildcards.subject}.consensus.filtered.maf {wildcards.subject}/{TIME}/{wildcards.subject}.consensus.maf
 	#######################

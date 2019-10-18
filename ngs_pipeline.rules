@@ -17,14 +17,13 @@ TIME=os.environ['TIME']
 NOW=os.environ['TMP']
 configfile: NGS_PIPELINE +"/config/config_annotation.json"
 configfile: NGS_PIPELINE +"/config/config_common.json"
-configfile: NGS_PIPELINE +"/config/config_cluster.json"
+if 'processedDATA' in WORK_DIR:
+	configfile: NGS_PIPELINE +"/config/config_cluster.json"
+else :
+	configfile: NGS_PIPELINE +"/config/config_cluster.v2.json"
+
 if HOST == 'biowulf.nih.gov':
 	configfile: NGS_PIPELINE +"/config/config_common_biowulf.json"
-elif HOST == 'login01':
-	configfile: NGS_PIPELINE +"/config/config_common_tgen.json"
-elif HOST == 'moab':
-	configfile: NGS_PIPELINE +"/config/config_common_moab.json"
-
 config['host'] = HOST
 GROUP=config['group']
 VERSION=config["pipeline_version"]
@@ -147,8 +146,9 @@ for sample in config['matched_normal'].keys():
 	subject=SAMPLE_TO_SUBJECT[sample]
 	TARGET += [subject+"/"+TIME+"/"+sample+"/calls/"+sample+".strelka.snvs.raw.vcf"],
 	TARGET += [subject+"/"+TIME+"/"+sample+"/calls/"+sample+".strelka.indels.raw.vcf"],
-	TARGET += [subject+"/"+TIME+"/"+sample+"/calls/"+sample+".MuTect.maf"],
-	TARGET += [subject+"/"+TIME+"/"+sample+"/calls/"+sample+".MuTect2.maf"],
+	#TARGET += [subject+"/"+TIME+"/"+sample+"/calls/"+sample+".MuTect.maf"],
+	TARGET += [subject+"/"+TIME+"/"+sample+"/calls/"+sample+".MuTect2.maf"]
+
 ###########################################################################
 localrules: pipeline, rnaseq_final, patient_qc_summary, tophat_link, patient_genotyping
 #Circos, CoveragePlot, BoxPlot_Hotspot, makeConfig,Ideogram
@@ -161,7 +161,7 @@ include: NGS_PIPELINE +"/ruleBook/ROH.rules"
 include: NGS_PIPELINE +"/ruleBook/TMB.rules"
 include: NGS_PIPELINE +"/ruleBook/variantsHeatmap.rules"
 include: NGS_PIPELINE +"/ruleBook/MSI.rules"
-include: NGS_PIPELINE +"/ruleBook/mixcr.rules"
+#include: NGS_PIPELINE +"/ruleBook/mixcr.rules"
 include: NGS_PIPELINE +"/ruleBook/Ancestry.rules"
 include: NGS_PIPELINE +"/ruleBook/mergeHC_PLAT.rules"
 include: NGS_PIPELINE +"/ruleBook/verifyBamID.rules"
@@ -172,6 +172,7 @@ include: NGS_PIPELINE +"/ruleBook/failedExon.rules"
 include: NGS_PIPELINE +"/ruleBook/hsMetrix.rules"
 include: NGS_PIPELINE +"/ruleBook/Consolidate.rules"
 #include: NGS_PIPELINE +"/ruleBook/universal.rules"
+#include: NGS_PIPELINE +"/ruleBook/AllmutationalSignature.rules"
 include: NGS_PIPELINE +"/ruleBook/mutationalSignature.rules"
 #include: NGS_PIPELINE +"/ruleBook/NeoAntigen.rules"
 include: NGS_PIPELINE +"/ruleBook/haplotypeCaller.rules"
@@ -188,7 +189,7 @@ include: NGS_PIPELINE +"/ruleBook/RSEM.rules"
 # we have to do it this way as some samples may not have rna or tumor     #
 ###########################################################################
 onerror:
-	shell("find .snakemake/ ! -readable -prune \( -type f -user $USER -exec chmod g+rw {{}} \; \) , \( -type d -user $USER -exec chmod g+rwx {{}} \; \)")
+	shell("find .snakemake/ ! -readable -prune \( -type f -user $USER -exec chmod g+rwx {{}} \; \) , \( -type d -user $USER -exec chmod g+rwx {{}} \; \)")
         shell("find .snakemake/ ! -readable -prune -group $USER -exec chgrp -f {GROUP} {{}} \;")
 	shell("find {PATIENTS} -group $USER -exec chgrp -f {GROUP} {{}} \;")
 	shell("find {PATIENTS} \( -type f -user $USER -exec chmod g+rw {{}} \; \) , \( -type d -user $USER -exec chmod g+rwx {{}} \; \)")
@@ -204,7 +205,7 @@ onstart:
 	shell("for sub in {PATIENTS}; do rm -rf {WORK_DIR}/${{sub}}/{TIME}/successful.txt ; done")
 	shell("ssh -q {HOST} \"echo 'ngs-pipeline version {VERSION} started on {PATIENTS} on {HOST}. Working Dir:  {WORK_DIR}' |mutt -s ' ngs-pipeline Status' `whoami`@mail.nih.gov -c patidarr@mail.nih.gov\"")
 onsuccess:
-	shell("find .snakemake/ ! -readable -prune \( -type f -user $USER -exec chmod g+r {{}} \; \) , \( -type d -user $USER -exec chmod g+rwx {{}} \; \)")
+	shell("find .snakemake/ ! -readable -prune \( -type f -user $USER -exec chmod g+rwx {{}} \; \) , \( -type d -user $USER -exec chmod g+rwx {{}} \; \)")
 	shell("find .snakemake/ ! -readable -prune -group $USER -exec chgrp -f {GROUP} {{}} \;")
 	print("Workflow finished, no error")
 ###########################################################################
@@ -227,7 +228,7 @@ rule pipeline:
 	#######################
 	rm -rf ngs_pipeline_{NOW}.rnaseq.done
 	find {PATIENTS} log -group $USER -exec chgrp -f {params.group} {{}} \;
-	find {PATIENTS} log \( -type f -user $USER -exec chmod g+rw {{}} \; \) , \( -type d -user $USER -exec chmod g+rwx {{}} \; \)
+	find {PATIENTS} log \( -type f -user $USER -exec chmod g+rwx {{}} \; \) , \( -type d -user $USER -exec chmod g+rwx {{}} \; \)
 	export LC_ALL=C
 	
 	for sub in {params.subs}
@@ -290,7 +291,7 @@ rule bbsplit:
 			sh {params.subsample} {input[0]} ${{R2}}
 		fi
 		
-		obj_put -v MoCha --force --progressbar {input[0]} ${{R2}}
+		#obj_put -v MoCha --force --progressbar {input[0]} ${{R2}}
 		
 		if [ {params.source} == 'PDX' ]; then
 			module load bbtools/{version}
@@ -307,7 +308,7 @@ rule bbsplit:
 			rm -rf {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R1.fastq.gz {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_hg19_R2.fastq.gz
 			touch {wildcards.base}/{wildcards.TIME}/FQ/{wildcards.sample}_stat.txt
 		fi	
-		rm -rf {input[0]} ${{R2}}
+		#rm -rf {input[0]} ${{R2}}
 		touch {output}
 	fi		
 	#######################
@@ -538,7 +539,7 @@ rule coverage:
 		batch    = config[config['host']]["job_bedtools"]
 	shell: """
 	#######################
-	module load bedtools/{version}
+	module load bedtools/2.22.0 # Only this version can generate the output we want!!
 	bedtools coverage -abam {input.bam} -b {input.interval} -hist |grep "^all" > {output}
 	#######################
 	"""
@@ -733,7 +734,8 @@ rule mutect2maf:
 		isoforms = config['mskcc_isoforms'],
 		batch    = config[config['host']]["job_vcf2maf"],
 		VEP      = config['VEP'],
-		script   = NGS_PIPELINE+"/scripts/filterMAF.pl",
+		script1  = NGS_PIPELINE+"/scripts/filterMAF.pl",
+		script2  = NGS_PIPELINE+"/scripts/slimMAF.pl",
 		normal   = lambda wildcards: config['matched_normal'][wildcards.sample][0],
 	shell: """
 	#######################
@@ -741,8 +743,7 @@ rule mutect2maf:
 	grep -P "#" {input.vcf} >${{LOCAL}}/input.vcf
 	grep -P "\\tPASS\\t" {input.vcf} >>${{LOCAL}}/input.vcf
         vcf2maf.pl --input-vcf ${{LOCAL}}/input.vcf --output-maf ${{LOCAL}}/{wildcards.sample}.{wildcards.caller}.maf --tumor-id {wildcards.sample} --normal-id {params.normal} --ref-fasta {input.ref} --filter-vcf /fdb/VEP/89/cache/ExAC.r0.3.1.sites.vep.vcf.gz --vep-path  $VEPHOME --vep-forks ${{THREADS}} --vep-data $VEP_CACHEDIR --custom-enst {params.isoforms}
-	cp ${{LOCAL}}/{wildcards.sample}.{wildcards.caller}.maf {wildcards.subject}/{TIME}/{wildcards.sample}/calls/{wildcards.sample}.{wildcards.caller}.raw.maf
-        {params.script} ${{LOCAL}}/{wildcards.sample}.{wildcards.caller}.maf > {wildcards.subject}/{TIME}/{wildcards.sample}/calls/{wildcards.sample}.{wildcards.caller}.maf
+	{params.script1} ${{LOCAL}}/{wildcards.sample}.{wildcards.caller}.maf |{params.script2} - |sed -e 's/\\t$//g' >{wildcards.subject}/{TIME}/{wildcards.sample}/calls/{wildcards.sample}.{wildcards.caller}.maf
 	#######################
 	"""
 ############

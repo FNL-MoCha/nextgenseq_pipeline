@@ -26,7 +26,8 @@
 		"ribozero"		: "/data/MoCha/patidarr/ref/design/RefSeq.target.hg19.merged.bed",
 		"sureselect.v5"		: "/data/MoCha/patidarr/ref/design/Sureselect.v5.refseq.ensembl.noUTR.notfound.target.hg19.bed",
 		"sureselect.v6"		: "/data/MoCha/patidarr/ref/design/Sureselect.v6.refseq.ensembl.noUTR.notfound.target.hg19.bed",
-		"K2A_manifest"		: "/data/MoCha/patidarr/ref/design/K2A_manifest.target.bed"
+		"K2A_manifest"		: "/data/MoCha/patidarr/ref/design/K2A_manifest.target.bed",
+		"twist_exome"		: "/data/MoCha/patidarr/ref/design/Twist_Exome.target.hg19.bed"
 	},
 	"hotspot_bed"		:{
 		"wholegenome"		: "/data/MoCha/patidarr/ref/hotspot/hg19_Hotspot.08.08.16_merged.bed",
@@ -35,10 +36,12 @@
 		"ribozero"		: "/data/MoCha/patidarr/ref/hotspot/hg19_Hotspot.08.08.16_merged.bed",
 		"sureselect.v5"		: "/data/MoCha/patidarr/ref/hotspot/hg19_Hotspot.08.08.16_merged.bed",
 		"sureselect.v6"		: "/data/MoCha/patidarr/ref/hotspot/hg19_Hotspot.08.08.16_merged.bed",
-		"K2A_manifest"		: "/data/MoCha/patidarr/ref/hotspot/hg19_Hotspot.08.08.16_merged.bed"
+		"K2A_manifest"		: "/data/MoCha/patidarr/ref/hotspot/hg19_Hotspot.08.08.16_merged.bed",
+		"twist_exome"		: "/data/MoCha/patidarr/ref/hotspot/hg19_Hotspot.08.08.16_merged.bed"
 	},
 	"verifyBamID_vcf"       :{
 		"sureselect.v5"		: "/data/MoCha/patidarr/ref/verifyBamID/Omni_MayoV5.recode.vcf",
+		"Twist_exome"		: "/data/MoCha/patidarr/ref/verifyBamID/Omni_MayoV5.recode.vcf",
 		"sureselect.v6"		: "/data/MoCha/patidarr/ref/verifyBamID/Omni_MayoV5.recode.vcf"
 	},
 	 "cnvkit_ref"           :{

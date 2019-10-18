@@ -7,6 +7,7 @@ if 'DNASeq' in config:
 			if config['sample_captures'][library] not in config['Panel_List']:
 				# any output which is desired on all libraries but Panel goes here, the list of panel captures should be maintained in the Panel_List in config file
 				TARGET    += [subject+"/"+TIME+"/qc/"+subject+".circos.png"]
+				TARGET    += [subject+"/"+TIME+"/qc/"+subject+".ideogram.png"]
 ############
 # CoveragePlot
 ############
@@ -34,9 +35,11 @@ rule coverageplot:
 rule circos:
 	input:
 		lohFiles=lambda wildcards: SUB_LOH[wildcards.subject],
-		circos =NGS_PIPELINE + "/scripts/circos.R"
+		circos =NGS_PIPELINE + "/scripts/circos.R",
+		ideogram =NGS_PIPELINE + "/scripts/ideogram.R"
 	output:
-		"{subject}/{TIME}/qc/{subject}.circos.png",
+		circos="{subject}/{TIME}/qc/{subject}.circos.png",
+		ideogram="{subject}/{TIME}/qc/{subject}.ideogram.png",
 	version: config["version_R"]
 	params:
 		rulename = "circos",
@@ -45,7 +48,8 @@ rule circos:
 	#######################
 	cp -f {input.lohFiles} ${{LOCAL}}
 	module load R/{version}
-	R --vanilla --slave --silent --args ${{LOCAL}} {output} {wildcards.subject} <{input.circos}
+	R --vanilla --slave --silent --args ${{LOCAL}} {output.circos} {wildcards.subject} <{input.circos}
+	R --vanilla --slave --silent --args ${{LOCAL}} {output.ideogram} {wildcards.subject} <{input.ideogram}
 	#######################
 	"""
 ############

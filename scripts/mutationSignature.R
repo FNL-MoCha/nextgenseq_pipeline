@@ -28,14 +28,12 @@ cosmic = whichSignatures(tumor.ref = sigs.input,
 		signatures.ref = signatures.cosmic,
 		sample.id = sample,
 		contexts.needed = TRUE,
-		signature.cutoff =0.05,
 		tri.counts.method='exome')
 
 nature = whichSignatures(tumor.ref = sigs.input,
                 signatures.ref = signatures.nature2013,
                 sample.id = sample,
                 contexts.needed = TRUE,
-		signature.cutoff =0.05,
 		tri.counts.method='exome')
 a <-cosmic$weights
 a$Sample <-sample
@@ -47,7 +45,7 @@ write.table(a, gsub("pdf", "txt", output), quote = FALSE, sep = "\t", row.names 
 pdf(output,width=10)
 plotSignatures(cosmic, sub='Mutational Signature Based on COSMIC')
 makePie(cosmic, sub='Mutational Signature Based on COSMIC')
-plotSignatures(nature, sub='Mutational Signature based on Nature 2013--23945592')
-makePie(nature, sub='Mutational Signature based on Nature 2013--23945592')
+plotSignatures(nature, sub='Mutational Signature based on Nature 2013 --PubMed ID 23945592')
+makePie(nature, sub='Mutational Signature based on Nature 2013 --PubMed ID 23945592')
 
 dev.off()

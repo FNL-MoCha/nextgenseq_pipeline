@@ -35,7 +35,7 @@ pheatmap(mat,
 	fontsize = 20, 
 	fontsize_row = 10, 
 	fontsize_col = 2,	
-	main=paste(subject,"\n",sep=""),
+	main=paste(subject,"\n",ncol(mat),sep=""),
 	legend = TRUE
 )
 dev.off()
