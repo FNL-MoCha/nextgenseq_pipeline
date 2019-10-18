@@ -1,0 +1,27 @@
+for subject in config['DNASeq']:
+	for sample in config['DNASeq'][subject]:
+		if config["sample_type"][sample] =='Tumor':
+			TARGET +=[subject+"/"+TIME+"/"+sample+"/"+sample+".AllmutationalSignature.pdf"]
+############
+#	Mutational Signature
+############
+rule Allmutational_signature:
+	input:
+		File   ="{base}/{TIME}/{sample}/calls/{sample}.variants.maf",
+		tool   =NGS_PIPELINE + "/scripts/mutationSignature.R"
+	output: 
+		v1="{base}/{TIME}/{sample}/{sample}.AllmutationalSignature.pdf"
+	version: config["version_R"]
+	params:
+		rulename = "Allmutational_signature",
+		batch    = config[config['host']]["job_default"],
+		script   = NGS_PIPELINE + "/scripts/maf2annovar.pl"
+	shell: """
+	#######################
+	module load R/{version}
+	echo -e "Chr\\tPos\\tRef\\tAlt\\tSample" >{output.v1}.tmp
+	perl {params.script} {input.File} |awk '{{OFS="\\t"}}{{print $1,$2,$4,$5,"{wildcards.sample}"}}' >>{output.v1}.tmp
+	{input.tool} --input {output.v1}.tmp --sample {wildcards.sample} --output {output.v1}
+	rm -rf {output.v1}.tmp
+	#######################
+	"""
